@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-// V0.7: RASA focus based on recent bow aim/position stability, with forgiving tremor and visual feedback.
+// V0.8: original procedural audio, unobtrusive impact feedback and round titles.
 // Quest integration is deliberately left for the later phase.
 public class JemparinganGame : MonoBehaviour
 {
@@ -26,6 +26,9 @@ public class JemparinganGame : MonoBehaviour
     [SerializeField, Range(1.5f, 8f)] private float focusAngularTolerance = 3.5f;
     [SerializeField, Range(0.03f, 0.18f)] private float focusPositionTolerance = 0.08f;
 
+    [Header("Atmosphere (quiet, original procedural audio)")]
+    [SerializeField, Range(0f, 0.15f)] private float ambientWindVolume = 0.045f;
+
     private const int ArrowPoolSize = 14;
     private const int PreviewDotCount = 8;
     private Transform _bow, _stringMarker, _focusRoot, _leadMarker;
@@ -38,8 +41,11 @@ public class JemparinganGame : MonoBehaviour
     private TextMesh _resultsTitle, _resultsDetails, _resultsHint, _stageBanner;
     private GameObject _introPanel, _resultsPanel;
     private Renderer[] _shotPipRenderers;
-    private AudioSource _audio;
-    private AudioClip _shotSound, _hitSound, _missSound, _focusSound;
+    private AudioSource _audio, _ambientAudio;
+    private AudioClip _shotSound, _hitSound, _bullseyeSound, _missSound, _focusSound, _stageSound;
+    private TextMesh _impactLabel;
+    private Vector3 _impactLabelBasePosition = new Vector3(.38f, -.02f, -.18f);
+    private float _impactLabelUntil, _impactLabelStart;
     private Vector3 _lastAim = Vector3.forward;
     private bool _ready, _wasDrawing, _wasBowHeld, _roundOver, _finished;
     private bool _replayArmed, _awaitStringRelease;
@@ -78,6 +84,7 @@ public class JemparinganGame : MonoBehaviour
             _feedbackLabel.text = "";
             _feedbackUntil = 0f;
         }
+        UpdateImpactLabel();
         if (_roundOver)
         {
             bool anyFlying = false;
@@ -362,7 +369,9 @@ public class JemparinganGame : MonoBehaviour
         if (_combo >= 3) pts += 2;
         _score += pts;
         if (_score > _best) _best = _score;
-        _audio.PlayOneShot(_hitSound, bullseye ? 0.72f : 0.55f);
+        _audio.PlayOneShot(bullseye ? _bullseyeSound : _hitSound, bullseye ? 0.54f : 0.45f);
+        ShowImpactLabel("+" + pts + (bullseye ? "  TENGAH" : "  KENA"),
+            bullseye ? new Color(.98f, .81f, .40f) : new Color(.40f, .94f, .75f));
         ShowFeedback((bullseye ? "TITIK TENGAH" : "KENA!") + "  +" + pts + (arrow.StableRelease ? "  TENANG" : "") + (_combo >= 3 ? "  KOMBO" : ""),
             bullseye ? new Color(.98f, .81f, .40f) : new Color(.40f, .94f, .75f));
         UpdateHUD();
@@ -388,6 +397,7 @@ public class JemparinganGame : MonoBehaviour
             _stageBanner.text = stage;
             _stageBannerUntil = Time.time + 1.25f;
         }
+        if (_audio != null && _stageSound != null) _audio.PlayOneShot(_stageSound, .23f);
         UpdateHUD();
     }
 
@@ -416,16 +426,52 @@ public class JemparinganGame : MonoBehaviour
 
         if (_resultsPanel != null)
         {
-            _resultsTitle.text = newRecord ? "R E K O R   B A R U !" : "R O N D E   S E L E S A I";
+            _resultsTitle.text = GetRoundTitle();
             int accuracy = _shots > 0 ? Mathf.RoundToInt(_hits * 100f / _shots) : 0;
             _resultsDetails.text = "SKOR  " + _score + "    AKURASI  " + accuracy + "%" +
                 "\nTITIK TENGAH  " + _bullseyes + "    KOMBO TERBAIK  " + _bestCombo +
                 "\nBONUS RASA  +" + _rasaBonus + "  (" + _rasaHits + " KENA)";
-            _resultsHint.text = Application.isEditor
-                ? "R UNTUK ULANG  /  TAHAN KLIK KIRI 0.7 DETIK"
-                : "LEPASKAN, LALU TAHAN TARIK 0.7 DETIK";
+            _resultsHint.text = newRecord
+                ? "REKOR BARU!  •  " + (Application.isEditor ? "R UNTUK ULANG" : "TARIK UNTUK ULANG")
+                : (Application.isEditor
+                    ? "R UNTUK ULANG  /  TAHAN KLIK KIRI 0.7 DETIK"
+                    : "LEPASKAN, LALU TAHAN TARIK 0.7 DETIK");
             _resultsPanel.SetActive(true);
         }
+    }
+
+    // These titles are original game feedback, not historical Jemparingan ranks.
+    // Evaluate both precision and composure; every player receives a positive result.
+    private string GetRoundTitle()
+    {
+        if (_hits >= 8 && _rasaHits >= 4) return "R A S A   T E R J A G A";
+        if (_hits >= 8) return "P A N A H   J I T U";
+        if (_rasaHits >= 3) return "T E N A N G   B E R T U M B U H";
+        return "L A N G K A H   P E R T A M A";
+    }
+
+    private void ShowImpactLabel(string message, Color color)
+    {
+        if (_impactLabel == null) return;
+        _impactLabel.text = message;
+        _impactLabel.color = color;
+        _impactLabelStart = Time.time;
+        _impactLabelUntil = Time.time + .85f;
+        _impactLabel.transform.localPosition = _impactLabelBasePosition;
+    }
+
+    private void UpdateImpactLabel()
+    {
+        if (_impactLabel == null || _impactLabelUntil <= 0f) return;
+        if (Time.time >= _impactLabelUntil)
+        {
+            _impactLabel.text = "";
+            _impactLabelUntil = 0f;
+            return;
+        }
+        float progress = (Time.time - _impactLabelStart) / .85f;
+        _impactLabel.transform.localPosition = _impactLabelBasePosition +
+            Vector3.up * (.085f * Mathf.Clamp01(progress));
     }
 
     private void ResetRound()
@@ -448,6 +494,8 @@ public class JemparinganGame : MonoBehaviour
         _target.swaySpeed = 0.7f;
         _target.ResetReaction();
         HidePreview();
+        if (_impactLabel != null) _impactLabel.text = "";
+        _impactLabelUntil = 0f;
         ShowFeedback("BABAK I  •  TENANG");
         UpdateHUD();
     }
@@ -534,6 +582,8 @@ public class JemparinganGame : MonoBehaviour
         BuildBackdrop(root);
         BuildBandulan(root);
         BuildTargetPresentation(root);
+        _impactLabel = JemparinganArt.Label("Floating impact points", root,
+            _impactLabelBasePosition, "", .0041f, new Color(.98f, .81f, .40f));
         BuildBow();
         BuildPool();
         BuildPreview();
@@ -555,9 +605,22 @@ public class JemparinganGame : MonoBehaviour
         _audio.spatialBlend = 0f;
         _audio.playOnAwake = false;
         _shotSound = GenerateTone("Archery String", 0.17f, 185f, true);
-        _hitSound = GenerateTone("Bandulan Bell", 0.48f, 520f, false);
+        _hitSound = GenerateWoodImpact("Bandulan Wood Hit", false);
+        _bullseyeSound = GenerateWoodImpact("Bandulan Center Hit", true);
         _missSound = GenerateTone("Soft Miss", 0.14f, 115f, false);
         _focusSound = GenerateTone("RASA Ready", 0.13f, 710f, false);
+        _stageSound = GenerateTone("Stage Change", 0.25f, 395f, false);
+
+        _ambientAudio = gameObject.AddComponent<AudioSource>();
+        _ambientAudio.spatialBlend = 0f;
+        _ambientAudio.playOnAwake = false;
+        _ambientAudio.loop = true;
+        _ambientAudio.volume = ambientWindVolume;
+        if (ambientWindVolume > 0f)
+        {
+            _ambientAudio.clip = GenerateWindAmbient("Soft Pendopo Wind", 4f);
+            _ambientAudio.Play();
+        }
         _best = PlayerPrefs.GetInt("JemparinganRasaBest", 0);
         ResetRound();
         SetInfo("Tahan klik kiri untuk menarik, lepas untuk menembak. Klik kanan + mouse untuk membidik.");
@@ -821,6 +884,57 @@ public class JemparinganGame : MonoBehaviour
                 Vector3.zero, Vector3.one * (.017f - i * .0009f), JemparinganArt.Tone.Jade).transform;
             _previewDots[i].gameObject.SetActive(false);
         }
+    }
+
+    // Short original synthesized wooden hit: harmonic resonance + soft transient.
+    // This is sound design, not a claim to be recorded traditional instrumentation.
+    private static AudioClip GenerateWoodImpact(string name, bool center)
+    {
+        const int sampleRate = 22050;
+        const float duration = .38f;
+        int count = Mathf.CeilToInt(duration * sampleRate);
+        var samples = new float[count];
+        float baseHz = center ? 590f : 365f;
+        uint random = center ? 12345u : 67891u;
+        for (int i = 0; i < count; i++)
+        {
+            float t = (float)i / sampleRate;
+            float decay = Mathf.Exp(-18f * t);
+            random = random * 1664525u + 1013904223u;
+            float noise = ((random >> 16) / 32768f - 1f);
+            float body = Mathf.Sin(2f * Mathf.PI * baseHz * t) +
+                .24f * Mathf.Sin(2f * Mathf.PI * baseHz * 2.12f * t);
+            samples[i] = .19f * decay * body +
+                .10f * Mathf.Exp(-95f * t) * noise;
+        }
+        var clip = AudioClip.Create(name, count, 1, sampleRate, false);
+        clip.SetData(samples, 0);
+        return clip;
+    }
+
+    // Seamless low-level wind texture made once, then looped without streaming or files.
+    // No external music/assets, and no allocations in gameplay Update.
+    private static AudioClip GenerateWindAmbient(string name, float seconds)
+    {
+        const int sampleRate = 22050;
+        int count = Mathf.CeilToInt(seconds * sampleRate);
+        var samples = new float[count];
+        float smoothedNoise = 0f;
+        uint random = 40621u;
+        for (int i = 0; i < count; i++)
+        {
+            float phase = i / (float)count * Mathf.PI * 2f;
+            random = random * 1664525u + 1013904223u;
+            float noise = ((random >> 16) / 32768f - 1f);
+            smoothedNoise = Mathf.Lerp(smoothedNoise, noise, .0025f);
+            float loopEnvelope = Mathf.Sin(phase) * Mathf.Sin(phase);
+            float breeze = .45f * Mathf.Sin(phase * 2f) +
+                .3f * Mathf.Sin(phase * 5f + .8f);
+            samples[i] = .12f * (breeze + smoothedNoise * loopEnvelope);
+        }
+        var clip = AudioClip.Create(name, count, 1, sampleRate, false);
+        clip.SetData(samples, 0);
+        return clip;
     }
 
     private static AudioClip GenerateTone(string name, float duration, float frequency, bool twang)
