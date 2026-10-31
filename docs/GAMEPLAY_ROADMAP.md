@@ -63,10 +63,10 @@ The RASA bonus is **an accessible optional reward**, not a mandatory action; kee
 **Acceptance:** 3 testers can explain when/why they earned RASA bonus, and do not need to freeze unnaturally.
 
 ### P1 — v0.8: Delight & authenticity (Nov 9 – 11)
-- [ ] Add short original/licensed wooden string twang, bandulan hit and gentle ambient audio.
-- [ ] Improve arrow-in-target readability, camera-safe feedback, pendopo silhouette and minimal cultural labels.
-- [ ] Add personalized end-of-round title based on *accuracy + composure*, not simply raw score (avoid ungrounded claims about historical grading).
-- [ ] Make miss effects respectful, immediate and quiet; avoid excessive punishment or visual clutter.
+- [x] Implement original procedural pluck, hit/bullseye taps, quiet looping wind ambience, and short stage tone. **Requires Unity audio QA.**
+- [x] Implement small rising +points label near bandulan and pooled short arrow flight trails; reuse existing pendopo stage. **Requires visual/comfort QA.**
+- [x] Add original end-of-round titles based on successful hits and RASA bonus count; not presented as authentic traditional ranks. **Requires Unity UI QA.**
+- [x] Keep miss cue quiet, retain modest red text and no flashy score popup. **Requires playtest feedback.**
 **Acceptance:** First 30 seconds are immediately understandable and visually interesting, with no distractions during aiming.
 
 ### P0 — v0.9: Balance, usability, and freeze (Nov 12 – 14)
@@ -96,4 +96,4 @@ Gameplay **feature freeze**. Only fix crashes/blockers and record actual headset
 
 ## Next work item
 
-Complete [v0.5](PLAYTEST_V05.md), [v0.6](PLAYTEST_V06.md) and [v0.7 RASA](PLAYTEST_V07.md) playtests in Unity Editor. v0.7 features are **implemented but not runtime-verified**. After those pass, validate Quest hand interaction and proceed to v0.8 audio/art polish. Stop expanding scope if there are blocking bugs.
+Complete [v0.5](PLAYTEST_V05.md), [v0.6](PLAYTEST_V06.md), [v0.7 RASA](PLAYTEST_V07.md) and [v0.8 polish](PLAYTEST_V08.md) acceptance tests in Unity Editor. v0.8 features are **implemented but not runtime-verified**. Next priority: playtest, Unity Console issues, and real Quest hand interaction; avoid scope expansion while blockers remain.
