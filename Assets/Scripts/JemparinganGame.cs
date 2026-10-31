@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-// V0.4: stylized art direction, stage framing and round HUD.
+// V0.5: reliable release, readable RASA state and clear miss feedback.
 // Quest integration is deliberately left for the later phase.
 public class JemparinganGame : MonoBehaviour
 {
@@ -19,6 +19,7 @@ public class JemparinganGame : MonoBehaviour
     [SerializeField, Range(0f, 10f)] private float simulatedGravity = 2.25f;
     [SerializeField, Range(0f, 1f)] private float aimAssist = 0.40f;
     [SerializeField] private bool trajectoryPreview = true;
+    [SerializeField, Range(0.05f, 0.4f)] private float minimumHoldSeconds = 0.14f;
 
     private const int ArrowPoolSize = 14;
     private const int PreviewDotCount = 8;
@@ -30,13 +31,14 @@ public class JemparinganGame : MonoBehaviour
     private TextMesh _scoreLabel, _infoLabel, _feedbackLabel, _titleLabel, _phaseLabel;
     private Renderer[] _shotPipRenderers;
     private AudioSource _audio;
-    private AudioClip _shotSound, _hitSound;
+    private AudioClip _shotSound, _hitSound, _missSound;
     private Vector3 _lastAim = Vector3.forward;
     private bool _ready, _wasDrawing, _wasBowHeld, _roundOver, _finished;
-    private float _lastDraw, _stableTime, _feedbackUntil;
+    private float _lastDraw, _stableTime, _feedbackUntil, _drawStartedAt;
     private int _shots, _hits, _score, _combo, _best, _poolCursor;
     private string _lastInfo = "";
     private int _lastPowerStep = -1;
+    private bool _lastStableSignal;
 
     private IEnumerator Start()
     {
@@ -69,8 +71,7 @@ public class JemparinganGame : MonoBehaviour
         {
             if (_bow != null) _bow.gameObject.SetActive(false);
             HidePreview();
-            _wasDrawing = _wasBowHeld = false;
-            _stableTime = 0f;
+            ClearDrawState();
             SetInfo("Tangan belum terlacak — coba lagi.");
             return;
         }
@@ -84,8 +85,7 @@ public class JemparinganGame : MonoBehaviour
         {
             _bow.gameObject.SetActive(false);
             HidePreview();
-            _wasBowHeld = _wasDrawing = false;
-            _stableTime = 0f;
+            ClearDrawState();
             SetInfo("Pegang busur dengan tangan kiri.");
             return;
         }
@@ -101,6 +101,7 @@ public class JemparinganGame : MonoBehaviour
 
         if (drawing)
         {
+            if (!_wasDrawing) _drawStartedAt = Time.time;
             _lastDraw = distance;
             _stableTime = angleRate < 18f && power > 0.35f
                 ? Mathf.Min(2f, _stableTime + Time.deltaTime) : Mathf.Max(0f, _stableTime - Time.deltaTime * 2f);
@@ -109,29 +110,48 @@ public class JemparinganGame : MonoBehaviour
             UpdateBowStrings(pull);
             ShowPreview(pose.BowPosition + aim * 0.25f, aim, power);
             int step = Mathf.RoundToInt(power * 10f);
-            if (step != _lastPowerStep)
+            bool calm = _stableTime >= 0.45f;
+            // RASA must update even at constant draw power.
+            if (step != _lastPowerStep || calm != _lastStableSignal)
             {
                 _lastPowerStep = step;
-                SetInfo("TARIK " + (step * 10) + "%   |   " + (_stableTime > 0.45f ? "RASA: TENANG" : "RASA: FOKUS"));
+                _lastStableSignal = calm;
+                SetInfo("TARIK " + (step * 10) + "%   |   " + (calm ? "RASA: TENANG" : "RASA: FOKUS"));
             }
         }
         else
         {
             _lastPowerStep = -1;
+            _lastStableSignal = false;
             _stringMarker.localPosition = Vector3.zero;
             UpdateBowStrings(0f);
             HidePreview();
             SetInfo("Tahan klik kiri untuk menarik, lepas untuk menembak. Klik kanan + mouse untuk membidik.");
         }
 
-        // No accidental release after loss of input/tracking.
-        if (_wasBowHeld && _wasDrawing && !drawing && _lastDraw >= minimumDraw)
+        // One uninterrupted draw-to-release transition fires exactly once.
+        // Tracking loss / bow-unpinch resets without firing.
+        if (_wasBowHeld && _wasDrawing && !drawing)
         {
-            Shoot(pose.BowPosition + aim * 0.25f, aim, _lastDraw, _stableTime >= 0.45f);
+            if (_lastDraw >= minimumDraw && Time.time - _drawStartedAt >= minimumHoldSeconds)
+                Shoot(pose.BowPosition + aim * 0.25f, aim, _lastDraw, _stableTime >= 0.45f);
+            else
+                ShowFeedback("TARIK LEBIH DALAM");
+            _lastDraw = 0f;
         }
         if (!drawing) _stableTime = 0f;
         _wasDrawing = drawing;
         _wasBowHeld = true;
+    }
+
+    private void ClearDrawState()
+    {
+        _wasDrawing = _wasBowHeld = false;
+        _lastDraw = 0f;
+        _stableTime = 0f;
+        _drawStartedAt = 0f;
+        _lastPowerStep = -1;
+        _lastStableSignal = false;
     }
 
     private void Shoot(Vector3 origin, Vector3 rawAim, float draw, bool stable)
@@ -147,6 +167,7 @@ public class JemparinganGame : MonoBehaviour
         arrow.Launch(origin, aim * speed, simulatedGravity, _target, OnArrowImpact, OnArrowMiss);
         _shots++;
         _audio.PlayOneShot(_shotSound, 0.48f);
+        ShowFeedback("PANAH MELUNCUR");
         if (_shots == 4 || _shots == 8) UpdateLevel();
         if (_shots >= arrowsPerRound) _roundOver = true;
         UpdateHUD();
@@ -182,6 +203,8 @@ public class JemparinganGame : MonoBehaviour
     private void OnArrowMiss(JemparinganArrow arrow)
     {
         _combo = 0;
+        if (_missSound != null) _audio.PlayOneShot(_missSound, 0.16f);
+        ShowFeedback("MELESET  •  COBA LAGI");
         UpdateHUD();
     }
 
@@ -215,9 +238,8 @@ public class JemparinganGame : MonoBehaviour
     {
         for (int i = 0; i < _arrows.Length; i++) _arrows[i].Cancel();
         _shots = _hits = _score = _combo = _poolCursor = 0;
-        _stableTime = 0f;
-        _wasBowHeld = _wasDrawing = _roundOver = _finished = false;
-        _lastDraw = 0f;
+        ClearDrawState();
+        _roundOver = _finished = false;
         _ready = true;
         _target.swayAmount = 0.06f;
         _target.swaySpeed = 0.7f;
@@ -326,6 +348,7 @@ public class JemparinganGame : MonoBehaviour
         _audio.playOnAwake = false;
         _shotSound = GenerateTone("Archery String", 0.17f, 185f, true);
         _hitSound = GenerateTone("Bandulan Bell", 0.48f, 520f, false);
+        _missSound = GenerateTone("Soft Miss", 0.14f, 115f, false);
         _best = PlayerPrefs.GetInt("JemparinganRasaBest", 0);
         ResetRound();
         SetInfo("Tahan klik kiri untuk menarik, lepas untuk menembak. Klik kanan + mouse untuk membidik.");
