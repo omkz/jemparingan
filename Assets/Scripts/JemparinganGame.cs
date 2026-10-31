@@ -58,6 +58,7 @@ public class JemparinganGame : MonoBehaviour
         {
             bool anyFlying = false;
             for (int i = 0; i < _arrows.Length; i++) if (_arrows[i].IsFlying) { anyFlying = true; break; }
+            // End the current frame after showing results; input must not overwrite the restart hint.
             if (!anyFlying) { FinishRound(); return; }
         }
 
