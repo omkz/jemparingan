@@ -28,7 +28,7 @@ public class JemparinganGame : MonoBehaviour
 
     private const int ArrowPoolSize = 14;
     private const int PreviewDotCount = 8;
-    private Transform _bow, _stringMarker, _focusRoot;
+    private Transform _bow, _stringMarker, _focusRoot, _leadMarker;
     private Renderer[] _focusRenderers;
     private Transform _upperString, _lowerString;
     private JemparinganTarget _target;
@@ -143,6 +143,7 @@ public class JemparinganGame : MonoBehaviour
             _stringMarker.localPosition = Vector3.back * pull;
             UpdateBowStrings(pull);
             ShowPreview(pose.BowPosition + aim * 0.25f, aim, power);
+            UpdateLeadMarker(pose.BowPosition + aim * .25f, power);
             int step = Mathf.RoundToInt(power * 10f);
             bool calm = Time.time <= _focusReadyUntil;
             // RASA must update even at constant draw power.
@@ -514,6 +515,7 @@ public class JemparinganGame : MonoBehaviour
     {
         if (_previewDots == null) return;
         for (int i = 0; i < _previewDots.Length; i++) _previewDots[i].gameObject.SetActive(false);
+        if (_leadMarker != null) _leadMarker.gameObject.SetActive(false);
     }
 
     private bool BuildScene()
@@ -534,6 +536,7 @@ public class JemparinganGame : MonoBehaviour
         BuildBow();
         BuildPool();
         BuildPreview();
+        BuildLeadMarker(root);
 
         var hud = new GameObject("Jemparingan HUD").transform;
         hud.SetPositionAndRotation(stagePosition, facing);
@@ -779,6 +782,32 @@ public class JemparinganGame : MonoBehaviour
             _arrows[i] = obj.AddComponent<JemparinganArrow>();
             obj.SetActive(false);
         }
+    }
+
+    private void BuildLeadMarker(Transform root)
+    {
+        _leadMarker = JemparinganArt.Part("Lead cue | Stages II and III", PrimitiveType.Sphere,
+            root, Vector3.zero, Vector3.one * .023f, JemparinganArt.Tone.Jade).transform;
+        _leadMarker.gameObject.SetActive(false);
+    }
+
+    private void UpdateLeadMarker(Vector3 arrowOrigin, float power)
+    {
+        if (_leadMarker == null || _target == null) return;
+        bool visible = _shots >= 4 && !_roundOver && power >= .35f;
+        if (!visible)
+        {
+            _leadMarker.gameObject.SetActive(false);
+            return;
+        }
+        float speed = Mathf.Lerp(minimumArrowSpeed, maximumArrowSpeed, power);
+        float travelTime = Vector3.Distance(_target.transform.position, arrowOrigin) /
+            Mathf.Max(.01f, speed);
+        // A small lead guide, not auto-aim: players can always ignore this hint.
+        // Keep it slightly toward the viewer so it stays legible over the bandulan.
+        _leadMarker.position = _target.PredictCenter(travelTime) -
+            _target.transform.forward * .10f;
+        _leadMarker.gameObject.SetActive(true);
     }
 
     private void BuildPreview()
