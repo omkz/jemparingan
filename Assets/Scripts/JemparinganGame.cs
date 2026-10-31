@@ -447,6 +447,7 @@ public class JemparinganGame : MonoBehaviour
         _target.swayAmount = 0.06f;
         _target.swaySpeed = 0.7f;
         _target.ResetReaction();
+        HidePreview();
         ShowFeedback("BABAK I  •  TENANG");
         UpdateHUD();
     }
