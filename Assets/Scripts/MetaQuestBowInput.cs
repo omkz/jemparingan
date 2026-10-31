@@ -10,6 +10,11 @@ public class MetaQuestBowInput : MonoBehaviour, IJemparinganInput
     public OVRHand leftHand;
     public OVRHand rightHand;
 
+    // Hand-to-hand direction is the approximate arrow line while drawing.
+    // Validate palm/hand-anchor ergonomics and real tracking on Quest hardware.
+    private Vector3 _lastValidHandAim;
+    private bool _hasHandAim;
+
     public bool TryReadPose(out JemparinganHandPose pose)
     {
         pose = default;
@@ -20,13 +25,34 @@ public class MetaQuestBowInput : MonoBehaviour, IJemparinganInput
 
         bool leftPinch = leftHand.GetFingerIsPinching(OVRHand.HandFinger.Index);
         bool rightPinch = rightHand.GetFingerIsPinching(OVRHand.HandFinger.Index);
+
+        Vector3 bowPosition = leftHand.transform.position;
+        Vector3 stringPosition = rightHand.transform.position;
+        Vector3 cameraAim = cam.transform.forward.normalized;
+        Vector3 handAxis = bowPosition - stringPosition;
+        Vector3 handAim = _hasHandAim ? _lastValidHandAim : cameraAim;
+        // Head direction is used only while idle / when hand geometry is invalid.
+        // With both pinch gestures held, the aim follows the bow-string axis,
+        // rather than requiring the player to point their head at the target.
+        if (leftPinch && rightPinch && handAxis.sqrMagnitude >= 0.02f &&
+            Vector3.Dot(handAxis.normalized, cameraAim) > 0.20f)
+        {
+            handAim = handAxis.normalized;
+            _lastValidHandAim = handAim;
+            _hasHandAim = true;
+        }
+        else if (!rightPinch)
+        {
+            handAim = cameraAim;
+        }
+
         pose = new JemparinganHandPose
         {
             BowPinched = leftPinch,
             StringPinched = rightPinch,
-            BowPosition = leftHand.transform.position,
-            StringPosition = rightHand.transform.position,
-            AimDirection = cam.transform.forward.normalized
+            BowPosition = bowPosition,
+            StringPosition = stringPosition,
+            AimDirection = handAim
         };
         return true;
     }
