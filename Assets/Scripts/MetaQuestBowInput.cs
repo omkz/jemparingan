@@ -41,9 +41,12 @@ public class MetaQuestBowInput : MonoBehaviour, IJemparinganInput
             _lastValidHandAim = handAim;
             _hasHandAim = true;
         }
-        else if (!rightPinch)
+        else if (!leftPinch)
         {
+            // Clear cached direction only when the bow hand is actually released.
+            // Releasing the string must preserve the last hand-aim vector for the shot.
             handAim = cameraAim;
+            _hasHandAim = false;
         }
 
         pose = new JemparinganHandPose
