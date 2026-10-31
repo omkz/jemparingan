@@ -60,8 +60,18 @@ public class JemparinganTarget : MonoBehaviour
         Vector3 axisA = transform.TransformPoint(new Vector3(0f, -0.21f, 0f));
         Vector3 axisB = transform.TransformPoint(new Vector3(0f, 0.21f, 0f));
         float d2 = SegmentDistanceSquared(arrowFrom, arrowTo, axisA, axisB);
-        bullseye = d2 <= 0.037f * 0.037f;
-        return d2 <= 0.12f * 0.12f;
+        // The visible shaft radius is ~0.048 m and its bindings ~0.052 m.
+        // Keep modest forgiveness instead of scoring a visibly distant shot.
+        bool hit = d2 <= 0.07f * 0.07f;
+        if (!hit) { bullseye = false; return false; }
+
+        // A central hit is near the MIDDLE of the bandulan, not anywhere along
+        // the full-length vertical axis. Score a smaller central segment.
+        Vector3 centerA = transform.TransformPoint(new Vector3(0f, -0.075f, 0f));
+        Vector3 centerB = transform.TransformPoint(new Vector3(0f, 0.075f, 0f));
+        float centerDistance = SegmentDistanceSquared(arrowFrom, arrowTo, centerA, centerB);
+        bullseye = centerDistance <= 0.035f * 0.035f;
+        return true;
     }
 
     public void Flash(bool bullseye = false)
