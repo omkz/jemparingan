@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-// V0.6: complete short-round flow, in-world onboarding, results and gesture replay.
+// V0.7: RASA focus based on recent bow aim/position stability, with forgiving tremor and visual feedback.
 // Quest integration is deliberately left for the later phase.
 public class JemparinganGame : MonoBehaviour
 {
@@ -21,9 +21,15 @@ public class JemparinganGame : MonoBehaviour
     [SerializeField] private bool trajectoryPreview = true;
     [SerializeField, Range(0.05f, 0.4f)] private float minimumHoldSeconds = 0.14f;
 
+    [Header("RASA focus (tune from player tests)")]
+    [SerializeField, Range(0.3f, 1.0f)] private float focusTimeSeconds = 0.58f;
+    [SerializeField, Range(1.5f, 8f)] private float focusAngularTolerance = 3.5f;
+    [SerializeField, Range(0.03f, 0.18f)] private float focusPositionTolerance = 0.08f;
+
     private const int ArrowPoolSize = 14;
     private const int PreviewDotCount = 8;
-    private Transform _bow, _stringMarker;
+    private Transform _bow, _stringMarker, _focusRoot;
+    private Renderer[] _focusRenderers;
     private Transform _upperString, _lowerString;
     private JemparinganTarget _target;
     private JemparinganArrow[] _arrows;
@@ -33,11 +39,15 @@ public class JemparinganGame : MonoBehaviour
     private GameObject _introPanel, _resultsPanel;
     private Renderer[] _shotPipRenderers;
     private AudioSource _audio;
-    private AudioClip _shotSound, _hitSound, _missSound;
+    private AudioClip _shotSound, _hitSound, _missSound, _focusSound;
     private Vector3 _lastAim = Vector3.forward;
     private bool _ready, _wasDrawing, _wasBowHeld, _roundOver, _finished;
     private bool _replayArmed, _awaitStringRelease;
-    private float _lastDraw, _stableTime, _feedbackUntil, _drawStartedAt;
+    private float _lastDraw, _feedbackUntil, _drawStartedAt;
+    private float _focusProgress, _focusReadyUntil = -1f;
+    private Vector3 _focusAimAnchor, _focusBowAnchor;
+    private int _lastFocusStep = -1;
+    private bool _focusCuePlayed;
     private float _replayHoldStartedAt = -1f, _stageBannerUntil;
     private int _shots, _hits, _score, _combo, _best, _poolCursor;
     private int _previousBest, _bullseyes, _bestCombo, _rasaHits, _rasaBonus;
@@ -114,7 +124,6 @@ public class JemparinganGame : MonoBehaviour
         if (_introPanel != null && _introPanel.activeSelf && pose.StringPinched)
             _introPanel.SetActive(false);
         Vector3 aim = pose.AimDirection.sqrMagnitude > 0.01f ? pose.AimDirection.normalized : _lastAim;
-        float angleRate = Vector3.Angle(_lastAim, aim) / Mathf.Max(Time.deltaTime, 0.001f);
         _lastAim = aim;
         _bow.SetPositionAndRotation(pose.BowPosition, Quaternion.LookRotation(aim, Vector3.up));
         bool drawing = pose.StringPinched;
@@ -123,16 +132,19 @@ public class JemparinganGame : MonoBehaviour
 
         if (drawing)
         {
-            if (!_wasDrawing) _drawStartedAt = Time.time;
+            if (!_wasDrawing)
+            {
+                _drawStartedAt = Time.time;
+                BeginFocus(aim, pose.BowPosition);
+            }
             _lastDraw = distance;
-            _stableTime = angleRate < 18f && power > 0.35f
-                ? Mathf.Min(2f, _stableTime + Time.deltaTime) : Mathf.Max(0f, _stableTime - Time.deltaTime * 2f);
+            UpdateFocus(aim, pose.BowPosition, power);
             float pull = Mathf.Clamp(distance, 0f, maximumDraw);
             _stringMarker.localPosition = Vector3.back * pull;
             UpdateBowStrings(pull);
             ShowPreview(pose.BowPosition + aim * 0.25f, aim, power);
             int step = Mathf.RoundToInt(power * 10f);
-            bool calm = _stableTime >= 0.45f;
+            bool calm = Time.time <= _focusReadyUntil;
             // RASA must update even at constant draw power.
             if (step != _lastPowerStep || calm != _lastStableSignal)
             {
@@ -156,12 +168,12 @@ public class JemparinganGame : MonoBehaviour
         if (_wasBowHeld && _wasDrawing && !drawing)
         {
             if (_lastDraw >= minimumDraw && Time.time - _drawStartedAt >= minimumHoldSeconds)
-                Shoot(pose.BowPosition + aim * 0.25f, aim, _lastDraw, _stableTime >= 0.45f);
+                Shoot(pose.BowPosition + aim * 0.25f, aim, _lastDraw, Time.time <= _focusReadyUntil);
             else
                 ShowFeedback("TARIK LEBIH DALAM");
             _lastDraw = 0f;
         }
-        if (!drawing) _stableTime = 0f;
+        if (!drawing) ClearFocus();
         _wasDrawing = drawing;
         _wasBowHeld = true;
     }
@@ -202,10 +214,103 @@ public class JemparinganGame : MonoBehaviour
     {
         _wasDrawing = _wasBowHeld = false;
         _lastDraw = 0f;
-        _stableTime = 0f;
+        ClearFocus();
         _drawStartedAt = 0f;
         _lastPowerStep = -1;
         _lastStableSignal = false;
+    }
+
+    // Each draw samples AIM and the bow hand, rather than comparing single-frame
+    // angular velocity. A slowly moving target can still be followed smoothly.
+    private void BeginFocus(Vector3 aim, Vector3 bowPosition)
+    {
+        _focusAimAnchor = aim;
+        _focusBowAnchor = bowPosition;
+        _focusProgress = 0f;
+        _focusReadyUntil = -1f;
+        _focusCuePlayed = false;
+        _lastFocusStep = -1;
+        _lastStableSignal = false;
+    }
+
+    private void ClearFocus()
+    {
+        _focusProgress = 0f;
+        _focusReadyUntil = -1f;
+        _focusCuePlayed = false;
+        _lastFocusStep = -1;
+        if (_focusRoot != null) _focusRoot.gameObject.SetActive(false);
+    }
+
+    private void UpdateFocus(Vector3 aim, Vector3 bowPosition, float power)
+    {
+        if (power < .35f)
+        {
+            _focusProgress = Mathf.Max(0f, _focusProgress - Time.deltaTime * 2f);
+            _focusReadyUntil = -1f;
+            _focusAimAnchor = aim;
+            _focusBowAnchor = bowPosition;
+        }
+        else
+        {
+            float angle = Vector3.Angle(_focusAimAnchor, aim);
+            float drift = Vector3.Distance(_focusBowAnchor, bowPosition);
+            bool largeMovement = angle > focusAngularTolerance * 2.5f ||
+                drift > focusPositionTolerance * 2f;
+
+            if (largeMovement)
+            {
+                // Reset only on an intentional re-aim or big hand jump.
+                _focusProgress = 0f;
+                _focusReadyUntil = -1f;
+                _focusAimAnchor = aim;
+                _focusBowAnchor = bowPosition;
+            }
+            else
+            {
+                bool settled = angle <= focusAngularTolerance &&
+                    drift <= focusPositionTolerance;
+                float change = Time.deltaTime / (settled ? focusTimeSeconds : .35f);
+                _focusProgress = Mathf.MoveTowards(_focusProgress, settled ? 1f : 0f, change);
+                // Follow deliberate slow movements; don't chase noisy tracking.
+                _focusAimAnchor = Vector3.Slerp(_focusAimAnchor, aim, Mathf.Clamp01(Time.deltaTime * 1.7f));
+                _focusBowAnchor = Vector3.Lerp(_focusBowAnchor, bowPosition, Mathf.Clamp01(Time.deltaTime * 1.7f));
+
+                if (settled && _focusProgress >= .999f)
+                {
+                    // A short grace window covers natural release movement.
+                    _focusReadyUntil = Time.time + .22f;
+                    if (!_focusCuePlayed && _audio != null && _focusSound != null)
+                    {
+                        _audio.PlayOneShot(_focusSound, .18f);
+                        _focusCuePlayed = true;
+                    }
+                }
+            }
+        }
+        UpdateFocusIndicator(power);
+    }
+
+    private void UpdateFocusIndicator(float power)
+    {
+        if (_focusRoot == null || _focusRenderers == null) return;
+        bool visible = power >= .35f;
+        if (_focusRoot.gameObject.activeSelf != visible)
+            _focusRoot.gameObject.SetActive(visible);
+        if (!visible) { _lastFocusStep = -1; return; }
+
+        int step = Mathf.Clamp(Mathf.FloorToInt(_focusProgress * _focusRenderers.Length + .001f),
+            0, _focusRenderers.Length);
+        bool ready = Time.time <= _focusReadyUntil;
+        if (step == _lastFocusStep && ready == _lastStableSignal) return;
+        _lastFocusStep = step;
+        for (int i = 0; i < _focusRenderers.Length; i++)
+        {
+            JemparinganArt.Tone tone = i < step
+                ? (ready ? JemparinganArt.Tone.Gold : JemparinganArt.Tone.Jade)
+                : JemparinganArt.Tone.Paper;
+            _focusRenderers[i].sharedMaterial = JemparinganArt.Material(tone);
+        }
     }
 
     private void Shoot(Vector3 origin, Vector3 rawAim, float draw, bool stable)
@@ -448,6 +553,7 @@ public class JemparinganGame : MonoBehaviour
         _shotSound = GenerateTone("Archery String", 0.17f, 185f, true);
         _hitSound = GenerateTone("Bandulan Bell", 0.48f, 520f, false);
         _missSound = GenerateTone("Soft Miss", 0.14f, 115f, false);
+        _focusSound = GenerateTone("RASA Ready", 0.13f, 710f, false);
         _best = PlayerPrefs.GetInt("JemparinganRasaBest", 0);
         ResetRound();
         SetInfo("Tahan klik kiri untuk menarik, lepas untuk menembak. Klik kanan + mouse untuk membidik.");
@@ -630,7 +736,26 @@ public class JemparinganGame : MonoBehaviour
         _lowerString = JemparinganArt.Part("Lower string", PrimitiveType.Cylinder, _bow,
             Vector3.zero, Vector3.one * .01f, JemparinganArt.Tone.Paper).transform;
         UpdateBowStrings(0f);
+        BuildFocusIndicator();
         _bow.gameObject.SetActive(false);
+    }
+
+    private void BuildFocusIndicator()
+    {
+        const int count = 6;
+        var holder = new GameObject("RASA Focus | Beside Bow");
+        _focusRoot = holder.transform;
+        _focusRoot.SetParent(_bow, false);
+        _focusRoot.localPosition = new Vector3(.15f, -.06f, -.07f);
+        _focusRenderers = new Renderer[count];
+        for (int i = 0; i < count; i++)
+        {
+            var pip = JemparinganArt.Part("Focus " + (i + 1), PrimitiveType.Cube,
+                _focusRoot, new Vector3(0f, i * .038f, 0f),
+                new Vector3(.023f, .024f, .012f), JemparinganArt.Tone.Paper);
+            _focusRenderers[i] = pip.GetComponent<Renderer>();
+        }
+        _focusRoot.gameObject.SetActive(false);
     }
 
     private void BuildPool()
