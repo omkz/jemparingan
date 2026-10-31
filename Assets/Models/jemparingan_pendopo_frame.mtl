@@ -1,0 +1,36 @@
+# Original procedural palette - no texture files
+newmtl gold
+Ka 0.08 0.08 0.08
+Kd 0.8800 0.6600 0.2900
+Ks 0.04 0.04 0.04
+Ns 24.0
+illum 2
+
+newmtl indigo
+Ka 0.08 0.08 0.08
+Kd 0.1100 0.1800 0.3000
+Ks 0.04 0.04 0.04
+Ns 24.0
+illum 2
+
+newmtl wood
+Ka 0.08 0.08 0.08
+Kd 0.4400 0.2300 0.1300
+Ks 0.04 0.04 0.04
+Ns 24.0
+illum 2
+
+newmtl wood_dark
+Ka 0.08 0.08 0.08
+Kd 0.2000 0.1100 0.1000
+Ks 0.04 0.04 0.04
+Ns 24.0
+illum 2
+
+newmtl wood_light
+Ka 0.08 0.08 0.08
+Kd 0.7600 0.5300 0.3000
+Ks 0.04 0.04 0.04
+Ns 24.0
+illum 2
+
