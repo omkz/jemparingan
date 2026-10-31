@@ -42,6 +42,33 @@ public static class JemparinganEditorMenu
         Debug.Log("Jemparingan v0.2 scene created at " + path + " — Play; hold LMB, release to shoot, hold RMB to aim; R resets.");
     }
 
+    [MenuItem("Tools/Jemparingan/Run Target Hitbox Checks")]
+    public static void RunTargetHitboxChecks()
+    {
+        // Edit-mode smoke checks. Does not save or modify the open scene.
+        var testObject = new GameObject("Jemparingan Hitbox Test (temporary)");
+        try
+        {
+            var target = testObject.AddComponent<JemparinganTarget>();
+            bool bullseye;
+            bool center = target.TestShot(new Vector3(0f, 0f, -.2f),
+                new Vector3(0f, 0f, .2f), out bullseye) && bullseye;
+            bool outer = target.TestShot(new Vector3(.06f, .16f, -.2f),
+                new Vector3(.06f, .16f, .2f), out bullseye) && !bullseye;
+            bool miss = !target.TestShot(new Vector3(.15f, 0f, -.2f),
+                new Vector3(.15f, 0f, .2f), out bullseye);
+            if (center && outer && miss)
+                Debug.Log("Jemparingan v0.5 hitbox checks passed (bullseye, outer hit, miss).");
+            else
+                Debug.LogError("Jemparingan v0.5 hitbox check failed: center=" + center +
+                    ", outer=" + outer + ", miss=" + miss);
+        }
+        finally
+        {
+            Object.DestroyImmediate(testObject);
+        }
+    }
+
     [MenuItem("Tools/Jemparingan/Create Prototype Scene")]
     public static void CreatePrototypeScene() => CreateOptimizedScene();
 }
