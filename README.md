@@ -40,9 +40,14 @@ See [Gameplay Roadmap](docs/GAMEPLAY_ROADMAP.md) for the three-stage 12-arrow lo
 
 **Current gate:** [v0.9 Regression Gate](docs/PLAYTEST_V09.md): run **Tools > Jemparingan > Run Gameplay QA v0.9** (21 deterministic checks) then complete three real Play Mode rounds. Also see [v0.8](docs/PLAYTEST_V08.md), [v0.7](docs/PLAYTEST_V07.md), [v0.6](docs/PLAYTEST_V06.md) and [v0.5](docs/PLAYTEST_V05.md). In Edit mode run **Tools > Jemparingan > Run Target Hitbox Checks** before Play Mode testing. A code commit is not evidence of successful Unity compilation.
 
-## Next milestone
+## Next milestone: Quest integration
 
-Complete the v0.9 regression gate, particularly score/pool correctness, restart while holding LMB, and three uninterrupted 12-shot rounds. Do not add polish until actual Unity tests pass. Quest hand tracking, passthrough, Android build and device performance verification remain **not complete**.
+- **Confirmed from user:** Unity compiler errors were resolved after removing duplicate rule classes. This does **not** establish three clean gameplay rounds or a Quest APK.
+- Complete the v0.9 regression gate (21 checks + three full 12-shot rounds).
+- Next follow the [Quest Integration Guide](docs/QUEST_INTEGRATION.md): install Android/OpenXR/Meta XR SDK, make a **separate** Quest scene with hand prefabs and passthrough, then test the APK on a real device.
+- Run **Tools > Jemparingan > Check Quest Prerequisites** after pulling; this is an advisory preflight, **not** an automated Quest installer.
+- The developer uses Linux Mint: Meta Link and XR Simulator are not available there, and Meta's Linux Editor support remains unofficial. Prefer on-device APK testing; use a supported build environment if Meta SDK compatibility blocks Linux.
+- Quest hand tracking, passthrough, Android build and headset performance verification remain **not complete**.
 
 ## Git workflow
 
