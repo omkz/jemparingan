@@ -830,7 +830,7 @@ public class JemparinganGame : MonoBehaviour
     private void BuildPool()
     {
         // The Inspector allows up to 30 shots; don't recycle live projectiles.
-        int poolSize = Mathf.Max(ArrowPoolSize, arrowsPerRound);
+        int poolSize = JemparinganScoreRules.PoolCapacity(arrowsPerRound, ArrowPoolSize);
         _arrows = new JemparinganArrow[poolSize];
         var poolRoot = new GameObject("Arrow Pool (reused)").transform;
         for (int i = 0; i < poolSize; i++)
@@ -972,6 +972,11 @@ public class JemparinganGame : MonoBehaviour
 // Pure gameplay rules used by runtime AND Editor QA; no scene or PlayerPrefs needed.
 public static class JemparinganScoreRules
 {
+    public static int PoolCapacity(int configuredShots, int minimumPool)
+    {
+        return Mathf.Max(minimumPool, configuredShots);
+    }
+
     public static int PointsForHit(bool bullseye, bool stableRelease, int consecutiveHits)
     {
         return (bullseye ? 10 : 5) + (stableRelease ? 3 : 0) +
