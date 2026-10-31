@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-// V0.2 desktop-focused gameplay and procedural art pass.
+// V0.4: stylized art direction, stage framing and round HUD.
 // Quest integration is deliberately left for the later phase.
 public class JemparinganGame : MonoBehaviour
 {
@@ -27,7 +27,8 @@ public class JemparinganGame : MonoBehaviour
     private JemparinganTarget _target;
     private JemparinganArrow[] _arrows;
     private Transform[] _previewDots;
-    private TextMesh _scoreLabel, _infoLabel, _feedbackLabel, _titleLabel;
+    private TextMesh _scoreLabel, _infoLabel, _feedbackLabel, _titleLabel, _phaseLabel;
+    private Renderer[] _shotPipRenderers;
     private AudioSource _audio;
     private AudioClip _shotSound, _hitSound;
     private Vector3 _lastAim = Vector3.forward;
@@ -174,13 +175,14 @@ public class JemparinganGame : MonoBehaviour
         _score += pts;
         if (_score > _best) _best = _score;
         _audio.PlayOneShot(_hitSound, bullseye ? 0.72f : 0.55f);
-        ShowFeedback((bullseye ? "TITIK TENGAH" : "KENA!") + "  +" + pts + (arrow.StableRelease ? "  TENANG" : ""));
+        ShowFeedback((bullseye ? "TITIK TENGAH" : "KENA!") + "  +" + pts + (arrow.StableRelease ? "  TENANG" : "") + (_combo >= 3 ? "  KOMBO" : ""));
         UpdateHUD();
     }
 
     private void OnArrowMiss(JemparinganArrow arrow)
     {
         _combo = 0;
+        UpdateHUD();
     }
 
     private void UpdateLevel()
@@ -189,6 +191,7 @@ public class JemparinganGame : MonoBehaviour
         _target.swayAmount = 0.06f + level * 0.045f;
         _target.swaySpeed = 0.7f + level * 0.52f;
         ShowFeedback(level == 1 ? "BABAK II  •  ANGIN" : "BABAK III  •  UJIAN RASA");
+        UpdateHUD();
     }
 
     private void FinishRound()
@@ -202,6 +205,7 @@ public class JemparinganGame : MonoBehaviour
             PlayerPrefs.Save();
         }
         _scoreLabel.text = "SELESAI  •  " + _score + " POIN  •  " + _hits + "/" + _shots + " HIT";
+        if (_phaseLabel != null) _phaseLabel.text = "R O N D E  S E L E S A I";
         SetInfo("Tekan R untuk mulai ronde baru.");
         _bow.gameObject.SetActive(false);
         HidePreview();
@@ -225,7 +229,25 @@ public class JemparinganGame : MonoBehaviour
     private void UpdateHUD()
     {
         if (_scoreLabel != null)
-            _scoreLabel.text = "JEMPARINGAN  /  RASA     " + _score + " POIN     " + _shots + "/" + arrowsPerRound + " PANAH     REKOR " + _best;
+            _scoreLabel.text = "SKOR " + _score + "  •  KENA " + _hits + "/" + _shots + "  •  KOMBO " + _combo + "  •  REKOR " + _best;
+        if (_phaseLabel != null && !_finished)
+            _phaseLabel.text = _shots < 4 ? "BABAK I  •  TENANG" :
+                _shots < 8 ? "BABAK II  •  ANGIN" : "BABAK III  •  UJIAN RASA";
+        UpdateShotPips();
+    }
+
+    private void UpdateShotPips()
+    {
+        if (_shotPipRenderers == null) return;
+        for (int i = 0; i < _shotPipRenderers.Length; i++)
+        {
+            JemparinganArt.Tone tone = i < _shots ? JemparinganArt.Tone.Gold : JemparinganArt.Tone.Paper;
+            bool inStage = (_shots < 4 && i < 4) ||
+                (_shots >= 4 && _shots < 8 && i >= 4 && i < 8) ||
+                (_shots >= 8 && i >= 8);
+            if (!_finished && i >= _shots && inStage) tone = JemparinganArt.Tone.Jade;
+            _shotPipRenderers[i].sharedMaterial = JemparinganArt.Material(tone);
+        }
     }
     private void SetInfo(string value)
     {
@@ -281,7 +303,9 @@ public class JemparinganGame : MonoBehaviour
         var root = new GameObject("JEMPARINGAN | Panggung Pendopo Stylized").transform;
         root.SetPositionAndRotation(stagePosition, facing);
         BuildPendopo(root);
+        BuildBackdrop(root);
         BuildBandulan(root);
+        BuildTargetPresentation(root);
         BuildBow();
         BuildPool();
         BuildPreview();
@@ -290,7 +314,9 @@ public class JemparinganGame : MonoBehaviour
         hud.SetPositionAndRotation(stagePosition, facing);
         _titleLabel = JemparinganArt.Label("Title", hud, new Vector3(0f, 1.16f, 0f), "J E M P A R I N G A N   •   R A S A", .0052f, new Color(0.96f, .79f, .48f));
         _scoreLabel = JemparinganArt.Label("Score", hud, new Vector3(0f, .96f, 0f), "", .0037f, Color.white);
-        _feedbackLabel = JemparinganArt.Label("Feedback", hud, new Vector3(0f, .77f, 0f), "", .0042f, new Color(.40f, .94f, .75f));
+        _phaseLabel = JemparinganArt.Label("Phase", hud, new Vector3(0f, .87f, 0f), "", .0033f, new Color(.93f, .90f, .70f));
+        _feedbackLabel = JemparinganArt.Label("Feedback", hud, new Vector3(0f, .70f, 0f), "", .0042f, new Color(.40f, .94f, .75f));
+        BuildShotPips(hud);
         var help = new GameObject("Jemparingan Instructions").transform;
         help.SetPositionAndRotation(camera.transform.position + forward * 1.05f - Vector3.up * .52f, facing);
         _infoLabel = JemparinganArt.Label("Help", help, Vector3.zero, "", .0026f, new Color(.95f, .89f, .76f));
@@ -304,6 +330,22 @@ public class JemparinganGame : MonoBehaviour
         ResetRound();
         SetInfo("Tahan klik kiri untuk menarik, lepas untuk menembak. Klik kanan + mouse untuk membidik.");
         return true;
+    }
+
+    private void BuildShotPips(Transform hud)
+    {
+        _shotPipRenderers = new Renderer[arrowsPerRound];
+        var parent = new GameObject("12 Shot Progress").transform;
+        parent.SetParent(hud, false);
+        parent.localPosition = new Vector3(0f, .56f, 0f);
+        const float width = .92f;
+        for (int i = 0; i < arrowsPerRound; i++)
+        {
+            float x = arrowsPerRound <= 1 ? 0f : Mathf.Lerp(-width * .5f, width * .5f, i / (float)(arrowsPerRound - 1));
+            var obj = JemparinganArt.Part("Shot " + (i + 1), PrimitiveType.Cube, parent,
+                new Vector3(x, 0f, 0f), new Vector3(.055f, .018f, .018f), JemparinganArt.Tone.Paper);
+            _shotPipRenderers[i] = obj.GetComponent<Renderer>();
+        }
     }
 
     private void BuildPendopo(Transform root)
@@ -349,6 +391,42 @@ public class JemparinganGame : MonoBehaviour
     private static void usingTone(Transform parent, Vector3 pos, Vector3 scale, JemparinganArt.Tone tone, string name)
         => JemparinganArt.Part(name, PrimitiveType.Cube, parent, pos, scale, tone);
 
+    // Minimal backdrop and lanterns: low-poly silhouettes, shared materials.
+    private void BuildBackdrop(Transform root)
+    {
+        usingTone(root, new Vector3(0f, -.04f, .42f), new Vector3(1.55f, 1.05f, .03f), JemparinganArt.Tone.Indigo, "Indigo backdrop");
+        usingTone(root, new Vector3(0f, .48f, .41f), new Vector3(1.61f, .07f, .04f), JemparinganArt.Tone.Gold, "Backdrop lintel");
+        usingTone(root, new Vector3(-.79f, -.08f, .40f), new Vector3(.17f, .90f, .025f), JemparinganArt.Tone.Red, "Left curtain");
+        usingTone(root, new Vector3(.79f, -.08f, .40f), new Vector3(.17f, .90f, .025f), JemparinganArt.Tone.Red, "Right curtain");
+        for (int side = -1; side <= 1; side += 2)
+        {
+            JemparinganArt.Part("Curtain ornament", PrimitiveType.Sphere, root,
+                new Vector3(side * .79f, .26f, .38f), Vector3.one * .055f, JemparinganArt.Tone.Gold);
+            JemparinganArt.Beam("Lamp chain", root,
+                new Vector3(side * .55f, .80f, -.03f), new Vector3(side * .55f, .55f, -.03f),
+                .004f, JemparinganArt.Tone.Paper);
+            JemparinganArt.Part("Lantern", PrimitiveType.Sphere, root,
+                new Vector3(side * .55f, .48f, -.03f), new Vector3(.09f, .11f, .09f), JemparinganArt.Tone.Gold);
+        }
+    }
+
+    // Target remains in front of a simple plaque for contrast.
+    private void BuildTargetPresentation(Transform root)
+    {
+        JemparinganArt.Beam("Left support", root,
+            new Vector3(-.42f, -.55f, .01f), new Vector3(-.18f, .66f, .01f), .012f, JemparinganArt.Tone.Brass);
+        JemparinganArt.Beam("Right support", root,
+            new Vector3(.42f, -.55f, .01f), new Vector3(.18f, .66f, .01f), .012f, JemparinganArt.Tone.Brass);
+        JemparinganArt.Beam("Support top", root,
+            new Vector3(-.20f, .66f, .01f), new Vector3(.20f, .66f, .01f), .012f, JemparinganArt.Tone.Gold);
+        JemparinganArt.Part("Plaque outer", PrimitiveType.Cylinder, root,
+            new Vector3(0f, -.12f, .085f), new Vector3(.28f, .012f, .28f),
+            JemparinganArt.Tone.Gold, Quaternion.Euler(90f, 0f, 0f));
+        JemparinganArt.Part("Plaque inner", PrimitiveType.Cylinder, root,
+            new Vector3(0f, -.12f, .070f), new Vector3(.22f, .012f, .22f),
+            JemparinganArt.Tone.Indigo, Quaternion.Euler(90f, 0f, 0f));
+    }
+
     private void BuildBandulan(Transform root)
     {
         JemparinganArt.Beam("Suspension cord", root, new Vector3(0, .69f, 0), new Vector3(0, .12f, 0), .005f, JemparinganArt.Tone.Paper);
@@ -379,6 +457,10 @@ public class JemparinganGame : MonoBehaviour
         JemparinganArt.Beam("Lower bow tip", _bow, new Vector3(.06f, -.28f, .03f), new Vector3(.02f, -.53f, .10f), .014f, JemparinganArt.Tone.LightWood);
         JemparinganArt.Part("Grip", PrimitiveType.Cylinder, _bow, Vector3.zero,
             new Vector3(.036f, .09f, .036f), JemparinganArt.Tone.DarkWood);
+        JemparinganArt.Part("Upper bow ornament", PrimitiveType.Sphere, _bow,
+            new Vector3(.045f, .34f, .055f), Vector3.one * .025f, JemparinganArt.Tone.Gold);
+        JemparinganArt.Part("Lower bow ornament", PrimitiveType.Sphere, _bow,
+            new Vector3(.045f, -.34f, .055f), Vector3.one * .025f, JemparinganArt.Tone.Gold);
         _stringMarker = JemparinganArt.Part("String pull bead", PrimitiveType.Sphere, _bow,
             Vector3.zero, Vector3.one * .026f, JemparinganArt.Tone.Jade).transform;
         _upperString = JemparinganArt.Part("Upper string", PrimitiveType.Cylinder, _bow,
