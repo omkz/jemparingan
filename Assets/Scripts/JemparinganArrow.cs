@@ -12,6 +12,7 @@ public class JemparinganArrow : MonoBehaviour
     private Action<JemparinganArrow, bool> _onImpact;
     private Action<JemparinganArrow> _onMiss;
     private Transform _poolParent;
+    private TrailRenderer _trail;
     public bool StableRelease { get; set; }
     private float _lifetime;
     private float _gravity;
@@ -21,7 +22,11 @@ public class JemparinganArrow : MonoBehaviour
 
     public bool IsFlying => _flying;
 
-    private void Awake() { _poolParent = transform.parent; }
+    private void Awake()
+    {
+        _poolParent = transform.parent;
+        _trail = GetComponent<TrailRenderer>();
+    }
 
     public void Launch(Vector3 origin, Vector3 velocity, float gravity,
         JemparinganTarget target, Action<JemparinganArrow, bool> onImpact,
@@ -39,12 +44,22 @@ public class JemparinganArrow : MonoBehaviour
         _flying = true;
         _embedded = false;
         gameObject.SetActive(true);
+        if (_trail != null)
+        {
+            _trail.Clear(); // Reused pooled arrows never inherit old shot trails.
+            _trail.emitting = true;
+        }
     }
 
     public void Cancel()
     {
         _flying = false;
         _embedded = false;
+        if (_trail != null)
+        {
+            _trail.emitting = false;
+            _trail.Clear();
+        }
         if (_poolParent != null && transform.parent != _poolParent)
             transform.SetParent(_poolParent, true);
         gameObject.SetActive(false);
@@ -71,6 +86,7 @@ public class JemparinganArrow : MonoBehaviour
         if (_target != null && _target.TestShot(previousTip, nextTip, out bool bullseye))
         {
             _flying = false;
+            if (_trail != null) _trail.emitting = false;
 
             // Seat the arrow tip on the target axis so it looks embedded rather than floating.
             Vector3 localTip = _target.transform.InverseTransformPoint(nextTip);
@@ -88,6 +104,7 @@ public class JemparinganArrow : MonoBehaviour
         else if (_lifetime > MaxLife)
         {
             _flying = false;
+            if (_trail != null) _trail.emitting = false;
             gameObject.SetActive(false);
             _onMiss?.Invoke(this);
         }
