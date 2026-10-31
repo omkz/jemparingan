@@ -558,7 +558,7 @@ public class JemparinganGame : MonoBehaviour
         for (int i = 0; i < _previewDots.Length; i++)
         {
             float t = (i + 1) * 0.065f;
-            _previewDots[i].position = origin + velocity * t + Vector3.down * (0.5f * simulatedGravity * t * t);
+            _previewDots[i].position = JemparinganTrajectory.Position(origin, velocity, simulatedGravity, t);
             _previewDots[i].gameObject.SetActive(true);
         }
     }
@@ -1012,5 +1012,15 @@ public static class JemparinganScoreRules
         if (hits >= 8) return "P A N A H   J I T U";
         if (rasaHits >= 3) return "T E N A N G   B E R T U M B U H";
         return "L A N G K A H   P E R T A M A";
+    }
+}
+
+// Shared exact constant-acceleration path for aim preview and runtime arrow steps.
+public static class JemparinganTrajectory
+{
+    public static Vector3 Position(Vector3 origin, Vector3 velocity, float gravity, float seconds)
+    {
+        float t = Mathf.Max(0f, seconds);
+        return origin + velocity * t + Vector3.down * (.5f * gravity * t * t);
     }
 }
