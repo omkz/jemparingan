@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-// V0.8: original procedural audio, unobtrusive impact feedback and round titles.
+// V0.9: regression hardening, deterministic scoring, and safer shot pool lifecycle.
 // Quest integration is deliberately left for the later phase.
 public class JemparinganGame : MonoBehaviour
 {
@@ -71,7 +71,13 @@ public class JemparinganGame : MonoBehaviour
 
     private void Update()
     {
-        if (Application.isEditor && Input.GetKeyDown(KeyCode.R) && _arrows != null) ResetRound();
+        if (Application.isEditor && Input.GetKeyDown(KeyCode.R) && _arrows != null)
+        {
+            // Restart during a held string must not turn that release into a shot.
+            bool stringWasHeld = _wasDrawing || Input.GetMouseButton(0);
+            ResetRound();
+            _awaitStringRelease = stringWasHeld;
+        }
         if (!_ready) return;
         if (_finished) { HandleResultInput(); return; }
         if (_stageBanner != null && _stageBannerUntil > 0f && Time.time >= _stageBannerUntil)
@@ -364,9 +370,7 @@ public class JemparinganGame : MonoBehaviour
             _rasaHits++;
             _rasaBonus += 3;
         }
-        int pts = bullseye ? 10 : 5;
-        if (arrow.StableRelease) pts += 3;
-        if (_combo >= 3) pts += 2;
+        int pts = JemparinganScoreRules.PointsForHit(bullseye, arrow.StableRelease, _combo);
         _score += pts;
         if (_score > _best) _best = _score;
         _audio.PlayOneShot(bullseye ? _bullseyeSound : _hitSound, bullseye ? 0.54f : 0.45f);
@@ -387,7 +391,7 @@ public class JemparinganGame : MonoBehaviour
 
     private void UpdateLevel()
     {
-        int level = _shots / 4;
+        int level = JemparinganScoreRules.StageIndex(_shots);
         _target.swayAmount = 0.06f + level * 0.045f;
         _target.swaySpeed = 0.7f + level * 0.52f;
         string stage = level == 1 ? "BABAK II  •  ANGIN" : "BABAK III  •  UJIAN RASA";
@@ -429,7 +433,7 @@ public class JemparinganGame : MonoBehaviour
         if (_resultsPanel != null)
         {
             _resultsTitle.text = GetRoundTitle();
-            int accuracy = _shots > 0 ? Mathf.RoundToInt(_hits * 100f / _shots) : 0;
+            int accuracy = JemparinganScoreRules.AccuracyPercent(_hits, _shots);
             _resultsDetails.text = "SKOR  " + _score + "    AKURASI  " + accuracy + "%" +
                 "\nTITIK TENGAH  " + _bullseyes + "    KOMBO TERBAIK  " + _bestCombo +
                 "\nBONUS RASA  +" + _rasaBonus + "  (" + _rasaHits + " KENA)";
@@ -446,10 +450,7 @@ public class JemparinganGame : MonoBehaviour
     // Evaluate both precision and composure; every player receives a positive result.
     private string GetRoundTitle()
     {
-        if (_hits >= 8 && _rasaHits >= 4) return "R A S A   T E R J A G A";
-        if (_hits >= 8) return "P A N A H   J I T U";
-        if (_rasaHits >= 3) return "T E N A N G   B E R T U M B U H";
-        return "L A N G K A H   P E R T A M A";
+        return JemparinganScoreRules.ResultTitle(_hits, _rasaHits);
     }
 
     private void ShowImpactLabel(string message, Color color)
@@ -507,8 +508,7 @@ public class JemparinganGame : MonoBehaviour
         if (_scoreLabel != null)
             _scoreLabel.text = "SKOR " + _score + "  •  KENA " + _hits + "/" + _shots + "  •  KOMBO " + _combo + "  •  REKOR " + _best;
         if (_phaseLabel != null && !_finished)
-            _phaseLabel.text = _shots < 4 ? "BABAK I  •  TENANG" :
-                _shots < 8 ? "BABAK II  •  ANGIN" : "BABAK III  •  UJIAN RASA";
+            _phaseLabel.text = JemparinganScoreRules.StageTitle(_shots);
         UpdateShotPips();
     }
 
@@ -829,9 +829,11 @@ public class JemparinganGame : MonoBehaviour
 
     private void BuildPool()
     {
-        _arrows = new JemparinganArrow[ArrowPoolSize];
+        // The Inspector allows up to 30 shots; don't recycle live projectiles.
+        int poolSize = Mathf.Max(ArrowPoolSize, arrowsPerRound);
+        _arrows = new JemparinganArrow[poolSize];
         var poolRoot = new GameObject("Arrow Pool (reused)").transform;
-        for (int i = 0; i < ArrowPoolSize; i++)
+        for (int i = 0; i < poolSize; i++)
         {
             var obj = new GameObject("Arrow_" + (i + 1));
             obj.transform.SetParent(poolRoot, false);
@@ -963,5 +965,47 @@ public class JemparinganGame : MonoBehaviour
         AudioClip clip = AudioClip.Create(name, length, 1, sampleRate, false);
         clip.SetData(samples, 0);
         return clip;
+    }
+}
+
+    
+// Pure gameplay rules used by runtime AND Editor QA; no scene or PlayerPrefs needed.
+public static class JemparinganScoreRules
+{
+    public static int PointsForHit(bool bullseye, bool stableRelease, int consecutiveHits)
+    {
+        return (bullseye ? 10 : 5) + (stableRelease ? 3 : 0) +
+            (consecutiveHits >= 3 ? 2 : 0);
+    }
+
+    public static int AccuracyPercent(int successfulHits, int arrowsFired)
+    {
+        if (arrowsFired <= 0) return 0;
+        return Mathf.Clamp(Mathf.RoundToInt(successfulHits * 100f / arrowsFired), 0, 100);
+    }
+
+    // Default 12-shot design: stage 1 = 0-3 fired, 2 = 4-7, 3 = 8+.
+    public static int StageIndex(int arrowsFired)
+    {
+        return Mathf.Clamp(arrowsFired / 4, 0, 2);
+    }
+
+    public static string StageTitle(int arrowsFired)
+    {
+        switch (StageIndex(arrowsFired))
+        {
+            case 0: return "BABAK I  •  TENANG";
+            case 1: return "BABAK II  •  ANGIN";
+            default: return "BABAK III  •  UJIAN RASA";
+        }
+    }
+
+    // Original encouraging feedback, not claimed historical competition ranks.
+    public static string ResultTitle(int hits, int rasaHits)
+    {
+        if (hits >= 8 && rasaHits >= 4) return "R A S A   T E R J A G A";
+        if (hits >= 8) return "P A N A H   J I T U";
+        if (rasaHits >= 3) return "T E N A N G   B E R T U M B U H";
+        return "L A N G K A H   P E R T A M A";
     }
 }
