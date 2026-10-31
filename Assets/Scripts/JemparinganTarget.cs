@@ -53,6 +53,15 @@ public class JemparinganTarget : MonoBehaviour
         }
     }
 
+    // Predicted target center for a small, optional lead cue on later stages.
+    // Uses the same deterministic sine function as Update; no random wind.
+    public Vector3 PredictCenter(float secondsAhead)
+    {
+        float predictedSway = Mathf.Sin((Time.time + Mathf.Max(0f, secondsAhead)) * swaySpeed) * swayAmount;
+        Vector3 localCenter = _rest + Vector3.right * predictedSway;
+        return transform.parent != null ? transform.parent.TransformPoint(localCenter) : localCenter;
+    }
+
     // Closest distance between the swept arrow tip and the bandulan's central axis.
     // Does not allocate or require Rigidbody/Collider on the target.
     public bool TestShot(Vector3 arrowFrom, Vector3 arrowTo, out bool bullseye)
