@@ -70,9 +70,9 @@ The RASA bonus is **an accessible optional reward**, not a mandatory action; kee
 **Acceptance:** First 30 seconds are immediately understandable and visually interesting, with no distractions during aiming.
 
 ### P0 — v0.9: Balance, usability, and freeze (Nov 12 – 14)
-- [ ] Playtest 3 full rounds on a real Quest 3/3S with **hands only** and no prompts from the developer.
-- [ ] Confirm both-handed gestures are comfortable seated and recover safely from tracking loss.
-- [ ] Record where players miss and why; tune assist, power, target movement, timing and UI legibility.
+- [ ] Playtest 3 full rounds in Unity Editor, then on real Quest 3/3S using **hands only**; hardware testing is still outstanding.
+- [ ] Confirm both-handed gestures are comfortable seated and recover safely from tracking loss on a real Quest. **Implemented:** Editor restart while a string remains held now requires release before shooting again.
+- [ ] Record where players miss and why; tune assist, power, target movement, timing and UI legibility. **Implemented:** shared trajectory math for preview/arrow, 21 deterministic Editor QA checks, correct pool capacity for 12–30 arrows.
 - [ ] Fix blockers; freeze gameplay rules once the loop is consistent.
 **Acceptance:** 3 uninterrupted complete runs, no accidental release, no controller dependence, and a good first hit within the first minute for a novice (tuning target, not guarantee).
 
@@ -96,4 +96,4 @@ Gameplay **feature freeze**. Only fix crashes/blockers and record actual headset
 
 ## Next work item
 
-Complete [v0.5](PLAYTEST_V05.md), [v0.6](PLAYTEST_V06.md), [v0.7 RASA](PLAYTEST_V07.md) and [v0.8 polish](PLAYTEST_V08.md) acceptance tests in Unity Editor. v0.8 features are **implemented but not runtime-verified**. Next priority: playtest, Unity Console issues, and real Quest hand interaction; avoid scope expansion while blockers remain.
+Start with [v0.9 regression gate](PLAYTEST_V09.md): run 21 deterministic Editor QA checks and **three full 12-shot rounds**, then address failures. v0.5–v0.9 features remain **not runtime-verified** until this is completed. Next priority after a passing Editor gate is real Quest hands-only playtesting and APK integration; do not expand gameplay scope.
