@@ -454,6 +454,46 @@ public class JemparinganGame : MonoBehaviour
         return true;
     }
 
+    // UI stays in world space; no external canvas or Quest-specific SDK required.
+    // It deliberately uses the existing shared primitive materials.
+    private void BuildSessionPanels(Transform hud)
+    {
+        var intro = new GameObject("Session Intro | Auto Hides On Draw");
+        intro.transform.SetParent(hud, false);
+        intro.transform.localPosition = new Vector3(0f, .09f, -.27f);
+        _introPanel = intro;
+        JemparinganArt.Part("Intro card", PrimitiveType.Cube, intro.transform,
+            Vector3.zero, new Vector3(1.46f, .55f, .016f), JemparinganArt.Tone.DarkWood);
+        JemparinganArt.Part("Intro gold edge", PrimitiveType.Cube, intro.transform,
+            new Vector3(0f, .268f, -.013f), new Vector3(1.46f, .012f, .01f), JemparinganArt.Tone.Gold);
+        JemparinganArt.Label("Intro title", intro.transform, new Vector3(0f, .16f, -.025f),
+            "J E M P A R I N G A N   /   R A S A", .0045f, new Color(.98f, .82f, .51f));
+        JemparinganArt.Label("Intro goal", intro.transform, new Vector3(0f, .015f, -.025f),
+            "12 PANAH   •   3 BABAK   •   RASA +3 SAAT TENANG", .0035f, Color.white);
+        JemparinganArt.Label("Intro start", intro.transform, new Vector3(0f, -.14f, -.025f),
+            Application.isEditor ? "TARIK DENGAN KLIK KIRI UNTUK MULAI" : "TARIK TALI UNTUK MULAI",
+            .0037f, new Color(.56f, .94f, .76f));
+
+        var results = new GameObject("Round Results | Hidden Until Finish");
+        results.transform.SetParent(hud, false);
+        results.transform.localPosition = new Vector3(0f, .09f, -.30f);
+        _resultsPanel = results;
+        JemparinganArt.Part("Results card", PrimitiveType.Cube, results.transform,
+            Vector3.zero, new Vector3(1.62f, .80f, .018f), JemparinganArt.Tone.DarkWood);
+        JemparinganArt.Part("Results gold edge", PrimitiveType.Cube, results.transform,
+            new Vector3(0f, .39f, -.014f), new Vector3(1.62f, .014f, .01f), JemparinganArt.Tone.Gold);
+        _resultsTitle = JemparinganArt.Label("Results heading", results.transform,
+            new Vector3(0f, .28f, -.026f), "", .0050f, new Color(.98f, .82f, .51f));
+        _resultsDetails = JemparinganArt.Label("Results score and accuracy", results.transform,
+            new Vector3(0f, .025f, -.026f), "", .0040f, Color.white);
+        _resultsHint = JemparinganArt.Label("Results replay action", results.transform,
+            new Vector3(0f, -.26f, -.026f), "", .0034f, new Color(.56f, .94f, .76f));
+        results.SetActive(false);
+
+        _stageBanner = JemparinganArt.Label("Stage transition", hud,
+            new Vector3(0f, .38f, -.14f), "", .0042f, new Color(.98f, .82f, .51f));
+    }
+
     private void BuildShotPips(Transform hud)
     {
         _shotPipRenderers = new Renderer[arrowsPerRound];
