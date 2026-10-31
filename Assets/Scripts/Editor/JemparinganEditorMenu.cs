@@ -149,6 +149,94 @@ public static class JemparinganEditorMenu
         Debug.LogError("Jemparingan QA FAIL: " + name);
     }
 
+    // SDK-free preflight check: works in the desktop prototype before Meta packages
+    // are installed. Package/asset checks are advisory; runtime XR features require
+    // the official Meta Project Setup Tool and an actual Quest test.
+    [MenuItem("Tools/Jemparingan/Check Quest Prerequisites")]
+    public static void CheckQuestPrerequisites()
+    {
+        int issues = 0;
+        string manifestPath = "Packages/manifest.json";
+        string manifest = File.Exists(manifestPath) ? File.ReadAllText(manifestPath) : "";
+
+        if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android)
+        {
+            issues++;
+            Debug.LogWarning("Quest preflight: active target is not Android / Meta Quest. Switch via File > Build Profiles.");
+        }
+
+        if (!manifest.Contains("\"com.unity.xr.management\""))
+        {
+            issues++;
+            Debug.LogWarning("Quest preflight: XR Plug-in Management is not in manifest.json.");
+        }
+
+        if (!manifest.Contains("\"com.unity.xr.openxr\""))
+        {
+            issues++;
+            Debug.LogWarning("Quest preflight: Unity OpenXR Plugin is not in manifest.json. Use Unity OpenXR, not deprecated Oculus XR Plugin.");
+        }
+
+        bool metaCoreAvailable = manifest.Contains("\"com.meta.xr.sdk.all\"") ||
+            manifest.Contains("\"com.meta.xr.sdk.core\"") ||
+            AssetDatabase.FindAssets("OVRManager t:MonoScript").Length > 0;
+        if (!metaCoreAvailable)
+        {
+            issues++;
+            Debug.LogWarning("Quest preflight: Meta XR Core SDK not detected. Install a compatible current Meta XR SDK.");
+        }
+
+        bool rigPrefabAvailable = AssetDatabase.FindAssets("OVRCameraRig t:Prefab").Length > 0;
+        if (!rigPrefabAvailable)
+        {
+            issues++;
+            Debug.LogWarning("Quest preflight: OVRCameraRig prefab not found yet. It is supplied by Meta XR SDK.");
+        }
+
+        bool enabledScene = false;
+        foreach (EditorBuildSettingsScene item in EditorBuildSettings.scenes)
+        {
+            if (!item.enabled) continue;
+            enabledScene = true;
+            break;
+        }
+        if (!enabledScene)
+        {
+            issues++;
+            Debug.LogWarning("Quest preflight: no enabled scene in the Build Profiles scene list.");
+        }
+
+        // Scene check is useful only after opening the intended Quest scene.
+        Scene scene = SceneManager.GetActiveScene();
+        if (scene.IsValid() && scene.isLoaded)
+        {
+            int cameraCount = 0;
+            bool hasRig = false;
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                if (root.name.Contains("OVRCameraRig")) hasRig = true;
+                Camera[] cameras = root.GetComponentsInChildren<Camera>(true);
+                cameraCount += cameras.Length;
+            }
+
+            if (!hasRig)
+            {
+                issues++;
+                Debug.LogWarning("Quest preflight: active scene has no OVRCameraRig. Keep the desktop scene; create a separate Quest scene.");
+            }
+            if (cameraCount > 1)
+            {
+                issues++;
+                Debug.LogWarning("Quest preflight: active scene has multiple Cameras. Remove the old desktop Main Camera when using OVRCameraRig.");
+            }
+        }
+
+        Debug.Log("Jemparingan Quest preflight finished. " + issues +
+            " potential setup item(s) detected. Check warnings above. " +
+            "Also verify Android OpenXR feature groups, hand tracking, passthrough, " +
+            "arm64, and Meta Project Setup Tool manually. This does not validate an APK or headset.");
+    }
+
     [MenuItem("Tools/Jemparingan/Create Prototype Scene")]
     public static void CreatePrototypeScene() => CreateOptimizedScene();
 }
