@@ -126,7 +126,7 @@ public class JemparinganGame : MonoBehaviour
             _stringMarker.localPosition = Vector3.zero;
             UpdateBowStrings(0f);
             HidePreview();
-            SetInfo("Tahan klik kiri untuk menarik, lepas untuk menembak. Klik kanan + mouse untuk membidik.");
+            SetInfo("SIAP  •  Tahan klik kiri untuk menarik; lepas untuk menembak. Klik kanan + mouse untuk membidik.");
         }
 
         // One uninterrupted draw-to-release transition fires exactly once.
@@ -196,7 +196,8 @@ public class JemparinganGame : MonoBehaviour
         _score += pts;
         if (_score > _best) _best = _score;
         _audio.PlayOneShot(_hitSound, bullseye ? 0.72f : 0.55f);
-        ShowFeedback((bullseye ? "TITIK TENGAH" : "KENA!") + "  +" + pts + (arrow.StableRelease ? "  TENANG" : "") + (_combo >= 3 ? "  KOMBO" : ""));
+        ShowFeedback((bullseye ? "TITIK TENGAH" : "KENA!") + "  +" + pts + (arrow.StableRelease ? "  TENANG" : "") + (_combo >= 3 ? "  KOMBO" : ""),
+            bullseye ? new Color(.98f, .81f, .40f) : new Color(.40f, .94f, .75f));
         UpdateHUD();
     }
 
@@ -204,7 +205,7 @@ public class JemparinganGame : MonoBehaviour
     {
         _combo = 0;
         if (_missSound != null) _audio.PlayOneShot(_missSound, 0.16f);
-        ShowFeedback("MELESET  •  COBA LAGI");
+        ShowFeedback("MELESET  •  COBA LAGI", new Color(.98f, .55f, .46f));
         UpdateHUD();
     }
 
@@ -275,9 +276,10 @@ public class JemparinganGame : MonoBehaviour
     {
         if (_infoLabel != null && _lastInfo != value) { _lastInfo = value; _infoLabel.text = value; }
     }
-    private void ShowFeedback(string msg)
+    private void ShowFeedback(string msg, Color? feedbackColor = null)
     {
         if (_feedbackLabel == null) return;
+        _feedbackLabel.color = feedbackColor ?? new Color(.40f, .94f, .75f);
         _feedbackLabel.text = msg;
         _feedbackUntil = Time.time + 1.5f;
     }
