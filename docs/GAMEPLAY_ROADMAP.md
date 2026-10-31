@@ -47,11 +47,11 @@ The RASA bonus is **an accessible optional reward**, not a mandatory action; kee
 **Acceptance:** A tester completes 12 shots without input or progression bugs; projectile reactions and points match what is seen.
 
 ### P0 — v0.6: Complete the playable 3-minute loop (Nov 3 – 5)
-- [ ] Introduce start prompt / brief in-world tutorial (no separate long menu).
-- [ ] Make stage transitions unmistakable but less than 2 seconds.
-- [ ] Add result screen: final score, hits/12, accuracy, RASA bonus summary, best score and **Play Again**.
-- [ ] Add safe restart mid-round and protect against double shot/restart races.
-- [ ] Confirm no controller action is **required** for any step when later wired to Quest.
+- [x] Implement in-world introduction (auto-dismiss on draw; no menu). **Pending Unity validation.**
+- [x] Implement brief BABAK II/III transition banner (~1.25 sec). **Pending Unity validation.**
+- [x] Implement results (score, hits/12 in HUD, accuracy, central hits, highest combo, RASA bonus and new-record indicator), plus replay via R/gesture. **Pending Unity validation.**
+- [x] Add replay input arm/release guard and reset of session UI/stats; mid-round R shortcut preserved. **Pending Unity validation, especially input races.**
+- [ ] Confirm hands-only completion on actual Quest hardware. The replay uses IJemparinganInput but Quest rig is not integrated/tested.
 **Acceptance:** New tester can understand and finish a round without verbal explanation; replay works at least 3 consecutive times.
 
 ### P0 — v0.7: Make RASA the signature mechanic (Nov 6 – 8)
@@ -96,4 +96,4 @@ Gameplay **feature freeze**. Only fix crashes/blockers and record actual headset
 
 ## Next work item
 
-Complete the [v0.5 gameplay playtest](PLAYTEST_V05.md) in Unity Editor. Once it passes, move to **v0.6 tutorial, results and replay**; no extra art until gameplay reliability is verified.
+Complete [v0.5 gameplay playtest](PLAYTEST_V05.md) and [v0.6 full-session playtest](PLAYTEST_V06.md) in Unity Editor. v0.6 features are **implemented but not runtime-verified**. Once both pass, proceed to v0.7 RASA tuning and Quest hand integration; pause additional art for blocking bugs.
