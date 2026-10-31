@@ -418,6 +418,8 @@ public class JemparinganGame : MonoBehaviour
         SetInfo(Application.isEditor ? "R UNTUK ULANG  •  ATAU TAHAN KLIK KIRI" : "LEPASKAN, LALU TAHAN TARIK UNTUK ULANG");
         _bow.gameObject.SetActive(false);
         HidePreview();
+        if (_impactLabel != null) _impactLabel.text = "";
+        _impactLabelUntil = 0f;
         if (_introPanel != null) _introPanel.SetActive(false);
         if (_stageBanner != null) _stageBanner.text = "";
         _stageBannerUntil = 0f;
@@ -432,7 +434,7 @@ public class JemparinganGame : MonoBehaviour
                 "\nTITIK TENGAH  " + _bullseyes + "    KOMBO TERBAIK  " + _bestCombo +
                 "\nBONUS RASA  +" + _rasaBonus + "  (" + _rasaHits + " KENA)";
             _resultsHint.text = newRecord
-                ? "REKOR BARU!  •  " + (Application.isEditor ? "R UNTUK ULANG" : "TARIK UNTUK ULANG")
+                ? "REKOR BARU!  •  " + (Application.isEditor ? "R UNTUK ULANG" : "LEPAS + TAHAN TARIK")
                 : (Application.isEditor
                     ? "R UNTUK ULANG  /  TAHAN KLIK KIRI 0.7 DETIK"
                     : "LEPASKAN, LALU TAHAN TARIK 0.7 DETIK");
