@@ -55,11 +55,11 @@ The RASA bonus is **an accessible optional reward**, not a mandatory action; kee
 **Acceptance:** New tester can understand and finish a round without verbal explanation; replay works at least 3 consecutive times.
 
 ### P0 — v0.7: Make RASA the signature mechanic (Nov 6 – 8)
-- [ ] Replace camera/head-motion-based stability with **bow/hand-aim** stability when real hand input is present; use comparable simulated signal in Editor.
-- [ ] Show a subtle, progressive focus signal only when the draw is meaningful (no big HUD blocking bandulan).
-- [ ] Tune stability thresholds against normal hand tremor; avoid requiring a long motionless hold.
-- [ ] Allow an early release with no bonus; no penalty for choosing speed over calm.
-- [ ] Validate stage II/III timing; moving targets must provide a readable lead cue.
+- [x] Implement bow/hand-aim direction (when valid pinch geometry exists) in Quest adapter and compare bow aim + bow-position motion against smoothed focus anchors; desktop uses mouse-simulated pose. **Pending Unity and Quest validation.**
+- [x] Implement a six-step focus indicator alongside the bow, visible only when draw strength exceeds 35%. **Pending Unity visual verification.**
+- [x] Implement configurable tolerance (3.5°/8cm), ~0.58sec progression, decay rather than hard reset for small wobbles, and 0.22sec release grace. **Threshold calibration with real players remains pending.**
+- [x] Early valid release still fires normally without RASA bonus; stable successful hits receive +3. **Pending Unity validation.**
+- [x] Implement small optional predictive marker in Stage II/III based on the same deterministic target sway. **Actual lead/timing accuracy and legibility still require playtesting.**
 **Acceptance:** 3 testers can explain when/why they earned RASA bonus, and do not need to freeze unnaturally.
 
 ### P1 — v0.8: Delight & authenticity (Nov 9 – 11)
@@ -96,4 +96,4 @@ Gameplay **feature freeze**. Only fix crashes/blockers and record actual headset
 
 ## Next work item
 
-Complete [v0.5 gameplay playtest](PLAYTEST_V05.md) and [v0.6 full-session playtest](PLAYTEST_V06.md) in Unity Editor. v0.6 features are **implemented but not runtime-verified**. Once both pass, proceed to v0.7 RASA tuning and Quest hand integration; pause additional art for blocking bugs.
+Complete [v0.5](PLAYTEST_V05.md), [v0.6](PLAYTEST_V06.md) and [v0.7 RASA](PLAYTEST_V07.md) playtests in Unity Editor. v0.7 features are **implemented but not runtime-verified**. After those pass, validate Quest hand interaction and proceed to v0.8 audio/art polish. Stop expanding scope if there are blocking bugs.
