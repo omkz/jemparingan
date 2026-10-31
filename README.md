@@ -29,6 +29,10 @@ Mixed Reality archery prototype inspired by Javanese jemparingan, targeting Meta
 - `Assets/Scripts/MetaQuestBowInput.cs` — future Quest hand input adapter; **not yet wired into a tested headset build**.
 - `Assets/Scripts/Editor/JemparinganEditorMenu.cs` — scene creation menu.
 
+## Gameplay roadmap
+
+See [Gameplay Roadmap](docs/GAMEPLAY_ROADMAP.md) for the three-stage 12-arrow loop, RASA mechanic, gameplay milestones, and acceptance gates.
+
 ## Next milestone
 
 Focus on feel and polish in the editor: verify all 12 shots, stage labels, progress pips, scoring, and restart work. Confirm that a hit flashes the bandulan, shows a brief spark burst, leaves the arrow embedded for about a second, and that pressing R clears old effects. Shots that miss should still expire normally. Quest hand tracking, passthrough, Android build and actual headset performance testing are postponed, **not complete**.
