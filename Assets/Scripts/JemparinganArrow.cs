@@ -76,8 +76,10 @@ public class JemparinganArrow : MonoBehaviour
 
         float dt = Mathf.Min(Time.deltaTime, 0.05f);
         Vector3 previousTip = transform.position + transform.forward * TipOffset;
+        // Integrate position before velocity with the same exact gravity curve as
+        // the preview dots; avoids frame-rate-dependent early dropping.
+        Vector3 nextPos = JemparinganTrajectory.Position(transform.position, _velocity, _gravity, dt);
         _velocity += Vector3.down * (_gravity * dt);
-        Vector3 nextPos = transform.position + _velocity * dt;
         Quaternion nextRot = Quaternion.LookRotation(_velocity.normalized);
         Vector3 nextTip = nextPos + (nextRot * Vector3.forward) * TipOffset;
         transform.SetPositionAndRotation(nextPos, nextRot);
