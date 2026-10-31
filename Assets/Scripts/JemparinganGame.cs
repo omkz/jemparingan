@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-// V0.5: reliable release, readable RASA state and clear miss feedback.
+// V0.6: complete short-round flow, in-world onboarding, results and gesture replay.
 // Quest integration is deliberately left for the later phase.
 public class JemparinganGame : MonoBehaviour
 {
@@ -29,13 +29,18 @@ public class JemparinganGame : MonoBehaviour
     private JemparinganArrow[] _arrows;
     private Transform[] _previewDots;
     private TextMesh _scoreLabel, _infoLabel, _feedbackLabel, _titleLabel, _phaseLabel;
+    private TextMesh _resultsTitle, _resultsDetails, _resultsHint, _stageBanner;
+    private GameObject _introPanel, _resultsPanel;
     private Renderer[] _shotPipRenderers;
     private AudioSource _audio;
     private AudioClip _shotSound, _hitSound, _missSound;
     private Vector3 _lastAim = Vector3.forward;
     private bool _ready, _wasDrawing, _wasBowHeld, _roundOver, _finished;
+    private bool _replayArmed, _awaitStringRelease;
     private float _lastDraw, _stableTime, _feedbackUntil, _drawStartedAt;
+    private float _replayHoldStartedAt = -1f, _stageBannerUntil;
     private int _shots, _hits, _score, _combo, _best, _poolCursor;
+    private int _previousBest, _bullseyes, _bestCombo, _rasaHits, _rasaBonus;
     private string _lastInfo = "";
     private int _lastPowerStep = -1;
     private bool _lastStableSignal;
@@ -51,7 +56,13 @@ public class JemparinganGame : MonoBehaviour
     private void Update()
     {
         if (Application.isEditor && Input.GetKeyDown(KeyCode.R) && _arrows != null) ResetRound();
-        if (!_ready || _finished) return;
+        if (!_ready) return;
+        if (_finished) { HandleResultInput(); return; }
+        if (_stageBanner != null && _stageBannerUntil > 0f && Time.time >= _stageBannerUntil)
+        {
+            _stageBanner.text = "";
+            _stageBannerUntil = 0f;
+        }
         if (_feedbackLabel != null && _feedbackUntil > 0f && Time.time >= _feedbackUntil)
         {
             _feedbackLabel.text = "";
@@ -91,6 +102,17 @@ public class JemparinganGame : MonoBehaviour
         }
 
         _bow.gameObject.SetActive(true);
+        if (_awaitStringRelease)
+        {
+            if (pose.StringPinched)
+            {
+                SetInfo("LEPASKAN TALI UNTUK MEMULAI");
+                return;
+            }
+            _awaitStringRelease = false;
+        }
+        if (_introPanel != null && _introPanel.activeSelf && pose.StringPinched)
+            _introPanel.SetActive(false);
         Vector3 aim = pose.AimDirection.sqrMagnitude > 0.01f ? pose.AimDirection.normalized : _lastAim;
         float angleRate = Vector3.Angle(_lastAim, aim) / Mathf.Max(Time.deltaTime, 0.001f);
         _lastAim = aim;
@@ -144,6 +166,38 @@ public class JemparinganGame : MonoBehaviour
         _wasBowHeld = true;
     }
 
+    // Result replay: release the string, then hold it for 0.7 seconds.
+    // Editor also supports R as an immediate debug shortcut.
+    private void HandleResultInput()
+    {
+        IJemparinganInput input = Application.isEditor && !preferQuestHandsInEditor
+            ? (IJemparinganInput)desktopInput : questInput;
+        JemparinganHandPose pose;
+        if (input == null || !input.TryReadPose(out pose) || !pose.BowPinched)
+        {
+            _replayArmed = false;
+            _replayHoldStartedAt = -1f;
+            return;
+        }
+
+        if (!pose.StringPinched)
+        {
+            _replayArmed = true;
+            _replayHoldStartedAt = -1f;
+        }
+        else if (_replayArmed)
+        {
+            if (_replayHoldStartedAt < 0f) _replayHoldStartedAt = Time.time;
+            if (Time.time - _replayHoldStartedAt >= .70f)
+            {
+                ResetRound();
+                // A held replay gesture cannot immediately count as a shot.
+                _awaitStringRelease = true;
+                SetInfo("LEPASKAN TALI UNTUK MEMULAI");
+            }
+        }
+    }
+
     private void ClearDrawState()
     {
         _wasDrawing = _wasBowHeld = false;
@@ -190,6 +244,13 @@ public class JemparinganGame : MonoBehaviour
     {
         _hits++;
         _combo++;
+        if (bullseye) _bullseyes++;
+        if (_combo > _bestCombo) _bestCombo = _combo;
+        if (arrow.StableRelease)
+        {
+            _rasaHits++;
+            _rasaBonus += 3;
+        }
         int pts = bullseye ? 10 : 5;
         if (arrow.StableRelease) pts += 3;
         if (_combo >= 3) pts += 2;
@@ -214,32 +275,67 @@ public class JemparinganGame : MonoBehaviour
         int level = _shots / 4;
         _target.swayAmount = 0.06f + level * 0.045f;
         _target.swaySpeed = 0.7f + level * 0.52f;
-        ShowFeedback(level == 1 ? "BABAK II  •  ANGIN" : "BABAK III  •  UJIAN RASA");
+        string stage = level == 1 ? "BABAK II  •  ANGIN" : "BABAK III  •  UJIAN RASA";
+        ShowFeedback(stage);
+        if (_stageBanner != null)
+        {
+            _stageBanner.text = stage;
+            _stageBannerUntil = Time.time + 1.25f;
+        }
         UpdateHUD();
     }
 
     private void FinishRound()
     {
-        // Only called after the final arrow has landed or despawned.
+        // Called when the final projectile is no longer in flight.
         _roundOver = false;
         _finished = true;
-        if (_score > PlayerPrefs.GetInt("JemparinganRasaBest", 0))
+        bool newRecord = _score > _previousBest;
+        if (newRecord)
         {
             PlayerPrefs.SetInt("JemparinganRasaBest", _score);
             PlayerPrefs.Save();
         }
-        _scoreLabel.text = "SELESAI  •  " + _score + " POIN  •  " + _hits + "/" + _shots + " HIT";
+        _best = Mathf.Max(_previousBest, _score);
+        _scoreLabel.text = "SELESAI  •  " + _score + " POIN  •  " + _hits + "/" + _shots + " KENA";
         if (_phaseLabel != null) _phaseLabel.text = "R O N D E  S E L E S A I";
-        SetInfo("Tekan R untuk mulai ronde baru.");
+        SetInfo(Application.isEditor ? "R UNTUK ULANG  •  ATAU TAHAN KLIK KIRI" : "LEPASKAN, LALU TAHAN TARIK UNTUK ULANG");
         _bow.gameObject.SetActive(false);
         HidePreview();
+        if (_introPanel != null) _introPanel.SetActive(false);
+        if (_stageBanner != null) _stageBanner.text = "";
+        _stageBannerUntil = 0f;
+        _replayArmed = false;
+        _replayHoldStartedAt = -1f;
+
+        if (_resultsPanel != null)
+        {
+            _resultsTitle.text = newRecord ? "R E K O R   B A R U !" : "R O N D E   S E L E S A I";
+            int accuracy = _shots > 0 ? Mathf.RoundToInt(_hits * 100f / _shots) : 0;
+            _resultsDetails.text = "SKOR  " + _score + "    AKURASI  " + accuracy + "%" +
+                "\nTITIK TENGAH  " + _bullseyes + "    KOMBO TERBAIK  " + _bestCombo +
+                "\nBONUS RASA  +" + _rasaBonus + "  (" + _rasaHits + " KENA)";
+            _resultsHint.text = Application.isEditor
+                ? "R UNTUK ULANG  /  TAHAN KLIK KIRI 0.7 DETIK"
+                : "LEPASKAN, LALU TAHAN TARIK 0.7 DETIK";
+            _resultsPanel.SetActive(true);
+        }
     }
 
     private void ResetRound()
     {
         for (int i = 0; i < _arrows.Length; i++) _arrows[i].Cancel();
         _shots = _hits = _score = _combo = _poolCursor = 0;
+        _bullseyes = _bestCombo = _rasaHits = _rasaBonus = 0;
+        _previousBest = PlayerPrefs.GetInt("JemparinganRasaBest", 0);
+        _best = _previousBest;
         ClearDrawState();
+        _replayArmed = _awaitStringRelease = false;
+        _replayHoldStartedAt = -1f;
+        _stageBannerUntil = 0f;
+        if (_stageBanner != null) _stageBanner.text = "";
+        if (_introPanel != null) _introPanel.SetActive(true);
+        if (_resultsPanel != null) _resultsPanel.SetActive(false);
         _roundOver = _finished = false;
         _ready = true;
         _target.swayAmount = 0.06f;
@@ -341,6 +437,7 @@ public class JemparinganGame : MonoBehaviour
         _phaseLabel = JemparinganArt.Label("Phase", hud, new Vector3(0f, .87f, 0f), "", .0033f, new Color(.93f, .90f, .70f));
         _feedbackLabel = JemparinganArt.Label("Feedback", hud, new Vector3(0f, .70f, 0f), "", .0042f, new Color(.40f, .94f, .75f));
         BuildShotPips(hud);
+        BuildSessionPanels(hud);
         var help = new GameObject("Jemparingan Instructions").transform;
         help.SetPositionAndRotation(camera.transform.position + forward * 1.05f - Vector3.up * .52f, facing);
         _infoLabel = JemparinganArt.Label("Help", help, Vector3.zero, "", .0026f, new Color(.95f, .89f, .76f));
