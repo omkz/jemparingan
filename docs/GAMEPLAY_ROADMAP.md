@@ -40,10 +40,10 @@ The RASA bonus is **an accessible optional reward**, not a mandatory action; kee
 
 ### P0 — v0.5: Make every shot satisfying (Oct 31 – Nov 2)
 - [ ] Verify v0.4 in Unity: 12 shots, 3 stages, combo, restart, and Console clean.
-- [ ] Fix release timing: a single draw and release fires exactly one arrow; short accidental taps don't fire.
-- [ ] Calibrate bow power curve, arrow speed, trajectory guide and visual hit zone. Remove unfair hit/miss behavior.
-- [ ] Clear separate **hit**, **bullseye**, and **miss** feedback (visual + short SFX). Keep existing pooled VFX.
-- [ ] Provide shot-ready state and clear next-shot cues.
+- [x] Implement release timing guard (min duration + draw distance) and state reset after lost tracking. **Pending Unity validation.**
+- [ ] Tune bow power, speed and trajectory from actual Unity playtesting. **Implemented:** hitbox narrowed to match visual bandulan and center bonus limited to central section; gameplay balancing still pending.
+- [x] Implement distinct **hit**, **bullseye**, **miss** feedback (colors + short SFX). **Pending Unity validation.**
+- [x] Implement shot-ready hint, shot-release cue and stable RASA indicator refresh. **Pending Unity validation.**
 **Acceptance:** A tester completes 12 shots without input or progression bugs; projectile reactions and points match what is seen.
 
 ### P0 — v0.6: Complete the playable 3-minute loop (Nov 3 – 5)
@@ -96,4 +96,4 @@ Gameplay **feature freeze**. Only fix crashes/blockers and record actual headset
 
 ## Next work item
 
-Start **v0.5: input/release reliability and hit feedback QA** in `Assets/Scripts/JemparinganGame.cs`, `JemparinganArrow.cs`, and `JemparinganTarget.cs`. Verify gameplay in Editor before any further decoration.
+Complete the [v0.5 gameplay playtest](PLAYTEST_V05.md) in Unity Editor. Once it passes, move to **v0.6 tutorial, results and replay**; no extra art until gameplay reliability is verified.
