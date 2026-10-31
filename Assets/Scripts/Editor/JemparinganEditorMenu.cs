@@ -103,6 +103,16 @@ public static class JemparinganEditorMenu
         Check("arrow pool 30",
             JemparinganScoreRules.PoolCapacity(30, 14) == 30, ref total, ref failed);
 
+        Vector3 flat = JemparinganTrajectory.Position(Vector3.zero, Vector3.forward * 10f, 0f, 1f);
+        Vector3 falling = JemparinganTrajectory.Position(Vector3.zero, Vector3.forward * 10f, 2f, 1f);
+        Vector3 initial = JemparinganTrajectory.Position(new Vector3(1f, 2f, 3f), Vector3.forward, 2f, 0f);
+        Check("trajectory no gravity", Vector3.Distance(flat, Vector3.forward * 10f) < .0001f,
+            ref total, ref failed);
+        Check("trajectory gravity at 1 sec", Vector3.Distance(falling,
+            new Vector3(0f, -1f, 10f)) < .0001f, ref total, ref failed);
+        Check("trajectory t0 remains at origin", Vector3.Distance(initial,
+            new Vector3(1f, 2f, 3f)) < .0001f, ref total, ref failed);
+
         var testObject = new GameObject("Jemparingan QA target (temporary)");
         try
         {
