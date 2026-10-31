@@ -843,6 +843,14 @@ public class JemparinganGame : MonoBehaviour
                 JemparinganArt.Part("Feather", PrimitiveType.Cube, obj.transform,
                     new Vector3(f * .022f, 0, -.20f), new Vector3(.035f, .004f, .11f), JemparinganArt.Tone.Red,
                     Quaternion.Euler(0, f * 22f, 0));
+            // One subtle trail per pooled arrow; never instantiated per shot.
+            var trail = obj.AddComponent<TrailRenderer>();
+            trail.time = .14f;
+            trail.minVertexDistance = .025f;
+            trail.startWidth = .009f;
+            trail.endWidth = .001f;
+            trail.sharedMaterial = JemparinganArt.Material(JemparinganArt.Tone.Paper);
+            trail.emitting = false;
             _arrows[i] = obj.AddComponent<JemparinganArrow>();
             obj.SetActive(false);
         }
