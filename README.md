@@ -40,6 +40,12 @@ See [Gameplay Roadmap](docs/GAMEPLAY_ROADMAP.md) for the three-stage 12-arrow lo
 
 **Current gate:** [v0.9 Regression Gate](docs/PLAYTEST_V09.md): run **Tools > Jemparingan > Run Gameplay QA v0.9** (21 deterministic checks) then complete three real Play Mode rounds. Also see [v0.8](docs/PLAYTEST_V08.md), [v0.7](docs/PLAYTEST_V07.md), [v0.6](docs/PLAYTEST_V06.md) and [v0.5](docs/PLAYTEST_V05.md). In Edit mode run **Tools > Jemparingan > Run Target Hitbox Checks** before Play Mode testing. A code commit is not evidence of successful Unity compilation.
 
+## Quest integration (next gate)
+
+The v0.9 Editor QA has been reported successful by the developer; this does **not** establish a working Quest build. The next step is a **hands-only Quest feasibility build**, not new gameplay content.
+
+See **[Quest OpenXR, Meta XR hands and passthrough setup](docs/QUEST_SETUP_V10.md)**. A new read-only Editor menu, **Tools > Jemparingan > Quest > Validate Active Scene**, checks package/scene prerequisites. It does not install SDKs, create an APK or test a headset. Keep the existing desktop scene intact.
+
 ## Next milestone: Quest integration
 
 - **Confirmed from user:** Unity compiler errors were resolved after removing duplicate rule classes. This does **not** establish three clean gameplay rounds or a Quest APK.
