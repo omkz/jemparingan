@@ -901,11 +901,13 @@ public class JemparinganGame : MonoBehaviour
         _bow = new GameObject("Busur Jemparingan Stylized").transform;
         float armRadius = useOutdoorEnvironment ? .027f : .019f;
         float tipRadius = useOutdoorEnvironment ? .019f : .014f;
+        float limbCurve = useOutdoorEnvironment ? .08f : .06f;
+        float tipCurve = useOutdoorEnvironment ? .025f : .02f;
         JemparinganArt.Tone mainWood = useOutdoorEnvironment ? JemparinganArt.Tone.DarkWood : JemparinganArt.Tone.Wood;
-        JemparinganArt.Beam("Upper bow arm", _bow, new Vector3(0, 0, 0), new Vector3(.08f, .28f, .03f), armRadius, mainWood);
-        JemparinganArt.Beam("Upper bow tip", _bow, new Vector3(.08f, .28f, .03f), new Vector3(.025f, .53f, .10f), tipRadius, JemparinganArt.Tone.LightWood);
-        JemparinganArt.Beam("Lower bow arm", _bow, new Vector3(0, 0, 0), new Vector3(.08f, -.28f, .03f), armRadius, mainWood);
-        JemparinganArt.Beam("Lower bow tip", _bow, new Vector3(.08f, -.28f, .03f), new Vector3(.025f, -.53f, .10f), tipRadius, JemparinganArt.Tone.LightWood);
+        JemparinganArt.Beam("Upper bow arm", _bow, new Vector3(0, 0, 0), new Vector3(limbCurve, .28f, .03f), armRadius, mainWood);
+        JemparinganArt.Beam("Upper bow tip", _bow, new Vector3(limbCurve, .28f, .03f), new Vector3(tipCurve, .53f, .10f), tipRadius, JemparinganArt.Tone.LightWood);
+        JemparinganArt.Beam("Lower bow arm", _bow, new Vector3(0, 0, 0), new Vector3(limbCurve, -.28f, .03f), armRadius, mainWood);
+        JemparinganArt.Beam("Lower bow tip", _bow, new Vector3(limbCurve, -.28f, .03f), new Vector3(tipCurve, -.53f, .10f), tipRadius, JemparinganArt.Tone.LightWood);
         if (useOutdoorEnvironment)
         {
             // Warm, contrasting details make the silhouette legible against trees.
