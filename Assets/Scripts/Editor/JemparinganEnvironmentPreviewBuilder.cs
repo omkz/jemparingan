@@ -220,6 +220,69 @@ public static class JemparinganEnvironmentPreviewBuilder
             Debug.LogError(report + " Structural checks FAILED. Regenerate the preview or inspect missing objects.");
     }
 
+    // The only v5 test that can run without Play Mode: read-only check of
+    // serialized scene wiring and initial projectile tuning.
+    [MenuItem("Tools/Jemparingan/Environment/Validate Playable v5 Setup")]
+    private static void ValidatePlayableV5()
+    {
+        Scene scene = SceneManager.GetActiveScene();
+        if (!scene.IsValid() || !scene.isLoaded || scene.path != PlayableScenePath)
+        {
+            Debug.LogError("Open " + PlayableScenePath + " before validating playable v5.");
+            return;
+        }
+
+        JemparinganGame foundGame = null;
+        int gameCount = 0, cameraCount = 0, inputCount = 0;
+        int staticBandulanCount = 0;
+        Transform frame = null;
+        foreach (GameObject root in scene.GetRootGameObjects())
+        {
+            if (root.name == TargetName) frame = root.transform;
+            foreach (JemparinganGame game in root.GetComponentsInChildren<JemparinganGame>(true))
+            {
+                gameCount++;
+                foundGame = game;
+            }
+            cameraCount += root.GetComponentsInChildren<Camera>(true).Length;
+            inputCount += root.GetComponentsInChildren<DesktopBowInput>(true).Length;
+            foreach (Transform transformInScene in root.GetComponentsInChildren<Transform>(true))
+                if (transformInScene.name == "Bandulan white lower body") staticBandulanCount++;
+        }
+
+        bool correctlyWired = false;
+        float minimumSpeed = 0f, maximumSpeed = 0f;
+        if (foundGame != null)
+        {
+            var serialized = new SerializedObject(foundGame);
+            SerializedProperty anchor = serialized.FindProperty("outdoorTargetAnchor");
+            SerializedProperty outdoor = serialized.FindProperty("useOutdoorEnvironment");
+            SerializedProperty minimum = serialized.FindProperty("minimumArrowSpeed");
+            SerializedProperty maximum = serialized.FindProperty("maximumArrowSpeed");
+            if (anchor != null && outdoor != null && minimum != null && maximum != null)
+            {
+                var targetAnchor = anchor.objectReferenceValue as Transform;
+                minimumSpeed = minimum.floatValue;
+                maximumSpeed = maximum.floatValue;
+                correctlyWired = outdoor.boolValue && targetAnchor != null &&
+                    frame != null && targetAnchor.IsChildOf(frame) &&
+                    maximumSpeed >= minimumSpeed && minimumSpeed >= 15f;
+            }
+        }
+
+        bool passed = correctlyWired && gameCount == 1 && cameraCount == 1 &&
+            inputCount == 1 && staticBandulanCount == 0;
+        string report = "Playable v5 setup: gameplay=" + gameCount + "/1, cameras=" +
+            cameraCount + "/1, desktop input=" + inputCount +
+            "/1, duplicate static bandulan=" + staticBandulanCount +
+            "/0, outdoor config=" + correctlyWired +
+            ", arrow speed " + minimumSpeed + ".." + maximumSpeed + " m/s.";
+        if (passed)
+            Debug.Log(report + " PASS. Play Mode shot tests and Quest tests are still required.");
+        else
+            Debug.LogError(report + " FAIL. Regenerate the playable v5 scene.");
+    }
+
     private static void ConfigureAtmosphere()
     {
         // The procedural skybox is installed after the sun is created, so it can
