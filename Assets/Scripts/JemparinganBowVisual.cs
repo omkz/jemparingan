@@ -39,12 +39,12 @@ public sealed class JemparinganBowVisual : MonoBehaviour
 
     private static float HalfWidth(float t)
     {
-        return Mathf.Lerp(0.047f, 0.015f, Mathf.Pow(t, 0.82f));
+        return Mathf.Lerp(0.024f, 0.009f, Mathf.Pow(t, 0.82f));
     }
 
     private static float HalfDepth(float t)
     {
-        return Mathf.Lerp(0.027f, 0.013f, t);
+        return Mathf.Lerp(0.016f, 0.008f, t);
     }
 
     private void BuildLimb(Transform bow, int sign)
@@ -160,10 +160,10 @@ public sealed class JemparinganBowVisual : MonoBehaviour
     {
         // The 18cm grip overlaps the roots of both limbs: no visible gap.
         JemparinganArt.Part("Carved dark teak grip core", PrimitiveType.Cylinder,
-            bow, Vector3.zero, new Vector3(.043f, .092f, .042f),
+            bow, Vector3.zero, new Vector3(.026f, .092f, .025f),
             JemparinganArt.Tone.BowTeak);
         JemparinganArt.Part("Leather-wrapped main grip", PrimitiveType.Cylinder,
-            bow, Vector3.zero, new Vector3(.048f, .075f, .046f),
+            bow, Vector3.zero, new Vector3(.030f, .075f, .029f),
             JemparinganArt.Tone.BowLeather);
 
         for (int i = 0; i < 7; i++)
@@ -171,17 +171,17 @@ public sealed class JemparinganBowVisual : MonoBehaviour
             float y = -.062f + i * .0205f;
             JemparinganArt.Part("Fine leather grip wrap " + (i + 1),
                 PrimitiveType.Cylinder, bow,
-                new Vector3(0f, y, 0f), new Vector3(.049f, .0032f, .047f),
+                new Vector3(0f, y, 0f), new Vector3(.031f, .0032f, .030f),
                 JemparinganArt.Tone.BowStitch);
             JemparinganArt.Beam("Front diagonal stitch " + (i + 1), bow,
-                new Vector3(-.026f, y - .007f, -.0473f),
-                new Vector3(.026f, y + .007f, -.0473f),
+                new Vector3(-.019f, y - .007f, -.0312f),
+                new Vector3(.019f, y + .007f, -.0312f),
                 .0021f, JemparinganArt.Tone.BowStitch);
         }
 
         foreach (float y in new[] {-.090f, .090f})
             JemparinganArt.Part("Muted brass grip collar", PrimitiveType.Cylinder,
-                bow, new Vector3(0f, y, 0f), new Vector3(.046f, .006f, .045f),
+                bow, new Vector3(0f, y, 0f), new Vector3(.028f, .006f, .027f),
                 JemparinganArt.Tone.BowBrass);
     }
 
@@ -192,12 +192,12 @@ public sealed class JemparinganBowVisual : MonoBehaviour
             Vector3 tip = LimbPoint(1f, sign);
             JemparinganArt.Part(sign > 0 ? "Upper tip nock" : "Lower tip nock",
                 PrimitiveType.Sphere, bow, tip,
-                new Vector3(.020f, .025f, .022f),
+                new Vector3(.014f, .023f, .015f),
                 JemparinganArt.Tone.BowEdge);
             JemparinganArt.Part(sign > 0 ? "Upper tip string knot" : "Lower tip string knot",
                 PrimitiveType.Sphere, bow,
                 tip + Vector3.back * .009f,
-                new Vector3(.012f, .010f, .012f),
+                new Vector3(.009f, .010f, .009f),
                 JemparinganArt.Tone.BowIvory);
         }
     }
