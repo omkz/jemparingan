@@ -17,7 +17,9 @@ public static class JemparinganEnvironmentPreviewBuilder
     private const string MaterialFolder = AssetRoot + "/Materials";
     private const string MeshFolder = AssetRoot + "/Meshes";
     private const string TargetName = "Preview Bandulan | movable target";
-    private const float SeatZ = 2.6f;
+    // A little deeper inside the pavilion makes the overhead joglo/eaves visible
+    // while still preserving a clear view of the bandulan and distant landscape.
+    private const float SeatZ = 1.25f;
     private static readonly Dictionary<string, Material> Materials = new Dictionary<string, Material>();
 
     [MenuItem("Tools/Jemparingan/Environment/Create Safe Preview v1")]
@@ -139,11 +141,14 @@ public static class JemparinganEnvironmentPreviewBuilder
         go.AddComponent<AudioListener>();
         camera.clearFlags = CameraClearFlags.SolidColor;
         camera.backgroundColor = new Color(0.57f, 0.76f, 0.88f);
-        camera.fieldOfView = 72f;
+        // Editor-only composition preview: a wider vertical view includes the joglo roof.
+        // The physical Quest field of view will be determined by the headset.
+        camera.fieldOfView = 84f;
         camera.nearClipPlane = 0.04f;
         camera.farClipPlane = 220f;
         go.transform.position = new Vector3(0f, 1.35f, SeatZ);
-        go.transform.LookAt(new Vector3(0f, 1.50f, SeatZ + 25f));
+        // Slight upward bias makes the timber roof frame the shot without hiding the target.
+        go.transform.LookAt(new Vector3(0f, 1.95f, SeatZ + 25f));
     }
 
     private static void CreateLight()
@@ -201,6 +206,14 @@ public static class JemparinganEnvironmentPreviewBuilder
             new Vector3(7.5f, 0.29f, 0.23f), darkWood);
         Block("Rear lintel", parent, new Vector3(0f, 3.54f, -3.45f),
             new Vector3(7.5f, 0.29f, 0.23f), darkWood);
+
+        // Visible timber fascia under the front roof overhang: this reads as a
+        // joglo ceiling frame at seated eye height, not a black empty ceiling.
+        Block("Front roof fascia", parent, new Vector3(0f, 3.62f, 4.25f),
+            new Vector3(8.25f, 0.24f, 0.22f), darkWood);
+        Block("Front fascia carved-color trim placeholder", parent,
+            new Vector3(0f, 3.45f, 4.25f),
+            new Vector3(8.1f, 0.065f, 0.15f), trim);
 
         RoofLayer("Outer joglo hip roof", parent, 4.45f, 2.25f, 3.72f, 4.89f, roof);
         RoofLayer("Upper joglo roof", parent, 2.30f, 0.64f, 4.89f, 5.60f, roof);
