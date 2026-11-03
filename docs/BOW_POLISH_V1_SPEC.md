@@ -1,6 +1,6 @@
 # JEMPARINGAN — RASA | Bow Polish v1 — Design & Implementation Specification
 
-**Status:** Specification only. **No C# or Unity scene modifications in this step.**
+**Status:** Option 1 specification approved; **Option 2 C# prototype implemented on `feature/safe-environment-preview-v1`**. Unity Editor compilation, Game-view appearance and Quest performance **not yet validated**.
 **Target:** Unity 6000.2.14f1 / URP, desktop-playable outdoor environment; later Meta Quest hand-tracking experience.
 **Art direction:** A **Javanese-inspired traditional wooden bow**, tastefully stylized for modern VR. This is an artistic interpretation, not a claim of a precise museum-grade historic bow.
 
@@ -101,3 +101,23 @@ Current implementations at specification time:
 - `docs/ENVIRONMENT_V3_V5.md`: environment/gameplay and readability QA.
 
 **Decision for now:** approve design intent; defer code implementation to option 2.
+
+## 9. Option 2 implementation (C# prototype)
+
+Implemented on the isolated `feature/safe-environment-preview-v1` branch:
+
+- `Assets/Scripts/JemparinganBowVisual.cs` (+ `.meta`): a reusable runtime bow model built from **two tapered curved mesh limbs (14 segments each)** with simple textured UV coordinates, thin curved wood inlays, 1.30 m overall tip-to-tip silhouette, dark-teak handle, 7 grip wrap bands with stitching, restrained brass collars, and end nocks. Meshes are generated when the game scene starts, **not every frame**, and cleaned up when the bow is destroyed.
+- `Assets/Scripts/JemparinganArt.cs`: appends six color/material tones without changing any of the original enum values or colors.
+- `Assets/Scripts/JemparinganGame.cs`: switches to the new model **only when `useOutdoorEnvironment` is true**. The existing bow and bowstring visuals are still used in the v0.9 scene. Both outdoor string endpoints derive from the same limb geometry curve to avoid mismatches.
+- Existing gameplay and UI layout are intentionally untouched by this iteration. A polished Blender mesh can eventually replace the helper without rewriting arrow physics.
+
+### How to inspect the upgrade
+
+1. On the branch above, `git pull origin feature/safe-environment-preview-v1`.
+2. Open the existing `JemparinganPlayableEnvironment_v05.unity` scene.
+3. Press **Play**. The new bow is spawned at runtime via `JemparinganGame.BuildBow()`: **no need to regenerate or overwrite the scene**.
+4. Compare the silhouette both when idle and when holding/releasing left mouse; check the string remains attached to the two nocks.
+5. Inspect the grip wrap, side HUD clearance, and 12-arrow scoring loop. Confirm 10, 20 and 30 m still work if previously tested.
+6. Open original `JemparinganOptimized_v02.unity` and confirm the old bow still looks and behaves the same.
+
+**Validation status:** GitHub source checks are possible here. Unity compilation, game rendering, bow appearance, actual arrow hit tests and VR performance require local Unity/Quest testing. Please send a **Game-view screenshot** if proportions or brightness need adjustment.
