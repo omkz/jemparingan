@@ -20,6 +20,7 @@ If the branch already exists locally, run `git switch feature/safe-environment-p
 2. Use **Tools > Jemparingan > Environment > Create Safe Preview v1**.
 3. The editor creates and opens `Assets/Jemparingan/Scenes/JemparinganEnvironmentPreview_v01.unity`.
 4. Open the **Game** tab (or press Play) to see the viewpoint from a **seated camera**. Press Play again to exit Play Mode.
+   - The camera now sits a little farther back with a wider preview FOV so the **front joglo eaves and roof fascia** frame the top of the image. This changes preview composition, not the Quest headset FOV.
 5. In Edit Mode, use **Tools > Jemparingan > Environment > Set Target 10m / 20m / 30m** to move the single bandulan. Save the scene with Ctrl+S if you want to retain the chosen distance.
 6. Check the Console and capture a Game-view screenshot to compare against the environment concept image.
 
@@ -34,6 +35,18 @@ The current preview includes an ~8×8 m open-sided pendopo, wooden floor and jog
 - This is an **art/layout blockout**, not polished final art. The bow/shot mechanics are intentionally absent in this preview.
 - Do **not** use the older **Tools > Jemparingan > Create Optimized Scene v0.2** command to preview the environment; that is a different legacy scene generator.
 - The 10/20/30 m targets are spatial references. Existing arrow physics has **not** been tuned for those distances.
+
+## Refresh the preview after pulling generator updates
+
+If you previously generated the preview, changing the C# editor builder **will not update the existing saved scene automatically**.
+
+1. Make sure the preview has no changes you want to keep; back up your local preview scene if you've customized it.
+2. Run **Tools > Jemparingan > Environment > Create Safe Preview v1** again.
+3. Confirm **Overwrite preview**; this only overwrites `JemparinganEnvironmentPreview_v01.unity`.
+4. Open the Game tab; the joglo eave/fascia should now be visible across the upper edge, with the bandulan still in view.
+5. Set target distance again if needed. The preview regenerates with its default 10m setting.
+
+The roof exterior is not visible from a seated position underneath it; the intended effect is an **overhead timber frame and eaves**. The 84-degree vertical FOV is an Editor composition aid, not a promise of matching the headset optics.
 
 ## If the scene looks wrong
 
