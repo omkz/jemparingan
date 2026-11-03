@@ -118,6 +118,65 @@ public static class JemparinganEnvironmentPreviewBuilder
         Debug.Log("Preview bandulan set to " + distance + "m from the seated player (positive Z). Save the scene to keep this setting.");
     }
 
+    // Read-only structural smoke test for the newly generated scene.
+    // Runs entirely in Edit Mode and does not change gameplay or saved assets.
+    [MenuItem("Tools/Jemparingan/Environment/Validate Joglo Preview v2")]
+    private static void ValidateJogloPreview()
+    {
+        Scene scene = SceneManager.GetActiveScene();
+        if (!scene.IsValid() || !scene.isLoaded || scene.path != ScenePath)
+        {
+            Debug.LogError("Open the generated " + ScenePath + " before running Joglo v2 validation.");
+            return;
+        }
+
+        int sakaGuru = 0;
+        int tumpangTiers = 0;
+        int roofLayers = 0;
+        int cameras = 0;
+        Camera previewCamera = null;
+        Transform target = null;
+        foreach (GameObject root in scene.GetRootGameObjects())
+        {
+            if (root.name == TargetName) target = root.transform;
+            foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
+            {
+                if (t.name == "Saka guru teak post") sakaGuru++;
+                if (t.name.StartsWith("Tumpang sari tier ", StringComparison.Ordinal)) tumpangTiers++;
+                if (t.name == "Penanggap lower roof" || t.name == "Brunjung high roof") roofLayers++;
+            }
+            foreach (Camera cam in root.GetComponentsInChildren<Camera>(true))
+            {
+                cameras++;
+                if (cam.CompareTag("MainCamera")) previewCamera = cam;
+            }
+        }
+
+        bool validDistance = false;
+        float distance = -1f;
+        if (previewCamera != null && target != null)
+        {
+            distance = Vector3.Distance(
+                new Vector3(target.position.x, 0f, target.position.z),
+                new Vector3(previewCamera.transform.position.x, 0f,
+                    previewCamera.transform.position.z));
+            validDistance = Mathf.Abs(distance - 10f) < .03f ||
+                Mathf.Abs(distance - 20f) < .03f ||
+                Mathf.Abs(distance - 30f) < .03f;
+        }
+
+        bool valid = sakaGuru == 4 && tumpangTiers == 4 &&
+            roofLayers == 2 && cameras == 1 && validDistance;
+        string report = "Joglo v2 preview: saka guru=" + sakaGuru +
+            "/4, tumpang sari tiers=" + tumpangTiers +
+            "/4, roof layers=" + roofLayers + "/2, cameras=" + cameras +
+            "/1, horizontal target distance=" + distance.ToString("F2") + "m.";
+        if (valid)
+            Debug.Log(report + " Structural checks PASSED. Still requires visual review in Game view.");
+        else
+            Debug.LogError(report + " Structural checks FAILED. Regenerate the preview or inspect missing objects.");
+    }
+
     private static void ConfigureAtmosphere()
     {
         RenderSettings.skybox = null;
