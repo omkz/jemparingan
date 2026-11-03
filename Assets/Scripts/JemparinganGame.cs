@@ -14,8 +14,8 @@ public class JemparinganGame : MonoBehaviour
     [SerializeField, Range(6, 30)] private int arrowsPerRound = 12;
     [SerializeField, Range(0.06f, 0.3f)] private float minimumDraw = 0.10f;
     [SerializeField, Range(0.25f, 0.6f)] private float maximumDraw = 0.40f;
-    [SerializeField, Range(4f, 15f)] private float minimumArrowSpeed = 7.5f;
-    [SerializeField, Range(6f, 20f)] private float maximumArrowSpeed = 11f;
+    [SerializeField, Range(4f, 30f)] private float minimumArrowSpeed = 7.5f;
+    [SerializeField, Range(6f, 35f)] private float maximumArrowSpeed = 11f;
     [SerializeField, Range(0f, 10f)] private float simulatedGravity = 2.25f;
     [SerializeField, Range(0f, 1f)] private float aimAssist = 0.40f;
     [SerializeField] private bool trajectoryPreview = true;
@@ -28,6 +28,13 @@ public class JemparinganGame : MonoBehaviour
 
     [Header("Atmosphere (quiet, original procedural audio)")]
     [SerializeField, Range(0f, 0.15f)] private float ambientWindVolume = 0.045f;
+
+    // Optional bridge for the separate outdoor VR preview. Defaults keep the
+    // original v0.9 scene fully self-contained and at its original 2.65m distance.
+    [Header("Outdoor environment v5 (optional; disabled in legacy scenes)")]
+    [SerializeField] private bool useOutdoorEnvironment = false;
+    [SerializeField] private Transform outdoorTargetAnchor;
+    [SerializeField, Range(1.6f, 4.0f)] private float outdoorArrowLifetime = 3.0f;
 
     private const int ArrowPoolSize = 14;
     private const int PreviewDotCount = 8;
@@ -337,7 +344,8 @@ public class JemparinganGame : MonoBehaviour
         _poolCursor = (_poolCursor + 1) % _arrows.Length;
         // Stability is captured on the arrow so it survives subsequent shots.
         arrow.StableRelease = stable;
-        arrow.Launch(origin, aim * speed, simulatedGravity, _target, OnArrowImpact, OnArrowMiss);
+        arrow.Launch(origin, aim * speed, simulatedGravity, _target, OnArrowImpact, OnArrowMiss,
+            useOutdoorEnvironment ? outdoorArrowLifetime : 1.6f);
         _shots++;
         _audio.PlayOneShot(_shotSound, 0.48f);
         ShowFeedback("PANAH MELUNCUR");
@@ -557,7 +565,11 @@ public class JemparinganGame : MonoBehaviour
         Vector3 velocity = GetAssistedAim(origin, rawAim, speed) * speed;
         for (int i = 0; i < _previewDots.Length; i++)
         {
-            float t = (i + 1) * 0.065f;
+            float previewDuration = useOutdoorEnvironment && _target != null
+                ? Mathf.Clamp(Vector3.Distance(origin, _target.transform.position) /
+                    Mathf.Max(1f, speed), 0.52f, 2.5f)
+                : 0.52f;
+            float t = (i + 1) * (previewDuration / _previewDots.Length);
             _previewDots[i].position = JemparinganTrajectory.Position(origin, velocity, simulatedGravity, t);
             _previewDots[i].gameObject.SetActive(true);
         }
@@ -576,14 +588,28 @@ public class JemparinganGame : MonoBehaviour
         Vector3 forward = Vector3.ProjectOnPlane(camera.transform.forward, Vector3.up).normalized;
         if (forward.sqrMagnitude < 0.1f) forward = Vector3.forward;
         Quaternion facing = Quaternion.LookRotation(forward);
-        Vector3 stagePosition = camera.transform.position + forward * 2.65f - Vector3.up * 0.05f;
+        if (useOutdoorEnvironment && outdoorTargetAnchor == null)
+        {
+            Debug.LogError("Jemparingan outdoor preview: target anchor is missing.");
+            return false;
+        }
 
-        var root = new GameObject("JEMPARINGAN | Panggung Pendopo Stylized").transform;
-        root.SetPositionAndRotation(stagePosition, facing);
-        BuildPendopo(root);
-        BuildBackdrop(root);
+        Vector3 stagePosition = camera.transform.position + forward * 2.65f - Vector3.up * 0.05f;
+        Vector3 targetPosition = useOutdoorEnvironment ? outdoorTargetAnchor.position : stagePosition;
+
+        var root = new GameObject(useOutdoorEnvironment
+            ? "JEMPARINGAN | Outdoor target gameplay"
+            : "JEMPARINGAN | Panggung Pendopo Stylized").transform;
+        root.SetPositionAndRotation(targetPosition, facing);
+        if (!useOutdoorEnvironment)
+        {
+            // Legacy desktop gameplay remains exactly as before.
+            BuildPendopo(root);
+            BuildBackdrop(root);
+        }
         BuildBandulan(root);
-        BuildTargetPresentation(root);
+        if (!useOutdoorEnvironment)
+            BuildTargetPresentation(root);
         _impactLabel = JemparinganArt.Label("Floating impact points", root,
             _impactLabelBasePosition, "", .0041f, new Color(.98f, .81f, .40f));
         BuildBow();
