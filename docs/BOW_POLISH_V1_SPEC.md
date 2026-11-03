@@ -121,3 +121,13 @@ Implemented on the isolated `feature/safe-environment-preview-v1` branch:
 6. Open original `JemparinganOptimized_v02.unity` and confirm the old bow still looks and behaves the same.
 
 **Validation status:** GitHub source checks are possible here. Unity compilation, game rendering, bow appearance, actual arrow hit tests and VR performance require local Unity/Quest testing. Please send a **Game-view screenshot** if proportions or brightness need adjustment.
+
+## 10. Nocked arrow visibility fix (Bow Polish v1.1)
+
+The polished bow now **shows a cosmetic nocked arrow** while held, including at idle and during draw. The arrow's nock follows the same `Vector3.back * pull` as the bowstring marker. On the release frame, the cosmetic arrow hides and the existing `JemparinganArrow` pool launches exactly one real projectile with the original scoring/collision callbacks. A fresh nocked visual is shown on the next ready frame.
+
+For the outdoor playable scene only, flying arrows get a subtly thicker shaft, light-colored length highlight, and a wider/longer trail to help them read against the outdoor landscape. Legacy v0.9 arrow geometry and trail settings are untouched.
+
+**Test:** Pull the current branch; open `JemparinganPlayableEnvironment_v05.unity`; press Play. You should see a visible arrow on the bow *before* pressing the mouse. Hold left click and verify that it travels backward with the string, then release and verify exactly one arrow flies forward. Repeat several times, complete 12 shots, reset with R, and verify target scoring. There is **no need to overwrite or regenerate your scene** because both models are built in Play Mode.
+
+**Status:** source review only; actual Unity rendering, ballistics and Quest hardware still need local validation.
