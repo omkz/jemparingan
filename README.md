@@ -11,6 +11,20 @@ Mixed Reality archery prototype inspired by Javanese jemparingan, targeting Meta
 - Click Play. **Hold left mouse** to pull the string, **release** to shoot, **hold right mouse + move mouse** to aim; press **R** to reset the round.
 - Set **Active Input Handling = Both** if the legacy mouse input APIs do not respond.
 
+## Optional environment preview (separate branch)
+
+The `feature/safe-environment-preview-v1` branch includes a standalone outdoor Joglo environment:
+
+- **Lighting v3:** golden-hour procedural skybox, warm daylight and distance fog.
+- **Landscape v4:** more organic sawah groups, banana plants and layered mesh mountains.
+- **Playable Environment v5:** one live bandulan at 10/20/30 m, wired to the existing 12-arrow gameplay and desktop mouse input.
+
+The generator creates scenes under `Assets/Jemparingan/Scenes/` using
+**Tools > Jemparingan > Environment > Create Joglo Preview v2** (scenic) or
+**Create Playable Environment v5** (interactive). The existing `JemparinganOptimized_v02`
+scene is not overwritten. See [Environment v3–v5 Guide](docs/ENVIRONMENT_V3_V5.md).
+These changes are source-reviewed, not Unity/Quest-tested in this environment.
+
 ## Gameplay and visual features (v0.9)
 
 - A 12-shot round with three difficulty stages, combo scoring, bullseye/stability bonus, and local best-score persistence.

@@ -5,7 +5,8 @@ using UnityEngine;
 public class JemparinganArrow : MonoBehaviour
 {
     private const float TipOffset = 0.36f;
-    private const float MaxLife = 1.6f;
+    private const float DefaultMaxLife = 1.6f;
+    private float _maxLife = DefaultMaxLife;
     private const float EmbedSeconds = 1.15f;
     private Vector3 _velocity;
     private JemparinganTarget _target;
@@ -30,7 +31,7 @@ public class JemparinganArrow : MonoBehaviour
 
     public void Launch(Vector3 origin, Vector3 velocity, float gravity,
         JemparinganTarget target, Action<JemparinganArrow, bool> onImpact,
-        Action<JemparinganArrow> onMiss)
+        Action<JemparinganArrow> onMiss, float maxLifeSeconds = DefaultMaxLife)
     {
         if (_poolParent == null) _poolParent = transform.parent;
         if (transform.parent != _poolParent) transform.SetParent(_poolParent, true);
@@ -40,6 +41,7 @@ public class JemparinganArrow : MonoBehaviour
         _onImpact = onImpact;
         _onMiss = onMiss;
         _gravity = gravity;
+        _maxLife = Mathf.Max(0.2f, maxLifeSeconds);
         _lifetime = 0f;
         _flying = true;
         _embedded = false;
@@ -103,7 +105,7 @@ public class JemparinganArrow : MonoBehaviour
             _target.Flash(bullseye);
             _onImpact?.Invoke(this, bullseye);
         }
-        else if (_lifetime > MaxLife)
+        else if (_lifetime > _maxLife)
         {
             _flying = false;
             if (_trail != null) _trail.emitting = false;

@@ -14,8 +14,8 @@ public class JemparinganGame : MonoBehaviour
     [SerializeField, Range(6, 30)] private int arrowsPerRound = 12;
     [SerializeField, Range(0.06f, 0.3f)] private float minimumDraw = 0.10f;
     [SerializeField, Range(0.25f, 0.6f)] private float maximumDraw = 0.40f;
-    [SerializeField, Range(4f, 15f)] private float minimumArrowSpeed = 7.5f;
-    [SerializeField, Range(6f, 20f)] private float maximumArrowSpeed = 11f;
+    [SerializeField, Range(4f, 30f)] private float minimumArrowSpeed = 7.5f;
+    [SerializeField, Range(6f, 35f)] private float maximumArrowSpeed = 11f;
     [SerializeField, Range(0f, 10f)] private float simulatedGravity = 2.25f;
     [SerializeField, Range(0f, 1f)] private float aimAssist = 0.40f;
     [SerializeField] private bool trajectoryPreview = true;
@@ -28,6 +28,13 @@ public class JemparinganGame : MonoBehaviour
 
     [Header("Atmosphere (quiet, original procedural audio)")]
     [SerializeField, Range(0f, 0.15f)] private float ambientWindVolume = 0.045f;
+
+    // Optional bridge for the separate outdoor VR preview. Defaults keep the
+    // original v0.9 scene fully self-contained and at its original 2.65m distance.
+    [Header("Outdoor environment v5 (optional; disabled in legacy scenes)")]
+    [SerializeField] private bool useOutdoorEnvironment = false;
+    [SerializeField] private Transform outdoorTargetAnchor;
+    [SerializeField, Range(1.6f, 4.0f)] private float outdoorArrowLifetime = 3.0f;
 
     private const int ArrowPoolSize = 14;
     private const int PreviewDotCount = 8;
@@ -337,7 +344,8 @@ public class JemparinganGame : MonoBehaviour
         _poolCursor = (_poolCursor + 1) % _arrows.Length;
         // Stability is captured on the arrow so it survives subsequent shots.
         arrow.StableRelease = stable;
-        arrow.Launch(origin, aim * speed, simulatedGravity, _target, OnArrowImpact, OnArrowMiss);
+        arrow.Launch(origin, aim * speed, simulatedGravity, _target, OnArrowImpact, OnArrowMiss,
+            useOutdoorEnvironment ? outdoorArrowLifetime : 1.6f);
         _shots++;
         _audio.PlayOneShot(_shotSound, 0.48f);
         ShowFeedback("PANAH MELUNCUR");
@@ -506,7 +514,9 @@ public class JemparinganGame : MonoBehaviour
     private void UpdateHUD()
     {
         if (_scoreLabel != null)
-            _scoreLabel.text = "SKOR " + _score + "  •  KENA " + _hits + "/" + _shots + "  •  KOMBO " + _combo + "  •  REKOR " + _best;
+            _scoreLabel.text = useOutdoorEnvironment
+                ? "SKOR " + _score + "  |  " + _shots + "/12 PANAH  |  KOMBO " + _combo
+                : "SKOR " + _score + "  •  KENA " + _hits + "/" + _shots + "  •  KOMBO " + _combo + "  •  REKOR " + _best;
         if (_phaseLabel != null && !_finished)
             _phaseLabel.text = JemparinganScoreRules.StageTitle(_shots);
         UpdateShotPips();
@@ -527,6 +537,16 @@ public class JemparinganGame : MonoBehaviour
     }
     private void SetInfo(string value)
     {
+        if (useOutdoorEnvironment)
+        {
+            // Keep first-person VR hints short enough to fit the readable lower panel.
+            if (value.StartsWith("SIAP") || value.StartsWith("Tahan klik kiri"))
+                value = "KIRI: TARIK / LEPAS   |   KANAN: BIDIK";
+            else if (value.StartsWith("Tangan belum"))
+                value = "TANGAN BELUM TERLACAK";
+            else if (value.StartsWith("Pegang busur"))
+                value = "PEGANG BUSUR DENGAN TANGAN KIRI";
+        }
         if (_infoLabel != null && _lastInfo != value) { _lastInfo = value; _infoLabel.text = value; }
     }
     private void ShowFeedback(string msg, Color? feedbackColor = null)
@@ -542,12 +562,13 @@ public class JemparinganGame : MonoBehaviour
         PositionString(_upperString, Vector3.up * 0.53f, Vector3.back * pull);
         PositionString(_lowerString, Vector3.down * 0.53f, Vector3.back * pull);
     }
-    private static void PositionString(Transform piece, Vector3 a, Vector3 b)
+    private void PositionString(Transform piece, Vector3 a, Vector3 b)
     {
         Vector3 delta = b - a;
         piece.localPosition = (a + b) * 0.5f;
         piece.localRotation = Quaternion.FromToRotation(Vector3.up, delta.normalized);
-        piece.localScale = new Vector3(0.0025f, delta.magnitude * 0.5f, 0.0025f);
+        float stringRadius = useOutdoorEnvironment ? .0040f : .0025f;
+        piece.localScale = new Vector3(stringRadius, delta.magnitude * 0.5f, stringRadius);
     }
 
     private void ShowPreview(Vector3 origin, Vector3 rawAim, float power)
@@ -557,7 +578,11 @@ public class JemparinganGame : MonoBehaviour
         Vector3 velocity = GetAssistedAim(origin, rawAim, speed) * speed;
         for (int i = 0; i < _previewDots.Length; i++)
         {
-            float t = (i + 1) * 0.065f;
+            float previewDuration = useOutdoorEnvironment && _target != null
+                ? Mathf.Clamp(Vector3.Distance(origin, _target.transform.position) /
+                    Mathf.Max(1f, speed), 0.52f, 2.5f)
+                : 0.52f;
+            float t = (i + 1) * (previewDuration / _previewDots.Length);
             _previewDots[i].position = JemparinganTrajectory.Position(origin, velocity, simulatedGravity, t);
             _previewDots[i].gameObject.SetActive(true);
         }
@@ -576,14 +601,28 @@ public class JemparinganGame : MonoBehaviour
         Vector3 forward = Vector3.ProjectOnPlane(camera.transform.forward, Vector3.up).normalized;
         if (forward.sqrMagnitude < 0.1f) forward = Vector3.forward;
         Quaternion facing = Quaternion.LookRotation(forward);
-        Vector3 stagePosition = camera.transform.position + forward * 2.65f - Vector3.up * 0.05f;
+        if (useOutdoorEnvironment && outdoorTargetAnchor == null)
+        {
+            Debug.LogError("Jemparingan outdoor preview: target anchor is missing.");
+            return false;
+        }
 
-        var root = new GameObject("JEMPARINGAN | Panggung Pendopo Stylized").transform;
-        root.SetPositionAndRotation(stagePosition, facing);
-        BuildPendopo(root);
-        BuildBackdrop(root);
+        Vector3 stagePosition = camera.transform.position + forward * 2.65f - Vector3.up * 0.05f;
+        Vector3 targetPosition = useOutdoorEnvironment ? outdoorTargetAnchor.position : stagePosition;
+
+        var root = new GameObject(useOutdoorEnvironment
+            ? "JEMPARINGAN | Outdoor target gameplay"
+            : "JEMPARINGAN | Panggung Pendopo Stylized").transform;
+        root.SetPositionAndRotation(targetPosition, facing);
+        if (!useOutdoorEnvironment)
+        {
+            // Legacy desktop gameplay remains exactly as before.
+            BuildPendopo(root);
+            BuildBackdrop(root);
+        }
         BuildBandulan(root);
-        BuildTargetPresentation(root);
+        if (!useOutdoorEnvironment)
+            BuildTargetPresentation(root);
         _impactLabel = JemparinganArt.Label("Floating impact points", root,
             _impactLabelBasePosition, "", .0041f, new Color(.98f, .81f, .40f));
         BuildBow();
@@ -592,7 +631,17 @@ public class JemparinganGame : MonoBehaviour
         BuildLeadMarker(root);
 
         var hud = new GameObject("Jemparingan HUD").transform;
-        hud.SetPositionAndRotation(stagePosition, facing);
+        if (useOutdoorEnvironment)
+        {
+            // Place all outdoor HUD copy in the upper RIGHT of the viewpoint.
+            // Bow remains left; the bandulan/aiming lane stays clear in the center.
+            // Keep this world-space board ~2.35m out, without ScreenSpaceOverlay.
+            hud.SetParent(camera.transform, false);
+            hud.localPosition = new Vector3(1.25f, 0.10f, 2.35f);
+            hud.localRotation = Quaternion.Euler(0f, 25f, 0f);
+        }
+        else
+            hud.SetPositionAndRotation(stagePosition, facing);
         _titleLabel = JemparinganArt.Label("Title", hud, new Vector3(0f, 1.16f, 0f), "J E M P A R I N G A N   •   R A S A", .0052f, new Color(0.96f, .79f, .48f));
         _scoreLabel = JemparinganArt.Label("Score", hud, new Vector3(0f, .96f, 0f), "", .0037f, Color.white);
         _phaseLabel = JemparinganArt.Label("Phase", hud, new Vector3(0f, .87f, 0f), "", .0033f, new Color(.93f, .90f, .70f));
@@ -600,8 +649,19 @@ public class JemparinganGame : MonoBehaviour
         BuildShotPips(hud);
         BuildSessionPanels(hud);
         var help = new GameObject("Jemparingan Instructions").transform;
-        help.SetPositionAndRotation(camera.transform.position + forward * 1.05f - Vector3.up * .52f, facing);
+        if (useOutdoorEnvironment)
+        {
+            // Instructions sit below the right-hand HUD and session cards,
+            // not across the bow or in front of the target.
+            help.SetParent(camera.transform, false);
+            help.localPosition = new Vector3(1.25f, -0.60f, 2.35f);
+            help.localRotation = Quaternion.Euler(0f, 25f, 0f);
+        }
+        else
+            help.SetPositionAndRotation(camera.transform.position + forward * 1.05f - Vector3.up * .52f, facing);
         _infoLabel = JemparinganArt.Label("Help", help, Vector3.zero, "", .0026f, new Color(.95f, .89f, .76f));
+        if (useOutdoorEnvironment)
+            StyleOutdoorHud(hud, help);
 
         _audio = gameObject.AddComponent<AudioSource>();
         _audio.spatialBlend = 0f;
@@ -627,6 +687,59 @@ public class JemparinganGame : MonoBehaviour
         ResetRound();
         SetInfo("Tahan klik kiri untuk menarik, lepas untuk menembak. Klik kanan + mouse untuk membidik.");
         return true;
+    }
+
+    // Outdoor-only readability pass. TextMesh is intentionally reused because the
+    // project has no TMP/UGUI package dependency yet. These are 3D objects in front
+    // of the seated camera, not a screen-space overlay.
+    private void StyleOutdoorHud(Transform hud, Transform help)
+    {
+        _titleLabel.text = "JEMPARINGAN  |  RASA";
+        _titleLabel.characterSize = .0090f;
+        _titleLabel.fontSize = 96;
+        _titleLabel.fontStyle = FontStyle.Bold;
+        _scoreLabel.characterSize = .0074f;
+        _scoreLabel.fontSize = 96;
+        _scoreLabel.fontStyle = FontStyle.Bold;
+        _phaseLabel.characterSize = .0071f;
+        _phaseLabel.fontSize = 96;
+        _feedbackLabel.characterSize = .0072f;
+        _feedbackLabel.fontSize = 96;
+        // Keep feedback aligned with the other copy in the right-hand HUD.
+        _feedbackLabel.transform.localPosition = new Vector3(0f, .67f, -.035f);
+
+        _infoLabel.characterSize = .0066f;
+        _infoLabel.fontSize = 96;
+        _infoLabel.fontStyle = FontStyle.Bold;
+
+        // Shared material, very low draw/geometry cost for readable contrast
+        // against the bright rice fields and light sky.
+        JemparinganArt.Part("HUD title + score contrast panel", PrimitiveType.Cube, hud,
+            new Vector3(0f, 1.04f, .085f),
+            new Vector3(1.88f, .49f, .025f), JemparinganArt.Tone.DarkWood);
+        JemparinganArt.Part("HUD title gold top edge", PrimitiveType.Cube, hud,
+            new Vector3(0f, 1.293f, .075f),
+            new Vector3(1.88f, .015f, .022f), JemparinganArt.Tone.Gold);
+        JemparinganArt.Part("HUD feedback contrast panel", PrimitiveType.Cube, hud,
+            new Vector3(0f, .67f, .09f),
+            new Vector3(1.75f, .18f, .023f), JemparinganArt.Tone.DarkWood);
+        JemparinganArt.Part("Instruction contrast panel", PrimitiveType.Cube, help,
+            new Vector3(0f, 0f, .08f),
+            new Vector3(1.77f, .18f, .022f), JemparinganArt.Tone.DarkWood);
+
+        foreach (TextMesh label in hud.GetComponentsInChildren<TextMesh>(true))
+        {
+            if (label == _titleLabel || label == _scoreLabel ||
+                label == _phaseLabel || label == _feedbackLabel) continue;
+            label.characterSize *= 1.35f;
+            label.fontSize = 96;
+            if (label.name == "Intro title")
+                label.text = "JEMPARINGAN  /  RASA";
+            else if (label.name == "Intro goal")
+                label.text = "12 PANAH  |  3 BABAK  |  RASA +3";
+            else if (label.name == "Intro start" && Application.isEditor)
+                label.text = "KLIK KIRI UNTUK MULAI";
+        }
     }
 
     // UI stays in world space; no external canvas or Quest-specific SDK required.
@@ -788,10 +901,25 @@ public class JemparinganGame : MonoBehaviour
     private void BuildBow()
     {
         _bow = new GameObject("Busur Jemparingan Stylized").transform;
-        JemparinganArt.Beam("Upper bow arm", _bow, new Vector3(0, 0, 0), new Vector3(.06f, .28f, .03f), .019f, JemparinganArt.Tone.Wood);
-        JemparinganArt.Beam("Upper bow tip", _bow, new Vector3(.06f, .28f, .03f), new Vector3(.02f, .53f, .10f), .014f, JemparinganArt.Tone.LightWood);
-        JemparinganArt.Beam("Lower bow arm", _bow, new Vector3(0, 0, 0), new Vector3(.06f, -.28f, .03f), .019f, JemparinganArt.Tone.Wood);
-        JemparinganArt.Beam("Lower bow tip", _bow, new Vector3(.06f, -.28f, .03f), new Vector3(.02f, -.53f, .10f), .014f, JemparinganArt.Tone.LightWood);
+        float armRadius = useOutdoorEnvironment ? .027f : .019f;
+        float tipRadius = useOutdoorEnvironment ? .019f : .014f;
+        float limbCurve = useOutdoorEnvironment ? .08f : .06f;
+        float tipCurve = useOutdoorEnvironment ? .025f : .02f;
+        JemparinganArt.Tone mainWood = useOutdoorEnvironment ? JemparinganArt.Tone.DarkWood : JemparinganArt.Tone.Wood;
+        JemparinganArt.Beam("Upper bow arm", _bow, new Vector3(0, 0, 0), new Vector3(limbCurve, .28f, .03f), armRadius, mainWood);
+        JemparinganArt.Beam("Upper bow tip", _bow, new Vector3(limbCurve, .28f, .03f), new Vector3(tipCurve, .53f, .10f), tipRadius, JemparinganArt.Tone.LightWood);
+        JemparinganArt.Beam("Lower bow arm", _bow, new Vector3(0, 0, 0), new Vector3(limbCurve, -.28f, .03f), armRadius, mainWood);
+        JemparinganArt.Beam("Lower bow tip", _bow, new Vector3(limbCurve, -.28f, .03f), new Vector3(tipCurve, -.53f, .10f), tipRadius, JemparinganArt.Tone.LightWood);
+        if (useOutdoorEnvironment)
+        {
+            // Warm, contrasting details make the silhouette legible against trees.
+            JemparinganArt.Beam("Upper polished limb inlay", _bow,
+                new Vector3(-.010f, .08f, -.024f), new Vector3(.070f, .29f, .003f),
+                .006f, JemparinganArt.Tone.Gold);
+            JemparinganArt.Beam("Lower polished limb inlay", _bow,
+                new Vector3(-.010f, -.08f, -.024f), new Vector3(.070f, -.29f, .003f),
+                .006f, JemparinganArt.Tone.Gold);
+        }
         JemparinganArt.Part("Grip", PrimitiveType.Cylinder, _bow, Vector3.zero,
             new Vector3(.036f, .09f, .036f), JemparinganArt.Tone.DarkWood);
         JemparinganArt.Part("Upper bow ornament", PrimitiveType.Sphere, _bow,

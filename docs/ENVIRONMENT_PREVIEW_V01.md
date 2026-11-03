@@ -1,0 +1,75 @@
+# JEMPARINGAN — RASA | Safe Environment Preview v1
+
+This is a **separate Unity Editor-only 3D blockout**, not a replacement for the v0.9 gameplay scene. It does not require Blender, the Meta XR SDK, or a Quest headset.
+
+## Switch to the isolated branch
+
+From your local repository:
+
+```bash
+git status --short
+git fetch origin
+git switch --track origin/feature/safe-environment-preview-v1
+```
+
+If the branch already exists locally, run `git switch feature/safe-environment-preview-v1` instead. Commit/stash any unrelated local work before switching.
+
+## Generate and inspect the preview
+
+1. Open the project in Unity **6000.2.14f1** and wait for compilation.
+2. Use **Tools > Jemparingan > Environment > Create Joglo Preview v2**.
+3. The editor creates and opens `Assets/Jemparingan/Scenes/JemparinganEnvironmentPreview_v01.unity`.
+4. Open the **Game** tab (or press Play) to see the viewpoint from a **seated camera**. Press Play again to exit Play Mode.
+   - The camera now sits a little farther back with a wider preview FOV so the **front joglo eaves and roof fascia** frame the top of the image. This changes preview composition, not the Quest headset FOV.
+5. In Edit Mode, use **Tools > Jemparingan > Environment > Set Target 10m / 20m / 30m** to move the single bandulan. Save the scene with Ctrl+S if you want to retain the chosen distance.
+6. Check the Console and capture a Game-view screenshot to compare against the environment concept image.
+
+The current preview includes an ~8×8 m open-sided joglo pendopo with saka guru/tumpang sari, wooden floor and layered roof, a courtyard, 10/20/30 m lane markers, a traditional hanging bandulan, rice paddies, bamboo fence, tropical trees, distant mountains, blue sky, and warm directional lighting.
+
+## Joglo authenticity pass v2
+
+This preview now uses a **Joglo-inspired roof and timber structure**, rather than a simple pavilion roof:
+
+- Four central **saka guru** square teak pillars on stone **umpak**.
+- Tiered **tumpang sari** wooden rings and the **blandar/pamidangan** above the player.
+- Two different roof slopes: the gentle **penanggap** (lower) and steep **brunjung** (upper).
+- Slanted rafters, exposed wooden beams, a raised roof silhouette, and a visible front fascia.
+- Original 8×8 m footprint, seated camera, landscape, and bandulan distances remain intact.
+
+These are designed for a **good first-person VR composition**, not a detailed historical reconstruction; carved joinery, tiles and materials will require authored assets later. The ceiling is open between the rafters, not sealed with a black plane.
+
+After generating, run **Tools > Jemparingan > Environment > Validate Joglo Preview v2**. This read-only Unity Editor command counts the 4 saka guru pillars, 4 tumpang sari tiers, 2 roof meshes, checks a single camera, and confirms the bandulan is at 10, 20 or 30 m from the viewpoint. This is a structural smoke test, **not a visual or headset test**.
+
+Architectural reference: [Dinas Kebudayaan DIY — Mengenal Bangunan Berarsitektur Tradisional Jawa: Joglo](https://budaya.jogjaprov.go.id/artikel/detail/Mengenal-Bangunan-Berarsitektur-Tradisional-Jawa-Bangunan-Joglo).
+
+## Guardrails
+
+- Existing `JemparinganOptimized_v02.unity`, `JemparinganGame.cs`, scoring, and input **are unchanged**.
+- The generator uses a new scene path and **requires confirmation before overwriting its own preview scene**.
+- It prompts to save any modified scene before switching, preventing silent scene loss.
+- Its output is ordinary editable scene objects, mesh assets, and shared materials under `Assets/Jemparingan/EnvironmentPreview/`.
+- This is an **art/layout blockout**, not polished final art. The bow/shot mechanics are intentionally absent in this preview.
+- Do **not** use the older **Tools > Jemparingan > Create Optimized Scene v0.2** command to preview the environment; that is a different legacy scene generator.
+- The 10/20/30 m targets are spatial references. Existing arrow physics has **not** been tuned for those distances.
+
+## Refresh the preview after pulling generator updates
+
+If you previously generated the preview, changing the C# editor builder **will not update the existing saved scene automatically**.
+
+1. Make sure the preview has no changes you want to keep; back up your local preview scene if you've customized it.
+2. Run **Tools > Jemparingan > Environment > Create Joglo Preview v2** again.
+3. Confirm **Overwrite preview**; this only overwrites `JemparinganEnvironmentPreview_v01.unity`.
+4. Open the Game tab; the front eaves, four central *saka guru* columns, and layered ceiling structure should be visible, with the bandulan still in view.
+5. Set target distance again if needed. The preview regenerates with its default 10m setting.
+
+The roof exterior is not visible from a seated position underneath it; the intended effect is an **overhead timber frame and eaves**. The 84-degree vertical FOV is an Editor composition aid, not a promise of matching the headset optics.
+
+## If the scene looks wrong
+
+Do not change the original gameplay scene. Capture the Unity Game view and Console errors. The entire experiment is isolated on `feature/safe-environment-preview-v1`; you can return to the original code with `git switch main`.
+
+## Validation status
+
+The v2 editor script was source-reviewed and isolated from gameplay files in GitHub. **It has not been compiled or visually tested in the Unity Editor or Quest here.** Please use the screenshot and any Console errors to drive the next iteration. After the blockout is accepted, replace its placeholder models with authored Blender assets and integrate the environment into a copy of the gameplay scene.
+
+Unity-generated `.unity`, `.mat`, `.asset` and matching `.meta` files will initially exist locally only. Commit them **only after** the environment layout has been inspected and accepted.
