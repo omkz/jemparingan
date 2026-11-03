@@ -515,7 +515,7 @@ public class JemparinganGame : MonoBehaviour
     {
         if (_scoreLabel != null)
             _scoreLabel.text = useOutdoorEnvironment
-                ? "SKOR " + _score + "   |   KENA " + _hits + "/" + _shots + "   |   KOMBO " + _combo
+                ? "SKOR " + _score + "  |  " + _shots + "/12 PANAH  |  KOMBO " + _combo
                 : "SKOR " + _score + "  •  KENA " + _hits + "/" + _shots + "  •  KOMBO " + _combo + "  •  REKOR " + _best;
         if (_phaseLabel != null && !_finished)
             _phaseLabel.text = JemparinganScoreRules.StageTitle(_shots);
@@ -633,12 +633,12 @@ public class JemparinganGame : MonoBehaviour
         var hud = new GameObject("Jemparingan HUD").transform;
         if (useOutdoorEnvironment)
         {
-            // Editor/Quest outdoor preview: a camera-relative world-space board,
-            // ~1.85m away, remains readable when desktop aim rotates the camera.
-            // This does not use ScreenSpaceOverlay, which is unsuitable for VR.
+            // Place all outdoor HUD copy in the upper RIGHT of the viewpoint.
+            // Bow remains left; the bandulan/aiming lane stays clear in the center.
+            // Keep this world-space board ~2.35m out, without ScreenSpaceOverlay.
             hud.SetParent(camera.transform, false);
-            hud.localPosition = new Vector3(0f, -0.67f, 1.85f);
-            hud.localRotation = Quaternion.identity;
+            hud.localPosition = new Vector3(1.25f, 0.10f, 2.35f);
+            hud.localRotation = Quaternion.Euler(0f, 25f, 0f);
         }
         else
             hud.SetPositionAndRotation(stagePosition, facing);
@@ -651,9 +651,11 @@ public class JemparinganGame : MonoBehaviour
         var help = new GameObject("Jemparingan Instructions").transform;
         if (useOutdoorEnvironment)
         {
+            // Instructions sit below the right-hand HUD and session cards,
+            // not across the bow or in front of the target.
             help.SetParent(camera.transform, false);
-            help.localPosition = new Vector3(0f, -0.83f, 1.65f);
-            help.localRotation = Quaternion.identity;
+            help.localPosition = new Vector3(1.25f, -0.60f, 2.35f);
+            help.localRotation = Quaternion.Euler(0f, 25f, 0f);
         }
         else
             help.SetPositionAndRotation(camera.transform.position + forward * 1.05f - Vector3.up * .52f, facing);
@@ -703,8 +705,8 @@ public class JemparinganGame : MonoBehaviour
         _phaseLabel.fontSize = 96;
         _feedbackLabel.characterSize = .0072f;
         _feedbackLabel.fontSize = 96;
-        // Status no longer overlays the center of the bandulan.
-        _feedbackLabel.transform.localPosition = new Vector3(-.56f, .67f, -.035f);
+        // Keep feedback aligned with the other copy in the right-hand HUD.
+        _feedbackLabel.transform.localPosition = new Vector3(0f, .67f, -.035f);
 
         _infoLabel.characterSize = .0066f;
         _infoLabel.fontSize = 96;
@@ -719,8 +721,8 @@ public class JemparinganGame : MonoBehaviour
             new Vector3(0f, 1.293f, .075f),
             new Vector3(1.88f, .015f, .022f), JemparinganArt.Tone.Gold);
         JemparinganArt.Part("HUD feedback contrast panel", PrimitiveType.Cube, hud,
-            new Vector3(-.56f, .67f, .09f),
-            new Vector3(1.15f, .18f, .023f), JemparinganArt.Tone.DarkWood);
+            new Vector3(0f, .67f, .09f),
+            new Vector3(1.75f, .18f, .023f), JemparinganArt.Tone.DarkWood);
         JemparinganArt.Part("Instruction contrast panel", PrimitiveType.Cube, help,
             new Vector3(0f, 0f, .08f),
             new Vector3(1.77f, .18f, .022f), JemparinganArt.Tone.DarkWood);
