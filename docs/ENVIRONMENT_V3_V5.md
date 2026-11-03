@@ -64,6 +64,14 @@ This optional update addresses the bow and text being hard to see against the br
 
 This is a focused legibility improvement, **not** final busur 3D art and **not** a TextMeshPro migration. TextMesh remains the existing lightweight text system; a future VR HUD pass can use SDF text once its dependency is deliberately installed.
 
+## HUD placement v5.2 — clear bow and aim lane
+
+The outdoor HUD, including its opening and end-of-round panels, now sits on the **upper-right side** of the camera view, while the bow remains on the left. The instruction panel is below it on the right. The status/feedback backing is centered within that panel, not placed over the middle of the shooting lane.
+
+**No scene regeneration required** for this fix: these objects are created at runtime by `JemparinganGame.BuildScene()`. After pulling the code, reopen the existing Playable v5 scene and press Play. The existing target distance and any hand-edited layout are preserved.
+
+The placement is tuned for desktop Game view; verify headset field of view and comfort later on physical Quest hardware.
+
 ## Safety notes and limitations
 
 - The existing v0.9 gameplay scene remains on its old 2.65 m near-target setup by default.
