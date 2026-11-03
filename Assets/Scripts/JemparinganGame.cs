@@ -41,6 +41,9 @@ public class JemparinganGame : MonoBehaviour
     private Transform _bow, _stringMarker, _focusRoot, _leadMarker;
     private Renderer[] _focusRenderers;
     private Transform _upperString, _lowerString;
+    // Cosmetic arrow follows the bowstring in outdoor mode.
+    // It never replaces the real pooled projectile launched by Shoot().
+    private Transform _nockedArrow;
     private JemparinganTarget _target;
     private JemparinganArrow[] _arrows;
     private Transform[] _previewDots;
@@ -162,6 +165,7 @@ public class JemparinganGame : MonoBehaviour
             float pull = Mathf.Clamp(distance, 0f, maximumDraw);
             _stringMarker.localPosition = Vector3.back * pull;
             UpdateBowStrings(pull);
+            UpdateNockedArrow(pull, true);
             ShowPreview(pose.BowPosition + aim * 0.25f, aim, power);
             UpdateLeadMarker(pose.BowPosition + aim * .25f, power);
             int step = Mathf.RoundToInt(power * 10f);
@@ -180,6 +184,7 @@ public class JemparinganGame : MonoBehaviour
             _lastStableSignal = false;
             _stringMarker.localPosition = Vector3.zero;
             UpdateBowStrings(0f);
+            UpdateNockedArrow(0f, true);
             HidePreview();
             SetInfo("SIAP  •  Tahan klik kiri untuk menarik; lepas untuk menembak. Klik kanan + mouse untuk membidik.");
         }
@@ -189,7 +194,12 @@ public class JemparinganGame : MonoBehaviour
         if (_wasBowHeld && _wasDrawing && !drawing)
         {
             if (_lastDraw >= minimumDraw && Time.time - _drawStartedAt >= minimumHoldSeconds)
+            {
+                // Hide the attached arrow for this release frame; the pooled
+                // projectile is the only arrow visible in flight.
+                UpdateNockedArrow(0f, false);
                 Shoot(pose.BowPosition + aim * 0.25f, aim, _lastDraw, Time.time <= _focusReadyUntil);
+            }
             else
                 ShowFeedback("TARIK LEBIH DALAM");
             _lastDraw = 0f;
@@ -504,6 +514,7 @@ public class JemparinganGame : MonoBehaviour
         _target.swayAmount = 0.06f;
         _target.swaySpeed = 0.7f;
         _target.ResetReaction();
+        UpdateNockedArrow(0f, true);
         HidePreview();
         if (_impactLabel != null) _impactLabel.text = "";
         _impactLabelUntil = 0f;
@@ -555,6 +566,46 @@ public class JemparinganGame : MonoBehaviour
         _feedbackLabel.color = feedbackColor ?? new Color(.40f, .94f, .75f);
         _feedbackLabel.text = msg;
         _feedbackUntil = Time.time + 1.5f;
+    }
+
+    private void BuildNockedArrow()
+    {
+        if (!useOutdoorEnvironment) return;
+
+        var root = new GameObject("Nocked arrow | cosmetic preview only").transform;
+        root.SetParent(_bow, false);
+        _nockedArrow = root;
+
+        // Nock at local Z=0, together with the bowstring bead. The shaft
+        // extends forward along +Z; the whole arrow follows the drawn string.
+        // Render only, with no projectile script or collision detection.
+        JemparinganArt.Part("Bamboo arrow shaft", PrimitiveType.Cylinder, root,
+            new Vector3(0f, 0f, .42f), new Vector3(.011f, .42f, .011f),
+            JemparinganArt.Tone.BowEdge, Quaternion.Euler(90f, 0f, 0f));
+        JemparinganArt.Part("Visible shaft highlight", PrimitiveType.Cube, root,
+            new Vector3(0f, .009f, .43f), new Vector3(.004f, .003f, .69f),
+            JemparinganArt.Tone.BowIvory);
+        JemparinganArt.Part("Metal arrow tip", PrimitiveType.Cylinder, root,
+            new Vector3(0f, 0f, .88f), new Vector3(.020f, .058f, .020f),
+            JemparinganArt.Tone.BowBrass, Quaternion.Euler(90f, 0f, 0f));
+        JemparinganArt.Part("Arrow nock", PrimitiveType.Sphere, root,
+            Vector3.zero, new Vector3(.016f, .016f, .025f),
+            JemparinganArt.Tone.BowIvory);
+        foreach (float x in new[] {-.026f, .026f})
+        {
+            JemparinganArt.Part("Red fletching", PrimitiveType.Cube, root,
+                new Vector3(x, 0f, .10f), new Vector3(.037f, .0035f, .135f),
+                JemparinganArt.Tone.Red, Quaternion.Euler(0f, x < 0f ? -16f : 16f, 0f));
+        }
+        UpdateNockedArrow(0f, true);
+    }
+
+    private void UpdateNockedArrow(float pull, bool visible)
+    {
+        if (_nockedArrow == null) return;
+        _nockedArrow.localPosition = Vector3.back * pull;
+        if (_nockedArrow.gameObject.activeSelf != visible)
+            _nockedArrow.gameObject.SetActive(visible);
     }
 
     private void UpdateBowStrings(float pull)
@@ -939,6 +990,7 @@ public class JemparinganGame : MonoBehaviour
         _lowerString = JemparinganArt.Part("Lower string", PrimitiveType.Cylinder, _bow,
             Vector3.zero, Vector3.one * .01f, stringTone).transform;
         UpdateBowStrings(0f);
+        BuildNockedArrow();
         BuildFocusIndicator();
         _bow.gameObject.SetActive(false);
     }
