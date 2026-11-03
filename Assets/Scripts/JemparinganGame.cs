@@ -1024,22 +1024,40 @@ public class JemparinganGame : MonoBehaviour
             var obj = new GameObject("Arrow_" + (i + 1));
             obj.transform.SetParent(poolRoot, false);
             JemparinganArt.Part("Bamboo shaft", PrimitiveType.Cylinder, obj.transform,
-                new Vector3(0, 0, .02f), new Vector3(.008f, .28f, .008f), JemparinganArt.Tone.LightWood,
+                new Vector3(0, 0, .02f),
+                new Vector3(useOutdoorEnvironment ? .012f : .008f, .28f,
+                    useOutdoorEnvironment ? .012f : .008f),
+                JemparinganArt.Tone.LightWood,
                 Quaternion.Euler(90f, 0f, 0f));
             JemparinganArt.Part("Metal tip", PrimitiveType.Cylinder, obj.transform,
-                new Vector3(0, 0, .35f), new Vector3(.017f, .035f, .017f), JemparinganArt.Tone.Gold,
+                new Vector3(0, 0, .35f),
+                new Vector3(useOutdoorEnvironment ? .021f : .017f, .035f,
+                    useOutdoorEnvironment ? .021f : .017f),
+                JemparinganArt.Tone.Gold,
                 Quaternion.Euler(90f, 0f, 0f));
+            if (useOutdoorEnvironment)
+            {
+                // Short ivory highlight and fletching read clearly on a moving
+                // arrow without adding a light, particle system or physics.
+                JemparinganArt.Part("Flying shaft highlight", PrimitiveType.Cube,
+                    obj.transform, new Vector3(0f, .012f, -.02f),
+                    new Vector3(.004f, .003f, .36f),
+                    JemparinganArt.Tone.BowIvory);
+            }
             for (int f = -1; f <= 1; f += 2)
                 JemparinganArt.Part("Feather", PrimitiveType.Cube, obj.transform,
                     new Vector3(f * .022f, 0, -.20f), new Vector3(.035f, .004f, .11f), JemparinganArt.Tone.Red,
                     Quaternion.Euler(0, f * 22f, 0));
             // One subtle trail per pooled arrow; never instantiated per shot.
             var trail = obj.AddComponent<TrailRenderer>();
-            trail.time = .14f;
+            // Slightly longer, wider flight streak only for the distant
+            // outdoor lane; the original short-range v0.9 remains unchanged.
+            trail.time = useOutdoorEnvironment ? .23f : .14f;
             trail.minVertexDistance = .025f;
-            trail.startWidth = .009f;
-            trail.endWidth = .001f;
-            trail.sharedMaterial = JemparinganArt.Material(JemparinganArt.Tone.Paper);
+            trail.startWidth = useOutdoorEnvironment ? .017f : .009f;
+            trail.endWidth = useOutdoorEnvironment ? .0025f : .001f;
+            trail.sharedMaterial = JemparinganArt.Material(useOutdoorEnvironment
+                ? JemparinganArt.Tone.BowIvory : JemparinganArt.Tone.Paper);
             trail.emitting = false;
             _arrows[i] = obj.AddComponent<JemparinganArrow>();
             obj.SetActive(false);
