@@ -54,6 +54,7 @@ public static class JemparinganEnvironmentPreviewBuilder
             ConfigureAtmosphere();
             CreateCamera();
             CreateLight();
+            CreateGoldenHourSkybox();
 
             var pendopo = Group("01 | Joglo pendopo - saka guru, tumpang sari, brunjung", null);
             BuildPendopo(pendopo);
@@ -179,17 +180,20 @@ public static class JemparinganEnvironmentPreviewBuilder
 
     private static void ConfigureAtmosphere()
     {
+        // The procedural skybox is installed after the sun is created, so it can
+        // follow the main directional light. Fall back to camera clear color if
+        // the skybox shader is unavailable on this Unity installation.
         RenderSettings.skybox = null;
         RenderSettings.fog = true;
         RenderSettings.fogMode = FogMode.Linear;
-        RenderSettings.fogColor = new Color(0.70f, 0.82f, 0.85f);
-        RenderSettings.fogStartDistance = 65f;
-        RenderSettings.fogEndDistance = 180f;
+        RenderSettings.fogColor = new Color(0.74f, 0.78f, 0.72f);
+        RenderSettings.fogStartDistance = 75f;
+        RenderSettings.fogEndDistance = 210f;
         RenderSettings.ambientMode = AmbientMode.Trilight;
-        RenderSettings.ambientSkyColor = new Color(0.76f, 0.81f, 0.85f);
-        RenderSettings.ambientEquatorColor = new Color(0.83f, 0.76f, 0.65f);
-        RenderSettings.ambientGroundColor = new Color(0.35f, 0.39f, 0.31f);
-        RenderSettings.ambientIntensity = 1.0f;
+        RenderSettings.ambientSkyColor = new Color(0.72f, 0.79f, 0.90f);
+        RenderSettings.ambientEquatorColor = new Color(0.92f, 0.78f, 0.63f);
+        RenderSettings.ambientGroundColor = new Color(0.35f, 0.38f, 0.30f);
+        RenderSettings.ambientIntensity = 0.95f;
     }
 
     private static void CreateCamera()
@@ -198,8 +202,8 @@ public static class JemparinganEnvironmentPreviewBuilder
         go.tag = "MainCamera";
         Camera camera = go.AddComponent<Camera>();
         go.AddComponent<AudioListener>();
-        camera.clearFlags = CameraClearFlags.SolidColor;
-        camera.backgroundColor = new Color(0.57f, 0.76f, 0.88f);
+        camera.clearFlags = CameraClearFlags.Skybox;
+        camera.backgroundColor = new Color(0.65f, 0.78f, 0.87f);
         // Editor-only composition preview: a wider vertical view includes the joglo roof.
         // The physical Quest field of view will be determined by the headset.
         camera.fieldOfView = 84f;
@@ -215,11 +219,38 @@ public static class JemparinganEnvironmentPreviewBuilder
         var go = new GameObject("Sun | warm afternoon - preview only");
         var light = go.AddComponent<Light>();
         light.type = LightType.Directional;
-        light.color = new Color(1.0f, 0.87f, 0.68f);
-        light.intensity = 1.5f;
+        light.color = new Color(1.0f, 0.84f, 0.66f);
+        light.intensity = 1.32f;
         // No realtime shadows during initial scene layout validation.
         light.shadows = LightShadows.None;
-        go.transform.rotation = Quaternion.Euler(42f, -32f, 0f);
+        go.transform.rotation = Quaternion.Euler(48f, -40f, 0f);
+        RenderSettings.sun = light;
+    }
+
+    private static void CreateGoldenHourSkybox()
+    {
+        const string skyPath = AssetRoot + "/GoldenHourSky_v03.mat";
+        Material sky = AssetDatabase.LoadAssetAtPath<Material>(skyPath);
+        if (sky == null)
+        {
+            Shader shader = Shader.Find("Skybox/Procedural");
+            if (shader == null)
+            {
+                Debug.LogWarning("Procedural skybox shader not found; using camera's blue clear color.");
+                Camera.main.clearFlags = CameraClearFlags.SolidColor;
+                return;
+            }
+
+            sky = new Material(shader) { name = "Jemparingan Golden Hour Sky v3" };
+            sky.SetColor("_SkyTint", new Color(.53f, .64f, .83f));
+            sky.SetColor("_GroundColor", new Color(.62f, .53f, .43f));
+            sky.SetFloat("_AtmosphereThickness", 1.15f);
+            sky.SetFloat("_Exposure", 1.10f);
+            sky.SetFloat("_SunSize", 0.035f);
+            sky.SetFloat("_SunSizeConvergence", 4f);
+            AssetDatabase.CreateAsset(sky, skyPath);
+        }
+        RenderSettings.skybox = sky;
     }
 
     // Joglo-inspired environment blockout: four central saka guru support a steep
