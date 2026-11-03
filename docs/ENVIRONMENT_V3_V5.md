@@ -44,6 +44,26 @@ This only overwrites `Assets/Jemparingan/Scenes/JemparinganEnvironmentPreview_v0
 
 **The default Playable v5 target is 10 m.** Speed (20–27 m/s), gravity (4.5 m/s²), aim assist (0.65), and flight lifetime (3 s) are preview tuning values serialized **only in this new scene**. A longer predicted-path marker is used for these shots. They are not physically calibrated simulations of traditional arrows.
 
+## Outdoor readability pass v5.1 — bow and HUD
+
+This optional update addresses the bow and text being hard to see against the bright landscape.
+
+- The **desktop bow** is placed around 0.92 m ahead and 0.33 m to the left of the camera instead of being almost centered at 0.55 m. The existing desktop input logic and release mechanics remain unchanged.
+- The outdoor bow mesh is slightly thicker with contrast accents; bowstrings are more visible.
+- Outdoor score/title/status text is larger and shorter; small teak-colored contrast panels separate it from rice fields and sky.
+- The world-space HUD is parented to the preview camera at approximately 1.85 m so it remains in view while aiming with the mouse. The lower instruction panel is at 1.65 m. This is for **Editor preview readability**; headset ergonomics and comfortable UI placement require on-device validation.
+- The old v0.9 scene still uses the original bow presentation and HUD.
+
+**Regenerate the playable scene to enable this.** The code is not automatically applied to an already-saved `.unity` scene:
+
+1. Exit Play Mode and back up any manual changes to `JemparinganPlayableEnvironment_v05.unity`.
+2. After `git pull`, select **Tools > Jemparingan > Environment > Create Playable Environment v5**, then confirm overwrite.
+3. In Edit Mode, run **Validate Playable v5 Setup**. Its report now checks that `outdoorBowPresentation` is enabled.
+4. Press Play and inspect the full bow silhouette, legible score/title, and readable instruction panel.
+5. If you changed target distance earlier, set it again after regeneration.
+
+This is a focused legibility improvement, **not** final busur 3D art and **not** a TextMeshPro migration. TextMesh remains the existing lightweight text system; a future VR HUD pass can use SDF text once its dependency is deliberately installed.
+
 ## Safety notes and limitations
 
 - The existing v0.9 gameplay scene remains on its old 2.65 m near-target setup by default.
