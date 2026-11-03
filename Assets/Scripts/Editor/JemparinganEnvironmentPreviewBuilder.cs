@@ -111,9 +111,14 @@ public static class JemparinganEnvironmentPreviewBuilder
     private static void AddPlayableGame(Transform targetAnchor)
     {
         var gameObject = new GameObject("Jemparingan Gameplay | Outdoor mode v5");
-        gameObject.AddComponent<DesktopBowInput>();
+        var desktop = gameObject.AddComponent<DesktopBowInput>();
         gameObject.AddComponent<MetaQuestBowInput>();
         var gameplay = gameObject.AddComponent<JemparinganGame>();
+
+        // Only the new playable scene uses a readable offset bow pose.
+        var desktopSettings = new SerializedObject(desktop);
+        desktopSettings.FindProperty("outdoorBowPresentation").boolValue = true;
+        desktopSettings.ApplyModifiedPropertiesWithoutUndo();
 
         // Serialise the opt-in bridge into the saved .unity scene, so it still
         // works when the user closes/reopens Unity. No reflection at runtime.
@@ -270,12 +275,24 @@ public static class JemparinganEnvironmentPreviewBuilder
             }
         }
 
-        bool passed = correctlyWired && gameCount == 1 && cameraCount == 1 &&
+        bool readableBow = false;
+        if (foundGame != null)
+        {
+            DesktopBowInput input = foundGame.GetComponent<DesktopBowInput>();
+            if (input != null)
+            {
+                var desktopSettings = new SerializedObject(input);
+                SerializedProperty readable = desktopSettings.FindProperty("outdoorBowPresentation");
+                readableBow = readable != null && readable.boolValue;
+            }
+        }
+        bool passed = correctlyWired && readableBow && gameCount == 1 && cameraCount == 1 &&
             inputCount == 1 && staticBandulanCount == 0;
         string report = "Playable v5 setup: gameplay=" + gameCount + "/1, cameras=" +
             cameraCount + "/1, desktop input=" + inputCount +
             "/1, duplicate static bandulan=" + staticBandulanCount +
             "/0, outdoor config=" + correctlyWired +
+            ", readable bow=" + readableBow +
             ", arrow speed " + minimumSpeed + ".." + maximumSpeed + " m/s.";
         if (passed)
             Debug.Log(report + " PASS. Play Mode shot tests and Quest tests are still required.");
