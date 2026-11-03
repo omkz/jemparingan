@@ -5,7 +5,7 @@ using UnityEngine;
 // Reuse the same material instances to keep SRP batching effective.
 public static class JemparinganArt
 {
-    public enum Tone { DarkWood, Wood, LightWood, Gold, Brass, Red, Scarlet, Jade, Paper, Indigo, Shadow }
+    public enum Tone { DarkWood, Wood, LightWood, Gold, Brass, Red, Scarlet, Jade, Paper, Indigo, Shadow, BowTeak, BowEdge, BowLeather, BowStitch, BowBrass, BowIvory }
     private static readonly Dictionary<Tone, Material> Materials = new Dictionary<Tone, Material>();
 
     public static Material Material(Tone tone)
@@ -28,11 +28,21 @@ public static class JemparinganArt
             case Tone.Jade: col = RGB(66, 174, 145); break;
             case Tone.Paper: col = RGB(247, 219, 170); break;
             case Tone.Indigo: col = RGB(35, 49, 76); break;
+            // Bow Polish v1 palette; extra enum values are appended to preserve
+            // serialized numeric values of existing tones in the legacy game.
+            case Tone.BowTeak: col = RGB(84, 53, 41); break;
+            case Tone.BowEdge: col = RGB(164, 110, 66); break;
+            case Tone.BowLeather: col = RGB(73, 49, 39); break;
+            case Tone.BowStitch: col = RGB(125, 91, 68); break;
+            case Tone.BowBrass: col = RGB(185, 149, 89); break;
+            case Tone.BowIvory: col = RGB(232, 216, 181); break;
             default: col = RGB(23, 30, 43); break;
         }
         if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", col);
         else if (mat.HasProperty("_Color")) mat.SetColor("_Color", col);
-        if (mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", 0.22f);
+        if (mat.HasProperty("_Smoothness"))
+            mat.SetFloat("_Smoothness", tone == Tone.BowLeather ||
+                tone == Tone.BowStitch ? 0.09f : 0.22f);
         Materials[tone] = mat;
         return mat;
     }
