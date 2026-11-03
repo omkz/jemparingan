@@ -22,7 +22,7 @@ public static class JemparinganEnvironmentPreviewBuilder
     private const float SeatZ = 1.25f;
     private static readonly Dictionary<string, Material> Materials = new Dictionary<string, Material>();
 
-    [MenuItem("Tools/Jemparingan/Environment/Create Safe Preview v1")]
+    [MenuItem("Tools/Jemparingan/Environment/Create Joglo Preview v2")]
     public static void CreateSafePreview()
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode)
@@ -55,7 +55,7 @@ public static class JemparinganEnvironmentPreviewBuilder
             CreateCamera();
             CreateLight();
 
-            var pendopo = Group("01 | Open-air pendopo - 8m x 8m", null);
+            var pendopo = Group("01 | Joglo pendopo - saka guru, tumpang sari, brunjung", null);
             BuildPendopo(pendopo);
 
             var courtyard = Group("02 | Archery courtyard and 30m lane", null);
@@ -76,7 +76,7 @@ public static class JemparinganEnvironmentPreviewBuilder
 
             AssetDatabase.SaveAssets();
             Selection.activeGameObject = GameObject.Find("Player viewpoint | seated 1.35m");
-            Debug.Log("Jemparingan environment preview created at " + ScenePath +
+            Debug.Log("Jemparingan Joglo v2 environment preview created at " + ScenePath +
                 ". Open Game view or Play Mode; use Tools > Jemparingan > Environment > Set Target 10m/20m/30m. No gameplay scripts were changed.");
         }
         catch (Exception error)
@@ -163,6 +163,10 @@ public static class JemparinganEnvironmentPreviewBuilder
         go.transform.rotation = Quaternion.Euler(42f, -32f, 0f);
     }
 
+    // Joglo-inspired environment blockout: four central saka guru support a steep
+    // brunjung roof; surrounding columns support the shallower penanggap roof.
+    // The silhouette/geometry is intentionally simplified, not a heritage-accurate
+    // reconstruction or a final Blender art asset.
     private static void BuildPendopo(Transform parent)
     {
         Material stone = Mat("Stone", 139, 137, 124);
@@ -172,56 +176,168 @@ public static class JemparinganEnvironmentPreviewBuilder
         Material roof = Mat("Clay_Roof", 99, 58, 48);
         Material mat = Mat("Woven_Mat", 173, 142, 93);
 
-        Block("Stone base", parent, new Vector3(0f, -0.16f, 0f), new Vector3(8.35f, 0.35f, 8.35f), stone);
-        Block("Teak floor", parent, new Vector3(0f, 0.07f, 0f), new Vector3(8f, 0.14f, 8f), teak);
+        var floor = Group("A | Floor, umpak, front step", parent);
+        Block("Stone base", floor, new Vector3(0f, -0.16f, 0f),
+            new Vector3(8.35f, 0.35f, 8.35f), stone);
+        Block("Teak floor", floor, new Vector3(0f, 0.07f, 0f),
+            new Vector3(8f, 0.14f, 8f), teak);
         for (int i = -3; i <= 3; i++)
-            Block("Floor board joint " + i, parent, new Vector3(i, 0.15f, 0f),
+            Block("Floor plank seam " + i, floor, new Vector3(i, 0.15f, 0f),
                 new Vector3(0.025f, 0.008f, 7.8f), darkWood);
-
-        Block("Seated woven mat", parent, new Vector3(0f, 0.155f, SeatZ),
+        Block("Seated woven mat", floor, new Vector3(0f, 0.155f, SeatZ),
             new Vector3(1.4f, 0.025f, 1.15f), mat);
+        Block("Low front step", floor, new Vector3(0f, -0.23f, 4.35f),
+            new Vector3(5.6f, 0.21f, 0.75f), stone);
 
+        var perimeter = Group("B | Outer penanggap columns", parent);
         foreach (float x in new[] {-3.45f, 3.45f})
+        foreach (float z in new[] {-3.45f, 3.45f})
         {
-            foreach (float z in new[] {-3.45f, 3.45f})
+            var column = Group("Outer saka | " + x + ", " + z, perimeter);
+            column.localPosition = new Vector3(x, 0f, z);
+            Block("Stone umpak", column, new Vector3(0f, 0.28f, 0f),
+                new Vector3(0.65f, 0.44f, 0.65f), stone);
+            // Rectangular wooden posts read better than plain cylinders.
+            Block("Outer teak saka", column, new Vector3(0f, 2.05f, 0f),
+                new Vector3(0.31f, 3.18f, 0.31f), teak);
+            Block("Foot trim", column, new Vector3(0f, 0.53f, 0f),
+                new Vector3(0.40f, 0.13f, 0.40f), darkWood);
+            Block("Column capital", column, new Vector3(0f, 3.69f, 0f),
+                new Vector3(0.56f, 0.21f, 0.56f), trim);
+            Block("Column head", column, new Vector3(0f, 3.81f, 0f),
+                new Vector3(0.66f, 0.11f, 0.66f), darkWood);
+        }
+
+        var core = Group("C | FOUR SAKA GURU - primary structure", parent);
+        foreach (float x in new[] {-1.72f, 1.72f})
+        foreach (float z in new[] {-1.72f, 1.72f})
+        {
+            var pillar = Group("Saka guru | " + x + ", " + z, core);
+            pillar.localPosition = new Vector3(x, 0f, z);
+            Block("Umpak carved stone placeholder", pillar, new Vector3(0f, 0.30f, 0f),
+                new Vector3(0.64f, 0.43f, 0.64f), stone);
+            Block("Saka guru teak post", pillar, new Vector3(0f, 2.38f, 0f),
+                new Vector3(0.35f, 3.86f, 0.35f), darkWood);
+            Block("Saka guru base collar", pillar, new Vector3(0f, 0.57f, 0f),
+                new Vector3(0.46f, 0.16f, 0.46f), trim);
+            Block("Saka guru head collar", pillar, new Vector3(0f, 4.23f, 0f),
+                new Vector3(0.54f, 0.23f, 0.54f), trim);
+            Block("Saka guru upper capital", pillar, new Vector3(0f, 4.40f, 0f),
+                new Vector3(0.62f, 0.16f, 0.62f), darkWood);
+        }
+
+        var interior = Group("D | Blandar, sunduk and tumpang sari", parent);
+        BuildTumpangSari(interior, darkWood, teak, trim);
+
+        var roofStructure = Group("E | Rafters, sloped structure and fascia", parent);
+        BuildRoofStructure(roofStructure, darkWood, teak, trim);
+
+        var roofPanels = Group("F | Penanggap and steep brunjung roof", parent);
+        // Penanggap: gentle lower slope. Brunjung: steeper high central roof.
+        // RoofLayer uses an all-new v2 mesh asset so the old v1 asset stays intact.
+        RoofLayer("Penanggap lower roof", roofPanels, 4.48f, 2.23f, 3.80f, 4.92f, roof);
+        RoofLayer("Brunjung high roof", roofPanels, 2.28f, 0.68f, 4.96f, 6.62f, roof);
+        Block("Molo | ridge cap", roofPanels, new Vector3(0f, 6.65f, 0f),
+            new Vector3(1.55f, 0.13f, 0.28f), darkWood);
+    }
+
+    private static void BuildTumpangSari(Transform parent, Material darkWood,
+        Material teak, Material trim)
+    {
+        // The four main columns are at (+/-1.72, +/-1.72). Their timber
+        // crossbeams form the inner rectangular pamidangan above the player.
+        foreach (float z in new[] {-1.72f, 1.72f})
+        {
+            Block("Blandar pamidangan X", parent, new Vector3(0f, 4.33f, z),
+                new Vector3(3.85f, 0.27f, 0.23f), darkWood);
+            Block("Sunduk lintel X", parent, new Vector3(0f, 3.93f, z),
+                new Vector3(3.62f, 0.15f, 0.15f), teak);
+        }
+        foreach (float x in new[] {-1.72f, 1.72f})
+        {
+            Block("Blandar pamidangan Z", parent, new Vector3(x, 4.33f, 0f),
+                new Vector3(0.23f, 0.27f, 3.85f), darkWood);
+            Block("Sunduk lintel Z", parent, new Vector3(x, 3.93f, 0f),
+                new Vector3(0.15f, 0.15f, 3.62f), teak);
+        }
+
+        // Stacked, progressively wider frames evoke tumpang sari when looking
+        // up from the seated player. They do not fill/black out the roof opening.
+        float[] halfSpans = {1.78f, 1.89f, 2.01f, 2.13f};
+        for (int level = 0; level < halfSpans.Length; level++)
+        {
+            float half = halfSpans[level];
+            float y = 4.48f + 0.14f * level;
+            Material beam = level % 2 == 0 ? teak : darkWood;
+            var ring = Group("Tumpang sari tier " + (level + 1), parent);
+            foreach (float z in new[] {-half, half})
             {
-                Block("Pillar foot", parent, new Vector3(x, 0.25f, z),
-                    new Vector3(0.65f, 0.45f, 0.65f), stone);
-                Cylinder("Joglo teak pillar", parent, new Vector3(x, 1.97f, z),
-                    new Vector3(0.19f, 1.7f, 0.19f), darkWood);
-                Block("Pillar head", parent, new Vector3(x, 3.60f, z),
-                    new Vector3(0.58f, 0.24f, 0.58f), trim);
+                Block("Tumpang X", ring, new Vector3(0f, y, z),
+                    new Vector3(2f * half + 0.15f, 0.13f, 0.14f), beam);
+                Block("Gilded slim detail X", ring, new Vector3(0f, y - 0.071f, z),
+                    new Vector3(2f * half + 0.08f, 0.024f, 0.075f), trim);
+            }
+            foreach (float x in new[] {-half, half})
+            {
+                Block("Tumpang Z", ring, new Vector3(x, y, 0f),
+                    new Vector3(0.14f, 0.13f, 2f * half + 0.15f), beam);
+            }
+        }
+    }
+
+    private static void BuildRoofStructure(Transform parent, Material darkWood,
+        Material teak, Material trim)
+    {
+        // Open-sided outer ring: no wall or central beam obstructs the aiming line.
+        foreach (float z in new[] {-3.45f, 3.45f})
+            Block("Penanggap front/back blandar", parent, new Vector3(0f, 3.79f, z),
+                new Vector3(7.62f, 0.24f, 0.24f), darkWood);
+        foreach (float x in new[] {-3.45f, 3.45f})
+            Block("Penanggap side blandar", parent, new Vector3(x, 3.79f, 0f),
+                new Vector3(0.24f, 0.24f, 7.62f), darkWood);
+
+        // Rafters follow both roof pitches. Keep modest count for Quest budgets.
+        for (int i = -4; i <= 4; i++)
+        {
+            float offset = i * 0.88f;
+            float topOffset = offset * 0.54f;
+            foreach (float sign in new[] {-1f, 1f})
+            {
+                Beam("Penanggap front/back rafter", parent,
+                    new Vector3(offset, 3.83f, sign * 4.30f),
+                    new Vector3(topOffset, 4.87f, sign * 2.15f),
+                    0.095f, 0.11f, teak);
+                Beam("Penanggap side rafter", parent,
+                    new Vector3(sign * 4.30f, 3.83f, offset),
+                    new Vector3(sign * 2.15f, 4.87f, topOffset),
+                    0.095f, 0.11f, teak);
             }
         }
 
-        for (int i = -3; i <= 3; i += 2)
+        for (int i = -2; i <= 2; i++)
         {
-            Block("Ceiling cross beam Z", parent, new Vector3(i, 3.56f, 0f),
-                new Vector3(0.13f, 0.18f, 7.3f), teak);
-            Block("Ceiling cross beam X", parent, new Vector3(0f, 3.56f, i),
-                new Vector3(7.3f, 0.18f, 0.13f), teak);
+            float offset = i * 0.75f;
+            foreach (float sign in new[] {-1f, 1f})
+            {
+                Beam("Brunjung steep inner rafter", parent,
+                    new Vector3(offset, 4.98f, sign * 2.20f),
+                    new Vector3(offset * 0.30f, 6.58f, sign * 0.65f),
+                    0.09f, 0.10f, darkWood);
+            }
         }
 
-        Block("Front lintel", parent, new Vector3(0f, 3.54f, 3.45f),
-            new Vector3(7.5f, 0.29f, 0.23f), darkWood);
-        Block("Rear lintel", parent, new Vector3(0f, 3.54f, -3.45f),
-            new Vector3(7.5f, 0.29f, 0.23f), darkWood);
-
-        // Visible timber fascia under the front roof overhang: this reads as a
-        // joglo ceiling frame at seated eye height, not a black empty ceiling.
-        Block("Front roof fascia", parent, new Vector3(0f, 3.62f, 4.25f),
-            new Vector3(8.25f, 0.24f, 0.22f), darkWood);
-        Block("Front fascia carved-color trim placeholder", parent,
-            new Vector3(0f, 3.45f, 4.25f),
-            new Vector3(8.1f, 0.065f, 0.15f), trim);
-
-        RoofLayer("Outer joglo hip roof", parent, 4.45f, 2.25f, 3.72f, 4.89f, roof);
-        RoofLayer("Upper joglo roof", parent, 2.30f, 0.64f, 4.89f, 5.60f, roof);
-        Block("Roof cap", parent, new Vector3(0f, 5.62f, 0f),
-            new Vector3(1.40f, 0.16f, 1.40f), darkWood);
-
-        Block("Low front step", parent, new Vector3(0f, -0.23f, 4.35f),
-            new Vector3(5.6f, 0.21f, 0.75f), stone);
+        // The eave's underside is deliberately visible in the preview camera.
+        Block("Front roof fascia", parent, new Vector3(0f, 3.66f, 4.25f),
+            new Vector3(8.4f, 0.24f, 0.22f), darkWood);
+        Block("Front roof fascia narrow gold trim", parent,
+            new Vector3(0f, 3.50f, 4.25f),
+            new Vector3(8.2f, 0.07f, 0.16f), trim);
+        Block("Left side eave fascia", parent, new Vector3(-4.25f, 3.66f, 0f),
+            new Vector3(0.22f, 0.24f, 8.4f), darkWood);
+        Block("Right side eave fascia", parent, new Vector3(4.25f, 3.66f, 0f),
+            new Vector3(0.22f, 0.24f, 8.4f), darkWood);
+        Block("Rear eave fascia", parent, new Vector3(0f, 3.66f, -4.25f),
+            new Vector3(8.4f, 0.24f, 0.22f), darkWood);
     }
 
     private static void BuildCourtyard(Transform parent)
@@ -379,6 +495,18 @@ public static class JemparinganEnvironmentPreviewBuilder
         return Primitive(PrimitiveType.Cube, name, parent, pos, scale, material);
     }
 
+    private static GameObject Beam(string name, Transform parent, Vector3 start,
+        Vector3 end, float width, float depth, Material material)
+    {
+        Vector3 direction = end - start;
+        if (direction.sqrMagnitude < 0.000001f)
+            throw new ArgumentException("Roof beam endpoints must be different.");
+        GameObject beam = Block(name, parent, (start + end) * 0.5f,
+            new Vector3(width, direction.magnitude, depth), material);
+        beam.transform.localRotation = Quaternion.FromToRotation(Vector3.up, direction.normalized);
+        return beam;
+    }
+
     private static GameObject Cylinder(string name, Transform parent, Vector3 pos, Vector3 scale, Material material)
     {
         // Unity's standard cylinder is 2 units high; scale.y is its half-height.
@@ -410,7 +538,9 @@ public static class JemparinganEnvironmentPreviewBuilder
     private static void RoofLayer(string name, Transform parent, float outside, float inside,
         float bottom, float top, Material material)
     {
-        string assetPath = MeshFolder + "/" + name.Replace(" ", "_") + "_v01.asset";
+        // Versioned asset avoids silently keeping the geometry of the previous
+        // generated scene, while leaving any existing v1 mesh assets untouched.
+        string assetPath = MeshFolder + "/" + name.Replace(" ", "_") + "_v02.asset";
         Mesh mesh = AssetDatabase.LoadAssetAtPath<Mesh>(assetPath);
         if (mesh == null)
         {
@@ -428,16 +558,35 @@ public static class JemparinganEnvironmentPreviewBuilder
                 new Vector3(inside, top, inside),
                 new Vector3(-inside, top, inside)
             };
-            for (int i = 0; i < 4; i++)
+
+            // Subdivided square roof facets with a gentle raised-corner eave.
+            // Both sides are rendered so the underside reads from inside the
+            // pavilion. This is simple geometry, not expensive tessellation.
+            const int segmentsPerSide = 8;
+            for (int side = 0; side < 4; side++)
             {
-                int next = (i + 1) % 4;
-                // Separate front and back faces so the underside is visible from the seat.
-                Vector3 a = outer[i], b = outer[next], c = inner[next], d = inner[i];
-                int s = vertices.Count;
-                vertices.Add(a); vertices.Add(b); vertices.Add(c); vertices.Add(d);
-                vertices.Add(a); vertices.Add(b); vertices.Add(c); vertices.Add(d);
-                triangles.AddRange(new[] {s, s + 1, s + 2, s, s + 2, s + 3,
-                    s + 4, s + 6, s + 5, s + 4, s + 7, s + 6});
+                int next = (side + 1) % 4;
+                for (int segment = 0; segment < segmentsPerSide; segment++)
+                {
+                    float t0 = (float)segment / segmentsPerSide;
+                    float t1 = (float)(segment + 1) / segmentsPerSide;
+                    Vector3 a = Vector3.Lerp(outer[side], outer[next], t0);
+                    Vector3 b = Vector3.Lerp(outer[side], outer[next], t1);
+                    // The slight eave upsweep appears toward the corners only.
+                    a.y += 0.12f * Mathf.Pow(Mathf.Abs(2f * t0 - 1f), 4f);
+                    b.y += 0.12f * Mathf.Pow(Mathf.Abs(2f * t1 - 1f), 4f);
+                    Vector3 c = Vector3.Lerp(inner[side], inner[next], t1);
+                    Vector3 d = Vector3.Lerp(inner[side], inner[next], t0);
+                    int baseIndex = vertices.Count;
+                    vertices.Add(a); vertices.Add(b); vertices.Add(c); vertices.Add(d);
+                    vertices.Add(a); vertices.Add(b); vertices.Add(c); vertices.Add(d);
+                    triangles.AddRange(new[] {
+                        baseIndex, baseIndex + 1, baseIndex + 2,
+                        baseIndex, baseIndex + 2, baseIndex + 3,
+                        baseIndex + 4, baseIndex + 6, baseIndex + 5,
+                        baseIndex + 4, baseIndex + 7, baseIndex + 6
+                    });
+                }
             }
             mesh = new Mesh { name = name };
             mesh.SetVertices(vertices);
