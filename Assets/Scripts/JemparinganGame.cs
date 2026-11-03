@@ -559,8 +559,14 @@ public class JemparinganGame : MonoBehaviour
 
     private void UpdateBowStrings(float pull)
     {
-        PositionString(_upperString, Vector3.up * 0.53f, Vector3.back * pull);
-        PositionString(_lowerString, Vector3.down * 0.53f, Vector3.back * pull);
+        // Outdoor Bow Polish v1 uses the exact mesh endpoints. The original
+        // v0.9 bow and string endpoints remain unchanged in legacy scenes.
+        Vector3 upperTip = useOutdoorEnvironment
+            ? JemparinganBowVisual.UpperTip : Vector3.up * 0.53f;
+        Vector3 lowerTip = useOutdoorEnvironment
+            ? JemparinganBowVisual.LowerTip : Vector3.down * 0.53f;
+        PositionString(_upperString, upperTip, Vector3.back * pull);
+        PositionString(_lowerString, lowerTip, Vector3.back * pull);
     }
     private void PositionString(Transform piece, Vector3 a, Vector3 b)
     {
@@ -901,37 +907,37 @@ public class JemparinganGame : MonoBehaviour
     private void BuildBow()
     {
         _bow = new GameObject("Busur Jemparingan Stylized").transform;
-        float armRadius = useOutdoorEnvironment ? .027f : .019f;
-        float tipRadius = useOutdoorEnvironment ? .019f : .014f;
-        float limbCurve = useOutdoorEnvironment ? .08f : .06f;
-        float tipCurve = useOutdoorEnvironment ? .025f : .02f;
-        JemparinganArt.Tone mainWood = useOutdoorEnvironment ? JemparinganArt.Tone.DarkWood : JemparinganArt.Tone.Wood;
-        JemparinganArt.Beam("Upper bow arm", _bow, new Vector3(0, 0, 0), new Vector3(limbCurve, .28f, .03f), armRadius, mainWood);
-        JemparinganArt.Beam("Upper bow tip", _bow, new Vector3(limbCurve, .28f, .03f), new Vector3(tipCurve, .53f, .10f), tipRadius, JemparinganArt.Tone.LightWood);
-        JemparinganArt.Beam("Lower bow arm", _bow, new Vector3(0, 0, 0), new Vector3(limbCurve, -.28f, .03f), armRadius, mainWood);
-        JemparinganArt.Beam("Lower bow tip", _bow, new Vector3(limbCurve, -.28f, .03f), new Vector3(tipCurve, -.53f, .10f), tipRadius, JemparinganArt.Tone.LightWood);
+
         if (useOutdoorEnvironment)
         {
-            // Warm, contrasting details make the silhouette legible against trees.
-            JemparinganArt.Beam("Upper polished limb inlay", _bow,
-                new Vector3(-.010f, .08f, -.024f), new Vector3(.070f, .29f, .003f),
-                .006f, JemparinganArt.Tone.Gold);
-            JemparinganArt.Beam("Lower polished limb inlay", _bow,
-                new Vector3(-.010f, -.08f, -.024f), new Vector3(.070f, -.29f, .003f),
-                .006f, JemparinganArt.Tone.Gold);
+            // New 1.30m tapered curved mesh plus wrapped grip and subdued
+            // metallic details. All visuals only; no changes to shoot origin.
+            JemparinganBowVisual.Build(_bow);
         }
-        JemparinganArt.Part("Grip", PrimitiveType.Cylinder, _bow, Vector3.zero,
-            new Vector3(.036f, .09f, .036f), JemparinganArt.Tone.DarkWood);
-        JemparinganArt.Part("Upper bow ornament", PrimitiveType.Sphere, _bow,
-            new Vector3(.045f, .34f, .055f), Vector3.one * .025f, JemparinganArt.Tone.Gold);
-        JemparinganArt.Part("Lower bow ornament", PrimitiveType.Sphere, _bow,
-            new Vector3(.045f, -.34f, .055f), Vector3.one * .025f, JemparinganArt.Tone.Gold);
+        else
+        {
+            // Preserve the known-working v0.9 primitive bow without changes.
+            JemparinganArt.Beam("Upper bow arm", _bow, new Vector3(0, 0, 0), new Vector3(.06f, .28f, .03f), .019f, JemparinganArt.Tone.Wood);
+            JemparinganArt.Beam("Upper bow tip", _bow, new Vector3(.06f, .28f, .03f), new Vector3(.02f, .53f, .10f), .014f, JemparinganArt.Tone.LightWood);
+            JemparinganArt.Beam("Lower bow arm", _bow, new Vector3(0, 0, 0), new Vector3(.06f, -.28f, .03f), .019f, JemparinganArt.Tone.Wood);
+            JemparinganArt.Beam("Lower bow tip", _bow, new Vector3(.06f, -.28f, .03f), new Vector3(.02f, -.53f, .10f), .014f, JemparinganArt.Tone.LightWood);
+            JemparinganArt.Part("Grip", PrimitiveType.Cylinder, _bow, Vector3.zero,
+                new Vector3(.036f, .09f, .036f), JemparinganArt.Tone.DarkWood);
+            JemparinganArt.Part("Upper bow ornament", PrimitiveType.Sphere, _bow,
+                new Vector3(.045f, .34f, .055f), Vector3.one * .025f, JemparinganArt.Tone.Gold);
+            JemparinganArt.Part("Lower bow ornament", PrimitiveType.Sphere, _bow,
+                new Vector3(.045f, -.34f, .055f), Vector3.one * .025f, JemparinganArt.Tone.Gold);
+        }
+
         _stringMarker = JemparinganArt.Part("String pull bead", PrimitiveType.Sphere, _bow,
-            Vector3.zero, Vector3.one * .026f, JemparinganArt.Tone.Jade).transform;
+            Vector3.zero, Vector3.one * .026f,
+            useOutdoorEnvironment ? JemparinganArt.Tone.BowBrass : JemparinganArt.Tone.Jade).transform;
+        JemparinganArt.Tone stringTone = useOutdoorEnvironment
+            ? JemparinganArt.Tone.BowIvory : JemparinganArt.Tone.Paper;
         _upperString = JemparinganArt.Part("Upper string", PrimitiveType.Cylinder, _bow,
-            Vector3.zero, Vector3.one * .01f, JemparinganArt.Tone.Paper).transform;
+            Vector3.zero, Vector3.one * .01f, stringTone).transform;
         _lowerString = JemparinganArt.Part("Lower string", PrimitiveType.Cylinder, _bow,
-            Vector3.zero, Vector3.one * .01f, JemparinganArt.Tone.Paper).transform;
+            Vector3.zero, Vector3.one * .01f, stringTone).transform;
         UpdateBowStrings(0f);
         BuildFocusIndicator();
         _bow.gameObject.SetActive(false);
