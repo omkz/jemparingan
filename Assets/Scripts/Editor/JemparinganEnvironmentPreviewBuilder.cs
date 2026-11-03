@@ -482,95 +482,184 @@ public static class JemparinganEnvironmentPreviewBuilder
     {
         Material riceA = Mat("Rice_Green", 104, 163, 70);
         Material riceB = Mat("Rice_Light", 146, 182, 91);
+        Material riceC = Mat("Rice_YellowGreen_v4", 168, 184, 93);
         Material bund = Mat("Paddy_Bund", 111, 117, 70);
         Material bamboo = Mat("Bamboo", 152, 129, 76);
         Material trunk = Mat("Tree_Trunk", 99, 78, 54);
         Material leavesA = Mat("Leaf_Green", 62, 122, 69);
         Material leavesB = Mat("Leaf_Light", 88, 151, 74);
+        Material earth = Mat("Dry_Rustic_Path_v4", 159, 135, 92);
+        Material darkLeaves = Mat("Banana_Leaves_v4", 66, 133, 65);
 
-        for (int row = 0; row < 12; row++)
+        var fields = Group("A | Irregular sawah paddy terraces", parent);
+        // Deterministic offset rows: fewer, larger plots; no chessboard pattern,
+        // no random allocations or per-frame vegetation simulation.
+        for (int row = 0; row < 10; row++)
         {
-            float z = 24f + row * 5.5f;
+            float z = 23f + row * 6.0f;
             for (int side = -1; side <= 1; side += 2)
+            for (int lane = 0; lane < 4; lane++)
             {
-                for (int lane = 0; lane < 5; lane++)
-                {
-                    float x = side * (8.5f + lane * 4.35f);
-                    Block("Rice paddy field", parent, new Vector3(x, 0.012f, z),
-                        new Vector3(3.55f, 0.035f, 4.15f),
-                        ((row + lane) % 2 == 0) ? riceA : riceB);
-                    Block("Paddy bund", parent, new Vector3(x, 0.02f, z + 2.20f),
-                        new Vector3(3.8f, 0.05f, 0.28f), bund);
-                }
+                float wobble = Mathf.Sin(row * 1.31f + lane * 2.04f);
+                float x = side * (8.6f + lane * 5.1f) + wobble * 0.40f;
+                float width = 3.95f + 0.3f * Mathf.Sin(lane + row);
+                float length = 4.65f + 0.38f * Mathf.Cos(row + 2 * lane);
+                Material field = (row + lane) % 4 == 0 ? riceC :
+                    (row + lane) % 2 == 0 ? riceA : riceB;
+                var plot = Group("Paddy " + side + "-" + row + "-" + lane, fields);
+                Block("Rice field", plot, new Vector3(x, 0.010f, z),
+                    new Vector3(width, 0.05f, length), field);
+                Block("Earth bund", plot,
+                    new Vector3(x, 0.016f, z + length * 0.51f),
+                    new Vector3(width + 0.35f, 0.055f, 0.28f), bund);
             }
         }
 
-        for (int side = -1; side <= 1; side += 2)
+        var approach = Group("B | Natural side access paths", parent);
+        foreach (float side in new[] {-1f, 1f})
+        {
+            for (int i = 0; i < 8; i++)
+            {
+                float z = 9f + i * 9.5f;
+                float x = side * (6.45f + Mathf.Sin(i * .82f) * .65f);
+                Block("Soft earth path segment", approach,
+                    new Vector3(x, -0.005f, z),
+                    new Vector3(1.25f, 0.05f, 9.8f), earth);
+            }
+        }
+
+        var fence = Group("C | Bamboo boundary", parent);
+        foreach (float side in new[] {-1f, 1f})
         {
             float x = side * 5.2f;
             for (int row = 0; row <= 10; row++)
             {
                 float z = 6f + row * 4.3f;
-                Cylinder("Bamboo fence post", parent, new Vector3(x, 0.62f, z),
+                Cylinder("Bamboo fence post", fence, new Vector3(x, 0.62f, z),
                     new Vector3(0.055f, 0.62f, 0.055f), bamboo);
             }
-
             foreach (float y in new[] {0.44f, 0.86f})
-                Block("Bamboo fence rail", parent, new Vector3(x, y, 27.5f),
+                Block("Bamboo fence rail", fence, new Vector3(x, y, 27.5f),
                     new Vector3(0.075f, 0.065f, 44f), bamboo);
         }
 
-        var trees = new [] {
+        var trees = Group("D | Tropical tree clusters", parent);
+        var treePositions = new [] {
             new Vector3(-10f, 0f, 7f), new Vector3(10f, 0f, 12f),
-            new Vector3(-12f, 0f, 22f), new Vector3(15f, 0f, 27f),
-            new Vector3(-22f, 0f, 34f), new Vector3(24f, 0f, 41f),
-            new Vector3(-32f, 0f, 58f), new Vector3(34f, 0f, 54f),
-            new Vector3(-42f, 0f, 74f), new Vector3(45f, 0f, 80f)
+            new Vector3(-13f, 0f, 23f), new Vector3(15f, 0f, 29f),
+            new Vector3(-24f, 0f, 37f), new Vector3(25f, 0f, 43f),
+            new Vector3(-34f, 0f, 59f), new Vector3(35f, 0f, 57f),
+            new Vector3(-44f, 0f, 74f), new Vector3(47f, 0f, 81f)
         };
-        for (int i = 0; i < trees.Length; i++)
+        for (int i = 0; i < treePositions.Length; i++)
         {
-            var tree = Group("Tropical tree " + (i + 1), parent);
-            tree.localPosition = trees[i];
-            float height = 3.2f + (i % 4) * 0.55f;
-            Cylinder("Trunk", tree, new Vector3(0f, height * .45f, 0f),
-                new Vector3(.20f, height * .45f, .20f), trunk);
-            Sphere("Leaf crown", tree, new Vector3(0f, height, 0f),
-                new Vector3(2.0f + (i % 3) * .25f, 1.8f, 1.9f),
-                i % 2 == 0 ? leavesA : leavesB);
-            Sphere("Side leaves", tree, new Vector3(0.7f, height - 0.55f, 0.2f),
-                new Vector3(1.5f, 1.15f, 1.6f), leavesA);
+            var tree = Group("Tree " + (i + 1), trees);
+            tree.localPosition = treePositions[i];
+            float height = 3.4f + (i % 4) * 0.55f;
+            Cylinder("Trunk", tree, new Vector3(0f, height * .46f, 0f),
+                new Vector3(.17f, height * .46f, .17f), trunk);
+            Sphere("Crown center", tree, new Vector3(0f, height, 0f),
+                new Vector3(1.7f, 1.6f, 1.7f), i % 2 == 0 ? leavesA : leavesB);
+            Sphere("Crown left", tree, new Vector3(-.88f, height - .46f, .22f),
+                new Vector3(1.34f, 1.18f, 1.27f), leavesB);
+            Sphere("Crown right", tree, new Vector3(.84f, height - .42f, -.10f),
+                new Vector3(1.45f, 1.32f, 1.29f), leavesA);
+        }
+
+        var bananas = Group("E | Banana leaf silhouettes", parent);
+        foreach (Vector3 position in new [] {
+            new Vector3(-7.6f, 0f, 15f), new Vector3(8.0f, 0f, 19f),
+            new Vector3(-10.4f, 0f, 47f), new Vector3(9.5f, 0f, 56f)
+        })
+        {
+            var plant = Group("Banana plant", bananas);
+            plant.localPosition = position;
+            Cylinder("Banana pseudostem", plant, new Vector3(0f, 1.26f, 0f),
+                new Vector3(0.11f, 1.25f, 0.11f), bamboo);
+            for (int leaf = 0; leaf < 6; leaf++)
+            {
+                float angle = leaf * Mathf.PI / 3f;
+                Vector3 tip = new Vector3(Mathf.Cos(angle) * 1.4f,
+                    2.35f + (leaf % 2) * .38f, Mathf.Sin(angle) * 1.30f);
+                // Light flat leaf placeholder, to be replaced with Blender meshes.
+                GameObject leafBlade = Block("Banana leaf blade", plant,
+                    (new Vector3(0f, 2.44f, 0f) + tip) * .5f,
+                    new Vector3(.37f, .035f, 1.55f), darkLeaves);
+                Vector3 direction = tip - new Vector3(0f, 2.44f, 0f);
+                leafBlade.transform.localRotation =
+                    Quaternion.LookRotation(direction.normalized, Vector3.up);
+            }
         }
     }
 
     private static void BuildHorizon(Transform parent)
     {
-        Material farGreen = Mat("Far_Hills", 96, 130, 109);
-        Material mountain = Mat("Blue_Mountain", 100, 134, 149);
-        Material mountainLight = Mat("Far_Mountain", 137, 157, 162);
+        Material nearHill = Mat("Far_Hills_v4", 94, 134, 105);
+        Material middle = Mat("Blue_Mountain_v4", 100, 134, 149);
+        Material far = Mat("Far_Mountain_v4", 150, 168, 166);
         Material cloud = Mat("Soft_Cloud", 224, 230, 224);
-        Material glow = Mat("Warm_Horizon", 188, 182, 145);
 
-        Sphere("Hill left", parent, new Vector3(-55f, 7f, 110f),
-            new Vector3(75f, 25f, 30f), farGreen);
-        Sphere("Hill right", parent, new Vector3(56f, 8f, 118f),
-            new Vector3(85f, 27f, 36f), farGreen);
-        Sphere("Mountain distant left", parent, new Vector3(-24f, 21f, 148f),
-            new Vector3(70f, 58f, 40f), mountainLight);
-        Sphere("Mountain center", parent, new Vector3(13f, 24f, 145f),
-            new Vector3(60f, 69f, 42f), mountain);
-        Sphere("Mountain distant right", parent, new Vector3(62f, 18f, 155f),
-            new Vector3(90f, 53f, 46f), mountainLight);
-        Sphere("Golden horizon tint", parent, new Vector3(-64f, 3f, 174f),
-            new Vector3(55f, 16f, 8f), glow);
+        // Procedural 3D ridge meshes remove the giant-sphere appearance of v1.
+        // Far mountains fade into linear fog, nearer hills remain warm green.
+        Ridge("Far mountain ridge", parent, 160f, 180f, -3f, 27f, 14f, far);
+        Ridge("Middle blue mountain ridge", parent, 145f, 155f, -3f,
+            22f, 11f, middle);
+        Ridge("Front rolling hills", parent, 145f, 122f, -3f,
+            10f, 5f, nearHill);
 
-        for (int i = 0; i < 7; i++)
+        for (int i = 0; i < 6; i++)
         {
-            float x = -65f + i * 22f;
-            float y = 36f + (i % 3) * 4f;
-            float z = 95f + (i % 2) * 20f;
-            Sphere("Soft distant cloud " + i, parent, new Vector3(x, y, z),
-                new Vector3(14f, 2.3f, 4.5f), cloud);
+            float x = -61f + i * 24f;
+            float y = 34f + (i % 3) * 3.7f;
+            float z = 122f + (i % 2) * 22f;
+            Sphere("Thin distant cloud " + i, parent,
+                new Vector3(x, y, z), new Vector3(14f, 1.5f, 3.7f), cloud);
         }
+    }
+
+    private static void Ridge(string name, Transform parent, float halfWidth,
+        float z, float bottom, float baseHeight, float variation, Material material)
+    {
+        string assetPath = MeshFolder + "/" + name.Replace(" ", "_") + "_v04.asset";
+        Mesh mesh = AssetDatabase.LoadAssetAtPath<Mesh>(assetPath);
+        if (mesh == null)
+        {
+            const int segments = 48;
+            var vertices = new List<Vector3>((segments + 1) * 2);
+            var triangles = new List<int>(segments * 6);
+            for (int i = 0; i <= segments; i++)
+            {
+                float t = (float)i / segments;
+                float x = (2f * t - 1f) * halfWidth;
+                float undulation = 0.48f * Mathf.Sin(t * 11.7f + z * .017f) +
+                    0.29f * Mathf.Sin(t * 24.1f + z * .036f) +
+                    0.23f * Mathf.Cos(t * 38.7f - z * .025f);
+                // Broad highest peak toward center; low variation on horizon.
+                float centerPeak = Mathf.Exp(-Mathf.Pow((t - .58f) * 4f, 2f));
+                float height = baseHeight + variation *
+                    (0.48f * undulation + 0.54f * centerPeak);
+                vertices.Add(new Vector3(x, bottom, z));
+                vertices.Add(new Vector3(x, height, z));
+                if (i == segments) continue;
+                int v = i * 2;
+                triangles.Add(v); triangles.Add(v + 1); triangles.Add(v + 2);
+                triangles.Add(v + 1); triangles.Add(v + 3); triangles.Add(v + 2);
+            }
+            mesh = new Mesh { name = name };
+            mesh.SetVertices(vertices);
+            mesh.SetTriangles(triangles, 0);
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            AssetDatabase.CreateAsset(mesh, assetPath);
+        }
+
+        var ridge = new GameObject(name);
+        ridge.transform.SetParent(parent, false);
+        ridge.AddComponent<MeshFilter>().sharedMesh = mesh;
+        var renderer = ridge.AddComponent<MeshRenderer>();
+        renderer.sharedMaterial = material;
+        renderer.shadowCastingMode = ShadowCastingMode.Off;
+        renderer.receiveShadows = false;
     }
 
     private static Transform Group(string name, Transform parent)
