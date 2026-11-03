@@ -17,14 +17,30 @@ If the branch already exists locally, run `git switch feature/safe-environment-p
 ## Generate and inspect the preview
 
 1. Open the project in Unity **6000.2.14f1** and wait for compilation.
-2. Use **Tools > Jemparingan > Environment > Create Safe Preview v1**.
+2. Use **Tools > Jemparingan > Environment > Create Joglo Preview v2**.
 3. The editor creates and opens `Assets/Jemparingan/Scenes/JemparinganEnvironmentPreview_v01.unity`.
 4. Open the **Game** tab (or press Play) to see the viewpoint from a **seated camera**. Press Play again to exit Play Mode.
    - The camera now sits a little farther back with a wider preview FOV so the **front joglo eaves and roof fascia** frame the top of the image. This changes preview composition, not the Quest headset FOV.
 5. In Edit Mode, use **Tools > Jemparingan > Environment > Set Target 10m / 20m / 30m** to move the single bandulan. Save the scene with Ctrl+S if you want to retain the chosen distance.
 6. Check the Console and capture a Game-view screenshot to compare against the environment concept image.
 
-The current preview includes an ~8×8 m open-sided pendopo, wooden floor and joglo roof, a courtyard, 10/20/30 m lane markers, a traditional hanging bandulan, rice paddies, bamboo fence, tropical trees, distant mountains, blue sky, and warm directional lighting.
+The current preview includes an ~8×8 m open-sided joglo pendopo with saka guru/tumpang sari, wooden floor and layered roof, a courtyard, 10/20/30 m lane markers, a traditional hanging bandulan, rice paddies, bamboo fence, tropical trees, distant mountains, blue sky, and warm directional lighting.
+
+## Joglo authenticity pass v2
+
+This preview now uses a **Joglo-inspired roof and timber structure**, rather than a simple pavilion roof:
+
+- Four central **saka guru** square teak pillars on stone **umpak**.
+- Tiered **tumpang sari** wooden rings and the **blandar/pamidangan** above the player.
+- Two different roof slopes: the gentle **penanggap** (lower) and steep **brunjung** (upper).
+- Slanted rafters, exposed wooden beams, a raised roof silhouette, and a visible front fascia.
+- Original 8×8 m footprint, seated camera, landscape, and bandulan distances remain intact.
+
+These are designed for a **good first-person VR composition**, not a detailed historical reconstruction; carved joinery, tiles and materials will require authored assets later. The ceiling is open between the rafters, not sealed with a black plane.
+
+After generating, run **Tools > Jemparingan > Environment > Validate Joglo Preview v2**. This read-only Unity Editor command counts the 4 saka guru pillars, 4 tumpang sari tiers, 2 roof meshes, checks a single camera, and confirms the bandulan is at 10, 20 or 30 m from the viewpoint. This is a structural smoke test, **not a visual or headset test**.
+
+Architectural reference: [Dinas Kebudayaan DIY — Mengenal Bangunan Berarsitektur Tradisional Jawa: Joglo](https://budaya.jogjaprov.go.id/artikel/detail/Mengenal-Bangunan-Berarsitektur-Tradisional-Jawa-Bangunan-Joglo).
 
 ## Guardrails
 
@@ -41,9 +57,9 @@ The current preview includes an ~8×8 m open-sided pendopo, wooden floor and jog
 If you previously generated the preview, changing the C# editor builder **will not update the existing saved scene automatically**.
 
 1. Make sure the preview has no changes you want to keep; back up your local preview scene if you've customized it.
-2. Run **Tools > Jemparingan > Environment > Create Safe Preview v1** again.
+2. Run **Tools > Jemparingan > Environment > Create Joglo Preview v2** again.
 3. Confirm **Overwrite preview**; this only overwrites `JemparinganEnvironmentPreview_v01.unity`.
-4. Open the Game tab; the joglo eave/fascia should now be visible across the upper edge, with the bandulan still in view.
+4. Open the Game tab; the front eaves, four central *saka guru* columns, and layered ceiling structure should be visible, with the bandulan still in view.
 5. Set target distance again if needed. The preview regenerates with its default 10m setting.
 
 The roof exterior is not visible from a seated position underneath it; the intended effect is an **overhead timber frame and eaves**. The 84-degree vertical FOV is an Editor composition aid, not a promise of matching the headset optics.
@@ -54,6 +70,6 @@ Do not change the original gameplay scene. Capture the Unity Game view and Conso
 
 ## Validation status
 
-The editor script was source-reviewed and isolated from the gameplay files in GitHub. **It has not been compiled or visually tested in the Unity Editor or Quest here.** Please use the screenshot and any Console errors to drive the next iteration. After the blockout is accepted, replace its placeholder models with authored Blender assets and integrate the environment into a copy of the gameplay scene.
+The v2 editor script was source-reviewed and isolated from gameplay files in GitHub. **It has not been compiled or visually tested in the Unity Editor or Quest here.** Please use the screenshot and any Console errors to drive the next iteration. After the blockout is accepted, replace its placeholder models with authored Blender assets and integrate the environment into a copy of the gameplay scene.
 
 Unity-generated `.unity`, `.mat`, `.asset` and matching `.meta` files will initially exist locally only. Commit them **only after** the environment layout has been inspected and accepted.
