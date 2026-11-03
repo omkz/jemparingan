@@ -13,6 +13,7 @@ using UnityEngine.SceneManagement;
 public static class JemparinganEnvironmentPreviewBuilder
 {
     private const string ScenePath = "Assets/Jemparingan/Scenes/JemparinganEnvironmentPreview_v01.unity";
+    private const string PlayableScenePath = "Assets/Jemparingan/Scenes/JemparinganPlayableEnvironment_v05.unity";
     private const string AssetRoot = "Assets/Jemparingan/EnvironmentPreview";
     private const string MaterialFolder = AssetRoot + "/Materials";
     private const string MeshFolder = AssetRoot + "/Meshes";
@@ -25,20 +26,32 @@ public static class JemparinganEnvironmentPreviewBuilder
     [MenuItem("Tools/Jemparingan/Environment/Create Joglo Preview v2")]
     public static void CreateSafePreview()
     {
+        CreateEnvironment(false);
+    }
+
+    [MenuItem("Tools/Jemparingan/Environment/Create Playable Environment v5")]
+    public static void CreatePlayablePreview()
+    {
+        CreateEnvironment(true);
+    }
+
+    private static void CreateEnvironment(bool playable)
+    {
         if (EditorApplication.isPlayingOrWillChangePlaymode)
         {
-            Debug.LogWarning("Stop Play Mode before creating the Jemparingan environment preview.");
+            Debug.LogWarning("Stop Play Mode before creating a Jemparingan environment.");
             return;
         }
-
-        // Never discard unsaved changes to a currently open scene.
+        // Never silently discard unsaved changes in an open scene.
         if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
 
-        if (File.Exists(ScenePath) &&
+        string scenePath = playable ? PlayableScenePath : ScenePath;
+        if (File.Exists(scenePath) &&
             !EditorUtility.DisplayDialog(
-                "Preview scene already exists",
-                "Only the separate environment preview scene will be overwritten. Your original Jemparingan gameplay scene will not be touched. Overwrite the preview?",
-                "Overwrite preview", "Cancel"))
+                "Environment scene already exists",
+                "Only the separate scene at " + scenePath + " will be overwritten. " +
+                "The original Jemparingan v0.9 gameplay scene will not be touched.",
+                "Overwrite this preview", "Cancel"))
             return;
 
         EnsureFolder("Assets/Jemparingan");
@@ -58,33 +71,61 @@ public static class JemparinganEnvironmentPreviewBuilder
 
             var pendopo = Group("01 | Joglo pendopo - saka guru, tumpang sari, brunjung", null);
             BuildPendopo(pendopo);
-
             var courtyard = Group("02 | Archery courtyard and 30m lane", null);
             BuildCourtyard(courtyard);
 
             var target = Group(TargetName, null);
             target.position = new Vector3(0f, 0f, SeatZ + 10f);
-            BuildBandulan(target);
+            // Only one bandulan: standalone art in the scenic preview, or
+            // the game's active moving target under this frame during Play.
+            BuildBandulan(target, !playable);
+            if (playable)
+            {
+                var anchor = Group("Gameplay bandulan anchor | 1.79m above ground", target);
+                anchor.localPosition = new Vector3(0f, 1.79f, 0f);
+                AddPlayableGame(anchor);
+            }
 
             var landscape = Group("03 | Rice fields, bamboo and trees", null);
             BuildLandscape(landscape);
-
             var horizon = Group("04 | Distant mountains and clouds", null);
             BuildHorizon(horizon);
 
-            if (!EditorSceneManager.SaveScene(scene, ScenePath))
-                throw new InvalidOperationException("Unity could not save the preview scene.");
-
+            if (!EditorSceneManager.SaveScene(scene, scenePath))
+                throw new InvalidOperationException("Unity could not save the environment scene.");
             AssetDatabase.SaveAssets();
             Selection.activeGameObject = GameObject.Find("Player viewpoint | seated 1.35m");
-            Debug.Log("Jemparingan Joglo v2 environment preview created at " + ScenePath +
-                ". Open Game view or Play Mode; use Tools > Jemparingan > Environment > Set Target 10m/20m/30m. No gameplay scripts were changed.");
+            Debug.Log("Jemparingan environment created: " + scenePath +
+                (playable
+                    ? " | Play Mode: left mouse draw/release, right mouse aim, R restart."
+                    : " | Scenic-only preview (no gameplay).") +
+                " Target distance can be changed in Edit Mode from the Environment menu.");
         }
         catch (Exception error)
         {
             Debug.LogException(error);
-            Debug.LogError("Preview generation failed. The original gameplay scene has not been edited.");
+            Debug.LogError("Environment generation failed. The original gameplay scene has not been edited.");
         }
+    }
+
+    private static void AddPlayableGame(Transform targetAnchor)
+    {
+        var gameObject = new GameObject("Jemparingan Gameplay | Outdoor mode v5");
+        gameObject.AddComponent<DesktopBowInput>();
+        gameObject.AddComponent<MetaQuestBowInput>();
+        var gameplay = gameObject.AddComponent<JemparinganGame>();
+
+        // Serialise the opt-in bridge into the saved .unity scene, so it still
+        // works when the user closes/reopens Unity. No reflection at runtime.
+        var serialized = new SerializedObject(gameplay);
+        serialized.FindProperty("useOutdoorEnvironment").boolValue = true;
+        serialized.FindProperty("outdoorTargetAnchor").objectReferenceValue = targetAnchor;
+        serialized.FindProperty("outdoorArrowLifetime").floatValue = 3.0f;
+        serialized.FindProperty("minimumArrowSpeed").floatValue = 20f;
+        serialized.FindProperty("maximumArrowSpeed").floatValue = 27f;
+        serialized.FindProperty("simulatedGravity").floatValue = 4.5f;
+        serialized.FindProperty("aimAssist").floatValue = .65f;
+        serialized.ApplyModifiedPropertiesWithoutUndo();
     }
 
     [MenuItem("Tools/Jemparingan/Environment/Set Target 10m")]
@@ -99,9 +140,9 @@ public static class JemparinganEnvironmentPreviewBuilder
     private static void SetTargetDistance(float distance)
     {
         Scene scene = SceneManager.GetActiveScene();
-        if (scene.path != ScenePath)
+        if (scene.path != ScenePath && scene.path != PlayableScenePath)
         {
-            Debug.LogWarning("Open " + ScenePath + " first. Target controls only work in the separate preview scene.");
+            Debug.LogWarning("Open either the scenic preview or playable v5 scene before changing the target distance.");
             return;
         }
 
@@ -125,9 +166,10 @@ public static class JemparinganEnvironmentPreviewBuilder
     private static void ValidateJogloPreview()
     {
         Scene scene = SceneManager.GetActiveScene();
-        if (!scene.IsValid() || !scene.isLoaded || scene.path != ScenePath)
+        if (!scene.IsValid() || !scene.isLoaded ||
+            (scene.path != ScenePath && scene.path != PlayableScenePath))
         {
-            Debug.LogError("Open the generated " + ScenePath + " before running Joglo v2 validation.");
+            Debug.LogError("Open a generated Jemparingan environment preview before running structural validation.");
             return;
         }
 
@@ -456,7 +498,7 @@ public static class JemparinganEnvironmentPreviewBuilder
         }
     }
 
-    private static void BuildBandulan(Transform parent)
+    private static void BuildBandulan(Transform parent, bool showStaticBandulan)
     {
         Material bamboo = Mat("Bamboo", 152, 129, 76);
         Material red = Mat("Bandulan_Red", 166, 48, 48);
@@ -468,6 +510,10 @@ public static class JemparinganEnvironmentPreviewBuilder
                 new Vector3(0.065f, 1.24f, 0.065f), bamboo);
         Block("Bandulan frame top", parent, new Vector3(0f, 2.48f, 0f),
             new Vector3(1.55f, 0.11f, 0.12f), bamboo);
+        if (!showStaticBandulan) return;
+
+        // Scenic preview: static stand-in. The playable scene instead spawns a
+        // real JemparinganTarget from JemparinganGame at the anchor.
         Cylinder("Suspension cord", parent, new Vector3(0f, 2.16f, 0f),
             new Vector3(0.012f, 0.29f, 0.012f), rope);
         Cylinder("Bandulan white lower body", parent, new Vector3(0f, 1.61f, 0f),
