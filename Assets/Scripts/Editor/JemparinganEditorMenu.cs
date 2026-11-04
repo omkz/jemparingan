@@ -151,6 +151,24 @@ public static class JemparinganEditorMenu
             Check("center hitbox", center, ref total, ref failed);
             Check("outer hitbox", outer, ref total, ref failed);
             Check("outside hitbox misses", miss, ref total, ref failed);
+
+            target.UseTraditionalScoring(true);
+            bool head = target.TestShot(new Vector3(0f, .145f, -.2f),
+                new Vector3(0f, .145f, .2f), out bullseye) &&
+                target.LastTraditionalZone == JemparinganTarget.TraditionalZone.Molo;
+            bool neck = target.TestShot(new Vector3(0f, .085f, -.2f),
+                new Vector3(0f, .085f, .2f), out bullseye) &&
+                target.LastTraditionalZone == JemparinganTarget.TraditionalZone.Jangga;
+            bool body = target.TestShot(new Vector3(0f, -.10f, -.2f),
+                new Vector3(0f, -.10f, .2f), out bullseye) &&
+                target.LastTraditionalZone == JemparinganTarget.TraditionalZone.Awak;
+            Check("Traditional red zone", head, ref total, ref failed);
+            Check("Traditional yellow zone", neck, ref total, ref failed);
+            Check("Traditional white zone", body, ref total, ref failed);
+            target.UseTraditionalScoring(false);
+            Check("Classic target remains intact", target.TestShot(
+                new Vector3(0f, 0f, -.2f), new Vector3(0f, 0f, .2f),
+                out bullseye) && bullseye, ref total, ref failed);
         }
         finally
         {
