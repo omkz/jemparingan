@@ -116,10 +116,13 @@ public sealed class JemparinganTraditionalArcher : MonoBehaviour
             _chest.TransformPoint(new Vector3(.20f, .60f, .17f)));
         Vector3 leftWrist = transform.InverseTransformPoint(_leftHand.TransformPoint(LeftWrist));
         Vector3 rightWrist = transform.InverseTransformPoint(_rightHand.TransformPoint(RightWrist));
+        // The bow arm opens gently to the left; the draw elbow stays wide and
+        // near shoulder height. Strong downward hints made both sleeves fall
+        // out of the bottom of the first-person view like disconnected tubes.
         Vector3 leftBend = transform.InverseTransformDirection(
-            _chest.TransformDirection(new Vector3(-.7f, -.8f, -.1f)));
+            _chest.TransformDirection(new Vector3(-.8f, -.32f, -.05f)));
         Vector3 rightBend = transform.InverseTransformDirection(
-            _chest.TransformDirection(new Vector3(.8f, -.6f, -.15f)));
+            _chest.TransformDirection(new Vector3(.95f, -.12f, -.05f)));
         PoseSleeve(_leftSleeve, _leftVertices, leftShoulder, leftWrist, leftBend,
             transform.InverseTransformDirection(_leftHand.TransformDirection(new Vector3(0f, .012f, .065f))));
         PoseSleeve(_rightSleeve, _rightVertices, rightShoulder, rightWrist, rightBend,
@@ -157,14 +160,14 @@ public sealed class JemparinganTraditionalArcher : MonoBehaviour
                 float t = ring / 3f;
                 point = Vector3.Lerp(shoulder, elbow, t);
                 direction = upper;
-                radius = Mathf.Lerp(.070f, .050f, t);
+                radius = Mathf.Lerp(.058f, .040f, t);
             }
             else
             {
                 float t = (ring - 3) / 3f;
                 point = Vector3.Lerp(elbow, wrist, t);
                 direction = ring == 3 ? (upper + lower).normalized : lower;
-                radius = Mathf.Lerp(.050f, .026f, t);
+                radius = Mathf.Lerp(.040f, .022f, t);
                 if (ring == 6) direction = wristDirection.normalized;
             }
             Vector3 across = Vector3.Cross(direction, bend).normalized;

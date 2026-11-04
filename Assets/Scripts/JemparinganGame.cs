@@ -291,18 +291,20 @@ public class JemparinganGame : MonoBehaviour
         Quaternion bowRotation = Quaternion.LookRotation(aim, Vector3.up);
         if (IsTraditionalMode())
         {
-            // A stylized side-drawn gandewa silhouette, more horizontal
-            // than the Classic bow. Arrow flight still follows pose.AimDirection.
-            bowRotation *= Quaternion.Euler(0f, 0f, -70f);
+            // Keep the gandewa recognizably canted without laying it across
+            // the sightline. Arrow flight still follows pose.AimDirection.
+            bowRotation *= Quaternion.Euler(0f, 0f, -20f);
         }
         Vector3 visualBowPosition = pose.BowPosition;
         if (IsTraditionalMode() && UsesDesktopInput() && Camera.main != null)
         {
-            // The outdoor mock input is almost a metre from the eye. Bring
-            // only the Traditional desktop artwork into human arm reach.
-            // Every trajectory/launch calculation below still uses pose.
-            visualBowPosition -= aim * .18f;
-            visualBowPosition += Camera.main.transform.right * .10f;
+            // The desktop input remains the gameplay source, but its 0.92 m
+            // mock hand is beyond a seated arm's reach. Give all Traditional
+            // render contacts one explicit eye-relative anchor: left of the
+            // sightline, below eye level and reachable from the torso.
+            Transform eye = Camera.main.transform;
+            visualBowPosition = eye.position + aim * .74f
+                - eye.right * .34f - eye.up * .17f;
         }
         _bow.SetPositionAndRotation(visualBowPosition, bowRotation);
         bool drawing = pose.StringPinched;
@@ -321,7 +323,7 @@ public class JemparinganGame : MonoBehaviour
             _lastDraw = distance;
             UpdateFocus(aim, pose.BowPosition, power);
             float pull = Mathf.Clamp(distance, 0f, maximumDraw);
-            _stringMarker.localPosition = Vector3.back * TraditionalVisualPull(pull);
+            _stringMarker.localPosition = TraditionalNockLocalPosition(pull);
             UpdateBowStrings(pull);
             UpdateNockedArrow(pull, true);
             ShowPreview(pose.BowPosition + aim * 0.25f, aim, power);
@@ -340,7 +342,7 @@ public class JemparinganGame : MonoBehaviour
         {
             _lastPowerStep = -1;
             _lastStableSignal = false;
-            _stringMarker.localPosition = Vector3.back * TraditionalVisualPull(0f);
+            _stringMarker.localPosition = TraditionalNockLocalPosition(0f);
             UpdateBowStrings(0f);
             UpdateNockedArrow(0f, true);
             HidePreview();
@@ -923,7 +925,7 @@ public class JemparinganGame : MonoBehaviour
     private void UpdateNockedArrow(float pull, bool visible)
     {
         if (_nockedArrow == null) return;
-        _nockedArrow.localPosition = Vector3.back * TraditionalVisualPull(pull);
+        _nockedArrow.localPosition = TraditionalNockLocalPosition(pull);
         if (_nockedArrow.gameObject.activeSelf != visible)
             _nockedArrow.gameObject.SetActive(visible);
     }
@@ -937,6 +939,21 @@ public class JemparinganGame : MonoBehaviour
             : pull;
     }
 
+    // The real rendered nocking point. A Traditional draw travels toward the
+    // player's anchor side as it comes back, rather than remaining directly
+    // behind the left grip. This affects only bow/string/hand artwork; launch
+    // origin, aim direction, draw power and projectile physics still use pose.
+    private Vector3 TraditionalNockLocalPosition(float pull)
+    {
+        float visualPull = TraditionalVisualPull(pull);
+        Vector3 local = Vector3.back * visualPull;
+        if (!IsTraditionalMode() || Camera.main == null) return local;
+        float draw01 = Mathf.InverseLerp(.12f, maximumDraw, visualPull);
+        Vector3 towardFace = Camera.main.transform.right * (.20f * draw01)
+            + Camera.main.transform.up * (.018f * draw01);
+        return local + _bow.InverseTransformVector(towardFace);
+    }
+
     private void UpdateBowStrings(float pull)
     {
         // Outdoor Bow Polish v1 uses the exact mesh endpoints. The original
@@ -945,9 +962,9 @@ public class JemparinganGame : MonoBehaviour
             ? JemparinganBowVisual.UpperTip : Vector3.up * 0.53f;
         Vector3 lowerTip = useOutdoorEnvironment
             ? JemparinganBowVisual.LowerTip : Vector3.down * 0.53f;
-        float visualPull = TraditionalVisualPull(pull);
-        PositionString(_upperString, upperTip, Vector3.back * visualPull);
-        PositionString(_lowerString, lowerTip, Vector3.back * visualPull);
+        Vector3 nock = TraditionalNockLocalPosition(pull);
+        PositionString(_upperString, upperTip, nock);
+        PositionString(_lowerString, lowerTip, nock);
     }
     private void PositionString(Transform piece, Vector3 a, Vector3 b)
     {
