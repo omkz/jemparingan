@@ -47,7 +47,8 @@ public static class JemparinganArt
         else if (mat.HasProperty("_Color")) mat.SetColor("_Color", col);
         if (mat.HasProperty("_Smoothness"))
             mat.SetFloat("_Smoothness", tone == Tone.BowLeather ||
-                tone == Tone.BowStitch ? 0.09f : 0.22f);
+                tone == Tone.BowStitch ? 0.09f :
+                tone == Tone.TraditionalSkin || tone == Tone.TraditionalCloth ? .035f : .22f);
         Materials[tone] = mat;
         return mat;
     }

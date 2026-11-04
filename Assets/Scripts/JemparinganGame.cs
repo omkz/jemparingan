@@ -17,11 +17,8 @@ public class JemparinganGame : MonoBehaviour
     private bool _modeChosen;
     private GameObject _classicBandulanVisual, _traditionalBandulanVisual;
     private Renderer _classicBandulanBody, _traditionalBandulanBody;
-    private Transform _traditionalPosture, _traditionalArmsRoot;
-    private Transform _traditionalLeftUpper, _traditionalLeftForearm, _traditionalLeftPalm;
-    private Transform _traditionalRightUpper, _traditionalRightForearm, _traditionalRightPalm;
-    private Vector3 _traditionalRightWrist;
-    private bool _traditionalRightWristReady;
+    private Transform _traditionalPosture;
+    private JemparinganTraditionalArcher _traditionalArcher;
     private TextMesh _introGoalLabel, _introTitleLabel;
 
     private bool IsTraditionalMode() { return useOutdoorEnvironment && _mode == GameMode.Traditional; }
@@ -176,7 +173,7 @@ public class JemparinganGame : MonoBehaviour
         if (_traditionalPosture != null)
             _traditionalPosture.gameObject.SetActive(IsTraditionalMode());
         HideTraditionalArms();
-        _traditionalRightWristReady = false;
+        if (_traditionalArcher != null) _traditionalArcher.ResetPose();
         _lastInfo = "";
         HideDesktopPracticeSight();
         ResetRound();
@@ -298,12 +295,19 @@ public class JemparinganGame : MonoBehaviour
             // than the Classic bow. Arrow flight still follows pose.AimDirection.
             bowRotation *= Quaternion.Euler(0f, 0f, -70f);
         }
-        _bow.SetPositionAndRotation(pose.BowPosition, bowRotation);
+        Vector3 visualBowPosition = pose.BowPosition;
+        if (IsTraditionalMode() && UsesDesktopInput() && Camera.main != null)
+        {
+            // The outdoor mock input is almost a metre from the eye. Bring
+            // only the Traditional desktop artwork into human arm reach.
+            // Every trajectory/launch calculation below still uses pose.
+            visualBowPosition -= aim * .18f;
+            visualBowPosition += Camera.main.transform.right * .10f;
+        }
+        _bow.SetPositionAndRotation(visualBowPosition, bowRotation);
         bool drawing = pose.StringPinched;
         float distance = Mathf.Clamp(Vector3.Dot(pose.BowPosition - pose.StringPosition, aim), 0f, maximumDraw);
         float power = Mathf.InverseLerp(minimumDraw, maximumDraw, distance);
-        UpdateTraditionalArms(pose.BowPosition,
-            pose.StringPinched ? distance : 0f, pose.StringPinched);
         UpdateDesktopPracticeSight(pose.BowPosition + aim * .25f,
             aim, Mathf.Lerp(minimumArrowSpeed, maximumArrowSpeed, power), drawing);
 
@@ -317,7 +321,7 @@ public class JemparinganGame : MonoBehaviour
             _lastDraw = distance;
             UpdateFocus(aim, pose.BowPosition, power);
             float pull = Mathf.Clamp(distance, 0f, maximumDraw);
-            _stringMarker.localPosition = Vector3.back * pull;
+            _stringMarker.localPosition = Vector3.back * TraditionalVisualPull(pull);
             UpdateBowStrings(pull);
             UpdateNockedArrow(pull, true);
             ShowPreview(pose.BowPosition + aim * 0.25f, aim, power);
@@ -336,12 +340,16 @@ public class JemparinganGame : MonoBehaviour
         {
             _lastPowerStep = -1;
             _lastStableSignal = false;
-            _stringMarker.localPosition = Vector3.zero;
+            _stringMarker.localPosition = Vector3.back * TraditionalVisualPull(0f);
             UpdateBowStrings(0f);
             UpdateNockedArrow(0f, true);
             HidePreview();
             SetInfo("READY  •  Hold left mouse to draw; release to shoot. Hold right mouse to aim.");
         }
+
+        // The contact targets must be current before posing hands. The old
+        // call ran before the string moved and smoothed the hand away from it.
+        UpdateTraditionalArms(drawing);
 
         // One uninterrupted draw-to-release transition fires exactly once.
         // Tracking loss / bow-unpinch resets without firing.
@@ -915,9 +923,18 @@ public class JemparinganGame : MonoBehaviour
     private void UpdateNockedArrow(float pull, bool visible)
     {
         if (_nockedArrow == null) return;
-        _nockedArrow.localPosition = Vector3.back * pull;
+        _nockedArrow.localPosition = Vector3.back * TraditionalVisualPull(pull);
         if (_nockedArrow.gameObject.activeSelf != visible)
             _nockedArrow.gameObject.SetActive(visible);
+    }
+
+    // Cosmetic brace height only. Input draw, launch origin, power and arrow
+    // flight continue to use the original pose/distance, in both modes.
+    private float TraditionalVisualPull(float pull)
+    {
+        return IsTraditionalMode()
+            ? Mathf.Lerp(.12f, maximumDraw, Mathf.InverseLerp(.04f, maximumDraw, pull))
+            : pull;
     }
 
     private void UpdateBowStrings(float pull)
@@ -928,8 +945,9 @@ public class JemparinganGame : MonoBehaviour
             ? JemparinganBowVisual.UpperTip : Vector3.up * 0.53f;
         Vector3 lowerTip = useOutdoorEnvironment
             ? JemparinganBowVisual.LowerTip : Vector3.down * 0.53f;
-        PositionString(_upperString, upperTip, Vector3.back * pull);
-        PositionString(_lowerString, lowerTip, Vector3.back * pull);
+        float visualPull = TraditionalVisualPull(pull);
+        PositionString(_upperString, upperTip, Vector3.back * visualPull);
+        PositionString(_lowerString, lowerTip, Vector3.back * visualPull);
     }
     private void PositionString(Transform piece, Vector3 a, Vector3 b)
     {
@@ -1324,22 +1342,22 @@ public class JemparinganGame : MonoBehaviour
             Quaternion.LookRotation(groundForward, Vector3.up));
 
         JemparinganArt.Part("Folded sarong at hips", PrimitiveType.Sphere,
-            _traditionalPosture, new Vector3(0f, -.69f, .82f),
+            _traditionalPosture, new Vector3(0f, -.96f, .06f),
             new Vector3(.43f, .19f, .38f), JemparinganArt.Tone.TraditionalCloth);
-        Vector3 leftHip = new Vector3(-.16f, -.72f, .86f);
-        Vector3 rightHip = new Vector3(.16f, -.72f, .86f);
-        Vector3 leftKnee = new Vector3(-.38f, -1.06f, 2.12f);
-        Vector3 rightKnee = new Vector3(.38f, -1.06f, 2.12f);
-        Vector3 leftFoot = new Vector3(.18f, -1.22f, 2.38f);
-        Vector3 rightFoot = new Vector3(-.18f, -1.22f, 2.38f);
+        Vector3 leftHip = new Vector3(-.13f, -.96f, .06f);
+        Vector3 rightHip = new Vector3(.13f, -.96f, .06f);
+        Vector3 leftKnee = new Vector3(-.40f, -1.04f, .42f);
+        Vector3 rightKnee = new Vector3(.40f, -1.04f, .42f);
+        Vector3 leftFoot = new Vector3(.15f, -1.09f, .28f);
+        Vector3 rightFoot = new Vector3(-.15f, -1.14f, .36f);
         MakeTraditionalLimb("Left folded thigh", _traditionalPosture,
-            leftHip, leftKnee, .33f, JemparinganArt.Tone.TraditionalCloth);
+            leftHip, leftKnee, .24f, JemparinganArt.Tone.TraditionalCloth);
         MakeTraditionalLimb("Right folded thigh", _traditionalPosture,
-            rightHip, rightKnee, .33f, JemparinganArt.Tone.TraditionalCloth);
+            rightHip, rightKnee, .24f, JemparinganArt.Tone.TraditionalCloth);
         MakeTraditionalLimb("Left shin crosses right", _traditionalPosture,
-            leftKnee, leftFoot, .24f, JemparinganArt.Tone.TraditionalCloth);
+            leftKnee, leftFoot, .15f, JemparinganArt.Tone.TraditionalCloth);
         MakeTraditionalLimb("Right shin crosses left", _traditionalPosture,
-            rightKnee, rightFoot, .24f, JemparinganArt.Tone.TraditionalCloth);
+            rightKnee, rightFoot, .15f, JemparinganArt.Tone.TraditionalCloth);
         JemparinganArt.Part("Left knee cloth fold", PrimitiveType.Sphere,
             _traditionalPosture, leftKnee, new Vector3(.20f, .15f, .23f),
             JemparinganArt.Tone.TraditionalCloth);
@@ -1364,33 +1382,8 @@ public class JemparinganGame : MonoBehaviour
             new Vector3(.13f, .055f, .20f), JemparinganArt.Tone.TraditionalSkin);
         _traditionalPosture.gameObject.SetActive(false);
 
-        // The arms move in camera coordinates: the bow remains in the same
-        // location as Classic, but sleeve and hand visuals reach its grip
-        // and the drawn string. They do not change any gameplay physics.
-        _traditionalArmsRoot = new GameObject(
-            "Traditional | first-person drawing arms").transform;
-        _traditionalArmsRoot.SetParent(camera.transform, false);
-        _traditionalLeftUpper = NewTraditionalLimb(
-            "Left upper sleeve", _traditionalArmsRoot,
-            JemparinganArt.Tone.TraditionalCloth);
-        _traditionalLeftForearm = NewTraditionalLimb(
-            "Left forearm sleeve", _traditionalArmsRoot,
-            JemparinganArt.Tone.TraditionalCloth);
-        _traditionalRightUpper = NewTraditionalLimb(
-            "Right upper sleeve", _traditionalArmsRoot,
-            JemparinganArt.Tone.TraditionalCloth);
-        _traditionalRightForearm = NewTraditionalLimb(
-            "Right forearm sleeve", _traditionalArmsRoot,
-            JemparinganArt.Tone.TraditionalCloth);
-        _traditionalLeftPalm = JemparinganArt.Part("Left grip hand",
-            PrimitiveType.Sphere, _traditionalArmsRoot, Vector3.zero,
-            new Vector3(.075f, .065f, .095f),
-            JemparinganArt.Tone.TraditionalSkin).transform;
-        _traditionalRightPalm = JemparinganArt.Part("Right draw hand",
-            PrimitiveType.Sphere, _traditionalArmsRoot, Vector3.zero,
-            new Vector3(.070f, .055f, .085f),
-            JemparinganArt.Tone.TraditionalSkin).transform;
-        _traditionalArmsRoot.gameObject.SetActive(false);
+        _traditionalArcher = _traditionalPosture.gameObject.AddComponent<JemparinganTraditionalArcher>();
+        _traditionalArcher.Build(_bow.Find("Leather-wrapped main grip"), _stringMarker, _bow);
     }
 
     private static Transform NewTraditionalLimb(string name, Transform parent,
@@ -1418,51 +1411,15 @@ public class JemparinganGame : MonoBehaviour
             start, end, width);
     }
 
-    // All these transforms were built once. Only their local transforms
-    // change as the bowstring moves; no new meshes are created per frame.
-    private void UpdateTraditionalArms(Vector3 bowWorldPosition,
-        float stringPull, bool drawing)
+    private void UpdateTraditionalArms(bool drawing)
     {
-        if (!IsTraditionalMode() || _traditionalArmsRoot == null) return;
-        if (!_traditionalArmsRoot.gameObject.activeSelf)
-            _traditionalArmsRoot.gameObject.SetActive(true);
-
-        Vector3 grip = _traditionalArmsRoot.InverseTransformPoint(bowWorldPosition);
-        Vector3 leftShoulder = new Vector3(-.23f, -.26f, .09f);
-        Vector3 leftElbow = new Vector3(-.31f, -.37f, .47f);
-        Vector3 leftWrist = grip + new Vector3(.01f, -.025f, -.03f);
-
-        Vector3 rightShoulder = new Vector3(.23f, -.26f, .08f);
-        Vector3 rightElbow = new Vector3(.36f, -.41f, .33f);
-        Vector3 restingRight = new Vector3(.18f, -.38f, .44f);
-        Vector3 rightTarget = drawing
-            ? _traditionalArmsRoot.InverseTransformPoint(
-                _bow.TransformPoint(Vector3.back * stringPull)) +
-                new Vector3(.025f, -.022f, -.04f)
-            : restingRight;
-        if (!_traditionalRightWristReady)
-        {
-            _traditionalRightWrist = restingRight;
-            _traditionalRightWristReady = true;
-        }
-        _traditionalRightWrist = Vector3.Lerp(_traditionalRightWrist,
-            rightTarget, Mathf.Clamp01(Time.deltaTime * 13f));
-
-        PlaceTraditionalLimb(_traditionalLeftUpper, leftShoulder, leftElbow, .15f);
-        PlaceTraditionalLimb(_traditionalLeftForearm, leftElbow, leftWrist, .115f);
-        PlaceTraditionalLimb(_traditionalRightUpper,
-            rightShoulder, rightElbow, .15f);
-        PlaceTraditionalLimb(_traditionalRightForearm,
-            rightElbow, _traditionalRightWrist, .115f);
-        _traditionalLeftPalm.localPosition = leftWrist;
-        _traditionalRightPalm.localPosition = _traditionalRightWrist;
+        if (!IsTraditionalMode() || _traditionalArcher == null) return;
+        _traditionalArcher.Present(drawing);
     }
 
     private void HideTraditionalArms()
     {
-        if (_traditionalArmsRoot != null &&
-            _traditionalArmsRoot.gameObject.activeSelf)
-            _traditionalArmsRoot.gameObject.SetActive(false);
+        if (_traditionalArcher != null) _traditionalArcher.HideArms();
     }
 
     private void BuildBow()
