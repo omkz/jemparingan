@@ -23,16 +23,16 @@ public static class JemparinganScoreRules
     public static string StageTitle(int shotsFired)
     {
         int stage = StageIndex(shotsFired);
-        return stage == 0 ? "BABAK I  •  TENANG" :
-            stage == 1 ? "BABAK II  •  ANGIN" : "BABAK III  •  UJIAN RASA";
+        return stage == 0 ? "ROUND I  •  CALM" :
+            stage == 1 ? "ROUND II  •  WIND" : "ROUND III  •  RASA CHALLENGE";
     }
 
     public static string ResultTitle(int hits, int stableHits)
     {
-        if (hits >= 8 && stableHits >= 4) return "R A S A   T E R J A G A";
-        if (hits >= 8) return "P A N A H   J I T U";
-        if (stableHits >= 3) return "T E N A N G   B E R T U M B U H";
-        return "L A N G K A H   P E R T A M A";
+        if (hits >= 8 && stableHits >= 4) return "RASA IN BALANCE";
+        if (hits >= 8) return "TRUE AIM";
+        if (stableHits >= 3) return "FINDING CALM";
+        return "FIRST STEPS";
     }
 
     public static int PoolCapacity(int arrowsPerRound, int baseCapacity)
