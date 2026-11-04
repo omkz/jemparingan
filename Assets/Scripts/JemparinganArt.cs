@@ -5,7 +5,7 @@ using UnityEngine;
 // Reuse the same material instances to keep SRP batching effective.
 public static class JemparinganArt
 {
-    public enum Tone { DarkWood, Wood, LightWood, Gold, Brass, Red, Scarlet, Jade, Paper, Indigo, Shadow, BowTeak, BowEdge, BowLeather, BowStitch, BowBrass, BowIvory }
+    public enum Tone { DarkWood, Wood, LightWood, Gold, Brass, Red, Scarlet, Jade, Paper, Indigo, Shadow, BowTeak, BowEdge, BowLeather, BowStitch, BowBrass, BowIvory, BandulanWhite, BandulanYellow }
     private static readonly Dictionary<Tone, Material> Materials = new Dictionary<Tone, Material>();
 
     public static Material Material(Tone tone)
@@ -36,6 +36,8 @@ public static class JemparinganArt
             case Tone.BowStitch: col = RGB(125, 91, 68); break;
             case Tone.BowBrass: col = RGB(185, 149, 89); break;
             case Tone.BowIvory: col = RGB(232, 216, 181); break;
+            case Tone.BandulanWhite: col = RGB(235, 229, 209); break;
+            case Tone.BandulanYellow: col = RGB(224, 172, 60); break;
             default: col = RGB(23, 30, 43); break;
         }
         if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", col);
