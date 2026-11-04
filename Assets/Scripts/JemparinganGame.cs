@@ -39,6 +39,10 @@ public class JemparinganGame : MonoBehaviour
     private const int ArrowPoolSize = 14;
     private const int PreviewDotCount = 8;
     private Transform _bow, _stringMarker, _focusRoot, _leadMarker;
+    private Transform _desktopPracticeSight;
+    private Renderer[] _practiceSightRenderers;
+    private TextMesh _practiceSightLabel;
+    private bool _desktopTrainingEnabled = true;
     private Renderer[] _focusRenderers;
     private Transform _upperString, _lowerString;
     // Cosmetic arrow follows the bowstring in outdoor mode.
@@ -89,7 +93,21 @@ public class JemparinganGame : MonoBehaviour
             _awaitStringRelease = stringWasHeld;
         }
         if (!_ready) return;
-        if (_finished) { HandleResultInput(); return; }
+        if (useOutdoorEnvironment && Application.isEditor &&
+            Input.GetKeyDown(KeyCode.T))
+        {
+            _desktopTrainingEnabled = !_desktopTrainingEnabled;
+            ShowFeedback(_desktopTrainingEnabled
+                ? "LATIHAN BIDIK AKTIF" : "LATIHAN NONAKTIF");
+            if (_desktopPracticeSight != null && !_desktopTrainingEnabled)
+                _desktopPracticeSight.gameObject.SetActive(false);
+        }
+        if (_finished)
+        {
+            HideDesktopPracticeSight();
+            HandleResultInput();
+            return;
+        }
         if (_stageBanner != null && _stageBannerUntil > 0f && Time.time >= _stageBannerUntil)
         {
             _stageBanner.text = "";
@@ -114,6 +132,7 @@ public class JemparinganGame : MonoBehaviour
         if (input == null || !input.TryReadPose(out JemparinganHandPose pose))
         {
             if (_bow != null) _bow.gameObject.SetActive(false);
+            HideDesktopPracticeSight();
             HidePreview();
             ClearDrawState();
             SetInfo("Tangan belum terlacak — coba lagi.");
@@ -122,12 +141,14 @@ public class JemparinganGame : MonoBehaviour
         if (_roundOver)
         {
             _bow.gameObject.SetActive(false);
+            HideDesktopPracticeSight();
             HidePreview();
             return;
         }
         if (!pose.BowPinched)
         {
             _bow.gameObject.SetActive(false);
+            HideDesktopPracticeSight();
             HidePreview();
             ClearDrawState();
             SetInfo("Pegang busur dengan tangan kiri.");
@@ -152,6 +173,8 @@ public class JemparinganGame : MonoBehaviour
         bool drawing = pose.StringPinched;
         float distance = Mathf.Clamp(Vector3.Dot(pose.BowPosition - pose.StringPosition, aim), 0f, maximumDraw);
         float power = Mathf.InverseLerp(minimumDraw, maximumDraw, distance);
+        UpdateDesktopPracticeSight(pose.BowPosition + aim * .25f,
+            aim, Mathf.Lerp(minimumArrowSpeed, maximumArrowSpeed, power), drawing);
 
         if (drawing)
         {
@@ -364,18 +387,83 @@ public class JemparinganGame : MonoBehaviour
         UpdateHUD();
     }
 
-    // Only adjust shots which are already close to the target; no automatic lock-on from far away.
+    private bool IsDesktopTrainingAimActive()
+    {
+        // Desktop Editor training only. Quest input and classic v0.9 shooting
+        // retain the original assistance behavior and physics.
+        return useOutdoorEnvironment && Application.isEditor &&
+            !preferQuestHandsInEditor && _desktopTrainingEnabled;
+    }
+
+    // Only close-to-target desktop practice shots are corrected. Aim at the
+    // visible bandulan (not above it); the training guide compensates drop.
     private Vector3 GetAssistedAim(Vector3 origin, Vector3 aim, float speed)
     {
         if (_target == null || aimAssist <= 0f) return aim;
+
+        if (IsDesktopTrainingAimActive())
+        {
+            Vector3 ballistic, sightTarget;
+            if (TryGetPracticeBallisticAim(origin, speed,
+                out ballistic, out sightTarget))
+            {
+                float error = Vector3.Angle(aim, sightTarget - origin);
+                if (error <= 2.8f) return ballistic;
+            }
+            return aim;
+        }
+
+        // Original non-training assist (legacy and Quest) stays unchanged.
         Vector3 delta = _target.transform.position - origin;
         float flightTime = Mathf.Max(0.05f, delta.magnitude / speed);
-        Vector3 ballistic = (delta + Vector3.up * (0.5f * simulatedGravity * flightTime * flightTime)).normalized;
-        float error = Vector3.Angle(aim, ballistic);
-        if (error > 8f) return aim;
-        float strength = aimAssist * Mathf.InverseLerp(8f, 0f, error);
-        return Vector3.Slerp(aim, ballistic, strength).normalized;
+        Vector3 direction = (delta + Vector3.up *
+            (0.5f * simulatedGravity * flightTime * flightTime)).normalized;
+        float angularError = Vector3.Angle(aim, direction);
+        if (angularError > 8f) return aim;
+        float strength = aimAssist * Mathf.InverseLerp(8f, 0f, angularError);
+        return Vector3.Slerp(aim, direction, strength).normalized;
     }
+
+    private bool TryGetPracticeBallisticAim(Vector3 origin, float speed,
+        out Vector3 direction, out Vector3 sightTarget)
+    {
+        direction = Vector3.forward;
+        sightTarget = Vector3.zero;
+        if (_target == null || speed < 0.1f) return false;
+
+        // Iteration matters on stages II-III because the bandulan sways while
+        // the arrow is flying. Time-to-target and lead are solved together.
+        float travelTime = Vector3.Distance(origin, _target.transform.position) / speed;
+        float gravity = Mathf.Max(0f, simulatedGravity);
+        for (int iteration = 0; iteration < 4; iteration++)
+        {
+            sightTarget = _target.PredictCenter(travelTime);
+            Vector3 delta = sightTarget - origin;
+            Vector3 flat = Vector3.ProjectOnPlane(delta, Vector3.up);
+            float horizontal = flat.magnitude;
+            if (horizontal < 0.01f) return false;
+            if (gravity < 0.001f)
+            {
+                direction = delta.normalized;
+                return true;
+            }
+
+            float speed2 = speed * speed;
+            float discriminant = speed2 * speed2 -
+                gravity * (gravity * horizontal * horizontal +
+                    2f * delta.y * speed2);
+            if (discriminant <= 0f) return false; // Unreachable shot.
+            float tangent = (speed2 - Mathf.Sqrt(discriminant)) /
+                (gravity * horizontal);
+            float angle = Mathf.Atan(tangent);
+            float cosine = Mathf.Cos(angle);
+            direction = (flat.normalized * cosine +
+                Vector3.up * Mathf.Sin(angle)).normalized;
+            travelTime = horizontal / Mathf.Max(0.01f, speed * cosine);
+        }
+        return true;
+    }
+
 
     private void OnArrowImpact(JemparinganArrow arrow, bool bullseye)
     {
@@ -685,6 +773,7 @@ public class JemparinganGame : MonoBehaviour
         BuildBow();
         BuildPool();
         BuildPreview();
+        BuildDesktopPracticeSight(camera);
         BuildLeadMarker(root);
 
         var hud = new GameObject("Jemparingan HUD").transform;
@@ -1088,6 +1177,76 @@ public class JemparinganGame : MonoBehaviour
         _leadMarker.position = _target.PredictCenter(travelTime) -
             _target.transform.forward * .10f;
         _leadMarker.gameObject.SetActive(true);
+    }
+
+    private void BuildDesktopPracticeSight(Camera camera)
+    {
+        if (!useOutdoorEnvironment || !Application.isEditor ||
+            preferQuestHandsInEditor) return;
+
+        // Four small strokes leave an open center; this is a sighting aid,
+        // not a full opaque crosshair or a fake physical projectile.
+        var root = new GameObject("Desktop practice reticle | toggle T").transform;
+        root.SetParent(camera.transform, false);
+        root.localPosition = new Vector3(0f, 0f, 1.85f);
+        root.localRotation = Quaternion.identity;
+        _desktopPracticeSight = root;
+        _practiceSightRenderers = new Renderer[4];
+        Vector3[] positions = {
+            new Vector3(-.051f, 0f, 0f),
+            new Vector3(.051f, 0f, 0f),
+            new Vector3(0f, .051f, 0f),
+            new Vector3(0f, -.051f, 0f)
+        };
+        for (int i = 0; i < positions.Length; i++)
+        {
+            Vector3 size = i < 2 ? new Vector3(.027f, .003f, .003f) :
+                new Vector3(.003f, .027f, .003f);
+            var part = JemparinganArt.Part("Practice sight stroke " + i,
+                PrimitiveType.Cube, root, positions[i], size,
+                JemparinganArt.Tone.Paper);
+            _practiceSightRenderers[i] = part.GetComponent<Renderer>();
+        }
+        _practiceSightLabel = JemparinganArt.Label("Practice aim signal",
+            root, new Vector3(0f, -.118f, 0f), "BIDIK BANDULAN",
+            .0047f, new Color(.95f, .88f, .72f));
+        _practiceSightLabel.fontStyle = FontStyle.Bold;
+    }
+
+    private void UpdateDesktopPracticeSight(Vector3 origin, Vector3 aim,
+        float speed, bool drawing)
+    {
+        if (_desktopPracticeSight == null) return;
+        bool show = IsDesktopTrainingAimActive() && !_roundOver && !_finished;
+        if (!show)
+        {
+            HideDesktopPracticeSight();
+            return;
+        }
+        if (!_desktopPracticeSight.gameObject.activeSelf)
+            _desktopPracticeSight.gameObject.SetActive(true);
+
+        Vector3 direction, predictedTarget;
+        bool canReach = TryGetPracticeBallisticAim(origin, speed,
+            out direction, out predictedTarget);
+        bool aligned = canReach &&
+            Vector3.Angle(aim, predictedTarget - origin) <= 2.8f;
+        var tone = aligned ? JemparinganArt.Tone.Jade : JemparinganArt.Tone.Paper;
+        Material material = JemparinganArt.Material(tone);
+        for (int i = 0; i < _practiceSightRenderers.Length; i++)
+            _practiceSightRenderers[i].sharedMaterial = material;
+        _practiceSightLabel.text = aligned
+            ? (drawing ? "HIJAU: LEPAS PANAH" : "SASARAN TERKUNCI")
+            : "BIDIK BANDULAN";
+        _practiceSightLabel.color = aligned
+            ? new Color(.40f, .94f, .75f)
+            : new Color(.95f, .88f, .72f);
+    }
+
+    private void HideDesktopPracticeSight()
+    {
+        if (_desktopPracticeSight != null)
+            _desktopPracticeSight.gameObject.SetActive(false);
     }
 
     private void BuildPreview()
