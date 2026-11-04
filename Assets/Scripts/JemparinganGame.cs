@@ -907,6 +907,7 @@ public class JemparinganGame : MonoBehaviour
         _impactLabel = JemparinganArt.Label("Floating impact points", root,
             _impactLabelBasePosition, "", .0041f, new Color(.98f, .81f, .40f));
         BuildBow();
+        BuildTraditionalPosture(camera);
         BuildPool();
         BuildPreview();
         BuildDesktopPracticeSight(camera);
@@ -1170,18 +1171,62 @@ public class JemparinganGame : MonoBehaviour
         targetGO.transform.SetParent(root, false);
         targetGO.transform.localPosition = new Vector3(0f, -.13f, 0f);
         _target = targetGO.AddComponent<JemparinganTarget>();
-        var main = JemparinganArt.Part("Bandulan lacquer red", PrimitiveType.Cylinder, targetGO.transform,
+        var classic = new GameObject("Classic bandulan visuals");
+        classic.transform.SetParent(targetGO.transform, false);
+        _classicBandulanVisual = classic;
+        var main = JemparinganArt.Part("Bandulan lacquer red", PrimitiveType.Cylinder, classic.transform,
             Vector3.zero, new Vector3(.048f, .24f, .048f), JemparinganArt.Tone.Red);
-        _target.SetBody(main.GetComponent<Renderer>());
-        JemparinganArt.Part("Bandulan golden cap", PrimitiveType.Cylinder, targetGO.transform,
+        _classicBandulanBody = main.GetComponent<Renderer>();
+        _target.SetBody(_classicBandulanBody);
+        JemparinganArt.Part("Bandulan golden cap", PrimitiveType.Cylinder, classic.transform,
             Vector3.up * .23f, new Vector3(.054f, .018f, .054f), JemparinganArt.Tone.Gold);
-        JemparinganArt.Part("Bandulan golden tip", PrimitiveType.Sphere, targetGO.transform,
+        JemparinganArt.Part("Bandulan golden tip", PrimitiveType.Sphere, classic.transform,
             Vector3.down * .24f, new Vector3(.055f, .04f, .055f), JemparinganArt.Tone.Gold);
         for (int i = -1; i <= 1; i++)
         {
-            JemparinganArt.Part("Thin gold binding", PrimitiveType.Cylinder, targetGO.transform,
+            JemparinganArt.Part("Thin gold binding", PrimitiveType.Cylinder, classic.transform,
                 new Vector3(0, i * .13f, 0), new Vector3(.052f, .007f, .052f), JemparinganArt.Tone.Brass);
         }
+
+        if (!useOutdoorEnvironment) return;
+        var traditional = new GameObject("Traditional bandulan visuals");
+        traditional.transform.SetParent(targetGO.transform, false);
+        _traditionalBandulanVisual = traditional;
+        var awak = JemparinganArt.Part("Awak white body | 1 point",
+            PrimitiveType.Cylinder, traditional.transform,
+            new Vector3(0f, -.085f, 0f), new Vector3(.048f, .135f, .048f),
+            JemparinganArt.Tone.BandulanWhite);
+        _traditionalBandulanBody = awak.GetComponent<Renderer>();
+        JemparinganArt.Part("Jangga yellow neck | 2 points",
+            PrimitiveType.Cylinder, traditional.transform,
+            new Vector3(0f, .075f, 0f), new Vector3(.049f, .025f, .049f),
+            JemparinganArt.Tone.BandulanYellow);
+        JemparinganArt.Part("Molo red head | 3 points",
+            PrimitiveType.Cylinder, traditional.transform,
+            new Vector3(0f, .148f, 0f), new Vector3(.049f, .048f, .049f),
+            JemparinganArt.Tone.Red);
+        traditional.SetActive(false);
+    }
+
+    private void BuildTraditionalPosture(Camera camera)
+    {
+        if (!useOutdoorEnvironment) return;
+        _traditionalPosture = new GameObject(
+            "Traditional seated silhouette (simplified)").transform;
+        _traditionalPosture.SetParent(camera.transform, false);
+        _traditionalPosture.localPosition = new Vector3(0f, -.43f, .90f);
+        JemparinganArt.Part("Seated cloth", PrimitiveType.Sphere,
+            _traditionalPosture, new Vector3(0f, -.075f, -.12f),
+            new Vector3(.47f, .14f, .40f), JemparinganArt.Tone.Indigo);
+        JemparinganArt.Part("Left folded leg", PrimitiveType.Sphere,
+            _traditionalPosture, new Vector3(-.22f, 0f, .09f),
+            new Vector3(.26f, .13f, .43f), JemparinganArt.Tone.Indigo,
+            Quaternion.Euler(0f, -35f, 0f));
+        JemparinganArt.Part("Right folded leg", PrimitiveType.Sphere,
+            _traditionalPosture, new Vector3(.22f, 0f, .09f),
+            new Vector3(.26f, .13f, .43f), JemparinganArt.Tone.Indigo,
+            Quaternion.Euler(0f, 35f, 0f));
+        _traditionalPosture.gameObject.SetActive(false);
     }
 
     private void BuildBow()
