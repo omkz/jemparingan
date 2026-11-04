@@ -281,7 +281,14 @@ public class JemparinganGame : MonoBehaviour
             _introPanel.SetActive(false);
         Vector3 aim = pose.AimDirection.sqrMagnitude > 0.01f ? pose.AimDirection.normalized : _lastAim;
         _lastAim = aim;
-        _bow.SetPositionAndRotation(pose.BowPosition, Quaternion.LookRotation(aim, Vector3.up));
+        Quaternion bowRotation = Quaternion.LookRotation(aim, Vector3.up);
+        if (IsTraditionalMode())
+        {
+            // A stylized side-drawn gandewa silhouette, more horizontal
+            // than the Classic bow. Arrow flight still follows pose.AimDirection.
+            bowRotation *= Quaternion.Euler(0f, 0f, -70f);
+        }
+        _bow.SetPositionAndRotation(pose.BowPosition, bowRotation);
         bool drawing = pose.StringPinched;
         float distance = Mathf.Clamp(Vector3.Dot(pose.BowPosition - pose.StringPosition, aim), 0f, maximumDraw);
         float power = Mathf.InverseLerp(minimumDraw, maximumDraw, distance);
