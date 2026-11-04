@@ -101,7 +101,7 @@ public class JemparinganGame : MonoBehaviour
         {
             _desktopTrainingEnabled = !_desktopTrainingEnabled;
             ShowFeedback(_desktopTrainingEnabled
-                ? "LATIHAN BIDIK AKTIF" : "LATIHAN NONAKTIF");
+                ? "AIM TRAINING ON" : "AIM TRAINING OFF");
             if (_desktopPracticeSight != null && !_desktopTrainingEnabled)
                 _desktopPracticeSight.gameObject.SetActive(false);
         }
@@ -140,7 +140,7 @@ public class JemparinganGame : MonoBehaviour
             HideDesktopPracticeSight();
             HidePreview();
             ClearDrawState();
-            SetInfo("Tangan belum terlacak — coba lagi.");
+            SetInfo("Hand tracking unavailable. Try again.");
             return;
         }
         if (_roundOver)
@@ -156,7 +156,7 @@ public class JemparinganGame : MonoBehaviour
             HideDesktopPracticeSight();
             HidePreview();
             ClearDrawState();
-            SetInfo("Pegang busur dengan tangan kiri.");
+            SetInfo("Hold the bow with your left hand.");
             return;
         }
 
@@ -165,7 +165,7 @@ public class JemparinganGame : MonoBehaviour
         {
             if (pose.StringPinched)
             {
-                SetInfo("LEPASKAN TALI UNTUK MEMULAI");
+                SetInfo("RELEASE STRING TO START");
                 return;
             }
             _awaitStringRelease = false;
@@ -203,7 +203,7 @@ public class JemparinganGame : MonoBehaviour
             {
                 _lastPowerStep = step;
                 _lastStableSignal = calm;
-                SetInfo("TARIK " + (step * 10) + "%   |   " + (calm ? "RASA: TENANG" : "RASA: FOKUS"));
+                SetInfo("DRAW " + (step * 10) + "%   |   " + (calm ? "RASA: STEADY" : "RASA: FOCUS"));
             }
         }
         else
@@ -214,7 +214,7 @@ public class JemparinganGame : MonoBehaviour
             UpdateBowStrings(0f);
             UpdateNockedArrow(0f, true);
             HidePreview();
-            SetInfo("SIAP  •  Tahan klik kiri untuk menarik; lepas untuk menembak. Klik kanan + mouse untuk membidik.");
+            SetInfo("READY  •  Hold left mouse to draw; release to shoot. Hold right mouse to aim.");
         }
 
         // One uninterrupted draw-to-release transition fires exactly once.
@@ -229,7 +229,7 @@ public class JemparinganGame : MonoBehaviour
                 Shoot(pose.BowPosition + aim * 0.25f, aim, _lastDraw, Time.time <= _focusReadyUntil);
             }
             else
-                ShowFeedback("TARIK LEBIH DALAM");
+                ShowFeedback("DRAW FURTHER");
             _lastDraw = 0f;
         }
         if (!drawing) ClearFocus();
@@ -264,7 +264,7 @@ public class JemparinganGame : MonoBehaviour
                 ResetRound();
                 // A held replay gesture cannot immediately count as a shot.
                 _awaitStringRelease = true;
-                SetInfo("LEPASKAN TALI UNTUK MEMULAI");
+                SetInfo("RELEASE STRING TO START");
             }
         }
     }
@@ -386,7 +386,7 @@ public class JemparinganGame : MonoBehaviour
             useOutdoorEnvironment ? outdoorArrowLifetime : 1.6f);
         _shots++;
         _audio.PlayOneShot(_shotSound, 0.48f);
-        ShowFeedback("PANAH MELUNCUR");
+        ShowFeedback("ARROW RELEASED");
         if (_shots == 4 || _shots == 8) UpdateLevel();
         if (_shots >= arrowsPerRound) _roundOver = true;
         UpdateHUD();
@@ -485,9 +485,9 @@ public class JemparinganGame : MonoBehaviour
         _score += pts;
         if (_score > _best) _best = _score;
         _audio.PlayOneShot(bullseye ? _bullseyeSound : _hitSound, bullseye ? 0.54f : 0.45f);
-        ShowImpactLabel("+" + pts + (bullseye ? "  TENGAH" : "  KENA"),
+        ShowImpactLabel("+" + pts + (bullseye ? "  CENTER" : "  HIT"),
             bullseye ? new Color(.98f, .81f, .40f) : new Color(.40f, .94f, .75f));
-        ShowFeedback((bullseye ? "TITIK TENGAH" : "KENA!") + "  +" + pts + (arrow.StableRelease ? "  TENANG" : "") + (_combo >= 3 ? "  KOMBO" : ""),
+        ShowFeedback((bullseye ? "BULLSEYE" : "HIT!") + "  +" + pts + (arrow.StableRelease ? "  STEADY" : "") + (_combo >= 3 ? "  COMBO" : ""),
             bullseye ? new Color(.98f, .81f, .40f) : new Color(.40f, .94f, .75f));
         UpdateHUD();
     }
@@ -496,7 +496,7 @@ public class JemparinganGame : MonoBehaviour
     {
         _combo = 0;
         if (_missSound != null) _audio.PlayOneShot(_missSound, 0.16f);
-        ShowFeedback("MELESET  •  COBA LAGI", new Color(.98f, .55f, .46f));
+        ShowFeedback("MISS  •  TRY AGAIN", new Color(.98f, .55f, .46f));
         UpdateHUD();
     }
 
@@ -505,7 +505,7 @@ public class JemparinganGame : MonoBehaviour
         int level = JemparinganScoreRules.StageIndex(_shots);
         _target.swayAmount = 0.06f + level * 0.045f;
         _target.swaySpeed = 0.7f + level * 0.52f;
-        string stage = level == 1 ? "BABAK II  •  ANGIN" : "BABAK III  •  UJIAN RASA";
+        string stage = level == 1 ? "ROUND II  •  WIND" : "ROUND III  •  RASA CHALLENGE";
         ShowFeedback(stage);
         // The outdoor phase row and status already communicate the new
         // stage: avoid a second banner duplicating the same information.
@@ -531,17 +531,17 @@ public class JemparinganGame : MonoBehaviour
         }
         _best = Mathf.Max(_previousBest, _score);
         _scoreLabel.text = useOutdoorEnvironment
-            ? "SELESAI  |  SKOR " + _score + "  |  " + _hits + " KENA"
-            : "SELESAI  •  " + _score + " POIN  •  " + _hits + "/" + _shots + " KENA";
+            ? "COMPLETE  |  SCORE " + _score + "  |  " + _hits + " HITS"
+            : "COMPLETE  •  " + _score + " POINTS  •  " + _hits + "/" + _shots + " HITS";
         if (_phaseLabel != null)
-            _phaseLabel.text = useOutdoorEnvironment ? "RONDE SELESAI" : "R O N D E  S E L E S A I";
+            _phaseLabel.text = useOutdoorEnvironment ? "ROUND COMPLETE" : "ROUND COMPLETE";
         if (_outdoorFeedbackPanel != null)
         {
             _outdoorFeedbackPanel.SetActive(false);
             _feedbackLabel.text = "";
             _feedbackUntil = 0f;
         }
-        SetInfo(Application.isEditor ? "R UNTUK ULANG  •  ATAU TAHAN KLIK KIRI" : "LEPASKAN, LALU TAHAN TARIK UNTUK ULANG");
+        SetInfo(Application.isEditor ? "PRESS R OR HOLD LEFT MOUSE TO RESTART" : "RELEASE STRING, THEN HOLD TO RESTART");
         _bow.gameObject.SetActive(false);
         HidePreview();
         if (_impactLabel != null) _impactLabel.text = "";
@@ -557,19 +557,19 @@ public class JemparinganGame : MonoBehaviour
             _resultsTitle.text = GetRoundTitle();
             int accuracy = JemparinganScoreRules.AccuracyPercent(_hits, _shots);
             _resultsDetails.text = useOutdoorEnvironment
-                ? "SKOR " + _score + "  |  AKURASI " + accuracy + "%" +
-                    "\nTENGAH " + _bullseyes + "  |  KOMBO " + _bestCombo +
-                    "\nBONUS RASA +" + _rasaBonus
-                : "SKOR  " + _score + "    AKURASI  " + accuracy + "%" +
-                    "\nTITIK TENGAH  " + _bullseyes + "    KOMBO TERBAIK  " + _bestCombo +
-                    "\nBONUS RASA  +" + _rasaBonus + "  (" + _rasaHits + " KENA)";
+                ? "SCORE " + _score + "  |  ACCURACY " + accuracy + "%" +
+                    "\nBULLSEYES " + _bullseyes + "  |  COMBO " + _bestCombo +
+                    "\nRASA BONUS +" + _rasaBonus
+                : "SCORE  " + _score + "    ACCURACY  " + accuracy + "%" +
+                    "\nBULLSEYES  " + _bullseyes + "    BEST COMBO  " + _bestCombo +
+                    "\nRASA BONUS  +" + _rasaBonus + "  (" + _rasaHits + " HITS)";
             _resultsHint.text = useOutdoorEnvironment && Application.isEditor
-                ? (newRecord ? "REKOR BARU!  |  R: ULANG" : "R: ULANG  |  TAHAN KIRI 0.7 D")
+                ? (newRecord ? "NEW RECORD!  |  R: RESTART" : "R: RESTART  |  HOLD LEFT 0.7s")
                 : (newRecord
-                    ? "REKOR BARU!  •  " + (Application.isEditor ? "R UNTUK ULANG" : "LEPAS + TAHAN TARIK")
+                    ? ""NEW RECORD!  •  " + (Application.isEditor ? "R TO RESTART" : "RELEASE + HOLD STRING")
                     : (Application.isEditor
-                        ? "R UNTUK ULANG  /  TAHAN KLIK KIRI 0.7 DETIK"
-                        : "LEPASKAN, LALU TAHAN TARIK 0.7 DETIK"));
+                        ? "R TO RESTART / HOLD LEFT 0.7s"
+                        : "RELEASE, THEN HOLD STRING 0.7s"));
             _resultsPanel.SetActive(true);
         }
     }
@@ -628,7 +628,7 @@ public class JemparinganGame : MonoBehaviour
         HidePreview();
         if (_impactLabel != null) _impactLabel.text = "";
         _impactLabelUntil = 0f;
-        ShowFeedback("BABAK I  •  TENANG");
+        ShowFeedback("ROUND I  •  CALM");
         UpdateHUD();
     }
 
@@ -636,8 +636,8 @@ public class JemparinganGame : MonoBehaviour
     {
         if (_scoreLabel != null)
             _scoreLabel.text = useOutdoorEnvironment
-                ? "SKOR " + _score + "  |  KENA " + _hits + "  |  PANAH " + _shots + "/" + arrowsPerRound
-                : "SKOR " + _score + "  •  KENA " + _hits + "/" + _shots + "  •  KOMBO " + _combo + "  •  REKOR " + _best;
+                ? "SCORE " + _score + "  |  HITS " + _hits + "  |  ARROWS " + _shots + "/" + arrowsPerRound
+                : "SCORE " + _score + "  •  HITS " + _hits + "/" + _shots + "  •  COMBO " + _combo + "  •  BEST " + _best;
         if (_phaseLabel != null && !_finished)
             _phaseLabel.text = JemparinganScoreRules.StageTitle(_shots);
         UpdateShotPips();
@@ -661,12 +661,12 @@ public class JemparinganGame : MonoBehaviour
         if (useOutdoorEnvironment)
         {
             // Keep first-person VR hints short enough to fit the readable lower panel.
-            if (value.StartsWith("SIAP") || value.StartsWith("Tahan klik kiri"))
-                value = "KIRI TARIK  |  KANAN BIDIK  |  SHIFT HALUS";
-            else if (value.StartsWith("Tangan belum"))
-                value = "TANGAN BELUM TERLACAK";
-            else if (value.StartsWith("Pegang busur"))
-                value = "PEGANG BUSUR DENGAN TANGAN KIRI";
+            if (value.StartsWith("READY") || value.StartsWith("Hold left mouse"))
+                value = "LMB DRAW  |  RMB AIM  |  SHIFT FINE";
+            else if (value.StartsWith("Hand tracking"))
+                value = "HAND TRACKING LOST";
+            else if (value.StartsWith("Hold the bow"))
+                value = "HOLD BOW WITH LEFT HAND";
         }
         if (_infoLabel != null && _lastInfo != value) { _lastInfo = value; _infoLabel.text = value; }
     }
@@ -855,7 +855,7 @@ public class JemparinganGame : MonoBehaviour
         }
         _best = PlayerPrefs.GetInt("JemparinganRasaBest", 0);
         ResetRound();
-        SetInfo("Tahan klik kiri untuk menarik, lepas untuk menembak. Klik kanan + mouse untuk membidik.");
+        SetInfo("Hold left mouse to draw, release to shoot. Hold right mouse to aim.");
         return true;
     }
 
@@ -907,9 +907,9 @@ public class JemparinganGame : MonoBehaviour
             if (label.name == "Intro title")
                 label.text = "JEMPARINGAN  /  RASA";
             else if (label.name == "Intro goal")
-                label.text = "12 PANAH  |  3 BABAK  |  RASA +3";
+                label.text = "12 ARROWS  |  3 ROUNDS  |  RASA +3";
             else if (label.name == "Intro start" && Application.isEditor)
-                label.text = "KLIK KIRI UNTUK MULAI";
+                label.text = "HOLD LEFT TO START";
         }
     }
 
@@ -928,9 +928,9 @@ public class JemparinganGame : MonoBehaviour
         JemparinganArt.Label("Intro title", intro.transform, new Vector3(0f, .16f, -.025f),
             "J E M P A R I N G A N   /   R A S A", .0045f, new Color(.98f, .82f, .51f));
         JemparinganArt.Label("Intro goal", intro.transform, new Vector3(0f, .015f, -.025f),
-            "12 PANAH   •   3 BABAK   •   RASA +3 SAAT TENANG", .0035f, Color.white);
+            "12 ARROWS   •   3 ROUNDS   •   RASA +3 WHEN STEADY", .0035f, Color.white);
         JemparinganArt.Label("Intro start", intro.transform, new Vector3(0f, -.14f, -.025f),
-            Application.isEditor ? "TARIK DENGAN KLIK KIRI UNTUK MULAI" : "TARIK TALI UNTUK MULAI",
+            Application.isEditor ? "HOLD LEFT MOUSE TO START" : "PULL STRING TO START",
             .0037f, new Color(.56f, .94f, .76f));
 
         var results = new GameObject("Round Results | Hidden Until Finish");
@@ -1256,7 +1256,7 @@ public class JemparinganGame : MonoBehaviour
             out direction, out predictedTarget);
         bool aligned = canReach &&
             Vector3.Angle(aim, predictedTarget - origin) <= 2.8f;
-        // Leave the target unobscured; only show "LEPAS" when drawing
+        // Leave the target unobscured; only show "RELEASE" when drawing
         // and aligned. Avoid rewriting text/renderer materials every frame.
         if (!_practiceSightStateKnown || aligned != _practiceSightWasAligned)
         {
@@ -1268,7 +1268,7 @@ public class JemparinganGame : MonoBehaviour
         if (!_practiceSightStateKnown || aligned != _practiceSightWasAligned ||
             drawing != _practiceSightWasDrawing)
         {
-            _practiceSightLabel.text = aligned && drawing ? "LEPAS" : "";
+            _practiceSightLabel.text = aligned && drawing ? "RELEASE" : "";
             _practiceSightLabel.color = aligned
                 ? new Color(.40f, .94f, .75f)
                 : new Color(.95f, .88f, .72f);
