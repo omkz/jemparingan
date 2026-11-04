@@ -1272,19 +1272,28 @@ public class JemparinganGame : MonoBehaviour
         var traditional = new GameObject("Traditional bandulan visuals");
         traditional.transform.SetParent(targetGO.transform, false);
         _traditionalBandulanVisual = traditional;
+        float bodyBottom = JemparinganTarget.TraditionalBottom;
+        float neckBottom = JemparinganTarget.TraditionalNeckBottom;
+        float headBottom = JemparinganTarget.TraditionalHeadBottom;
+        float headTop = JemparinganTarget.TraditionalTop;
         var awak = JemparinganArt.Part("Awak white body | 1 point",
             PrimitiveType.Cylinder, traditional.transform,
-            new Vector3(0f, -.085f, 0f), new Vector3(.048f, .135f, .048f),
+            new Vector3(0f, (bodyBottom + neckBottom) * .5f, 0f),
+            new Vector3(.048f, (neckBottom - bodyBottom) * .5f, .048f),
             JemparinganArt.Tone.BandulanWhite);
         _traditionalBandulanBody = awak.GetComponent<Renderer>();
-        JemparinganArt.Part("Jangga yellow neck | 2 points",
+        var jangga = JemparinganArt.Part("Jangga yellow neck | 2 points",
             PrimitiveType.Cylinder, traditional.transform,
-            new Vector3(0f, .075f, 0f), new Vector3(.049f, .025f, .049f),
+            new Vector3(0f, (neckBottom + headBottom) * .5f, 0f),
+            new Vector3(.049f, (headBottom - neckBottom) * .5f, .049f),
             JemparinganArt.Tone.BandulanYellow);
-        JemparinganArt.Part("Molo red head | 3 points",
+        var molo = JemparinganArt.Part("Molo red head | 3 points",
             PrimitiveType.Cylinder, traditional.transform,
-            new Vector3(0f, .148f, 0f), new Vector3(.049f, .048f, .049f),
+            new Vector3(0f, (headBottom + headTop) * .5f, 0f),
+            new Vector3(.049f, (headTop - headBottom) * .5f, .049f),
             JemparinganArt.Tone.Red);
+        _target.SetTraditionalZoneRenderers(molo.GetComponent<Renderer>(),
+            jangga.GetComponent<Renderer>(), _traditionalBandulanBody);
         traditional.SetActive(false);
     }
 
