@@ -92,12 +92,12 @@ public static class JemparinganEditorMenu
             JemparinganScoreRules.StageIndex(7) == 1, ref total, ref failed);
         Check("stage third at shot 8", JemparinganScoreRules.StageIndex(8) == 2 &&
             JemparinganScoreRules.StageIndex(12) == 2, ref total, ref failed);
-        Check("stage label", JemparinganScoreRules.StageTitle(8).StartsWith("BABAK III"),
+        Check("stage label", JemparinganScoreRules.StageTitle(8).StartsWith("ROUND III"),
             ref total, ref failed);
         Check("round title considers composure",
-            JemparinganScoreRules.ResultTitle(9, 4).Contains("R A S A"), ref total, ref failed);
+            JemparinganScoreRules.ResultTitle(9, 4).Contains("RASA"), ref total, ref failed);
         Check("round title distinguishes accuracy",
-            JemparinganScoreRules.ResultTitle(9, 1).Contains("P A N A H"), ref total, ref failed);
+            JemparinganScoreRules.ResultTitle(9, 1).Contains("TRUE AIM"), ref total, ref failed);
         Check("arrow pool default 12",
             JemparinganScoreRules.PoolCapacity(12, 14) == 14, ref total, ref failed);
         Check("arrow pool 30",
