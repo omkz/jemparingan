@@ -43,6 +43,9 @@ public class JemparinganGame : MonoBehaviour
     private Renderer[] _practiceSightRenderers;
     private TextMesh _practiceSightLabel;
     private bool _desktopTrainingEnabled = true;
+    // Cached sight state keeps TextMesh updates event-driven, not every frame.
+    private bool _practiceSightStateKnown, _practiceSightWasAligned, _practiceSightWasDrawing;
+    private GameObject _outdoorFeedbackPanel;
     private Renderer[] _focusRenderers;
     private Transform _upperString, _lowerString;
     // Cosmetic arrow follows the bowstring in outdoor mode.
@@ -117,6 +120,8 @@ public class JemparinganGame : MonoBehaviour
         {
             _feedbackLabel.text = "";
             _feedbackUntil = 0f;
+            if (_outdoorFeedbackPanel != null)
+                _outdoorFeedbackPanel.SetActive(false);
         }
         UpdateImpactLabel();
         if (_roundOver)
@@ -502,7 +507,9 @@ public class JemparinganGame : MonoBehaviour
         _target.swaySpeed = 0.7f + level * 0.52f;
         string stage = level == 1 ? "BABAK II  •  ANGIN" : "BABAK III  •  UJIAN RASA";
         ShowFeedback(stage);
-        if (_stageBanner != null)
+        // The outdoor phase row and status already communicate the new
+        // stage: avoid a second banner duplicating the same information.
+        if (_stageBanner != null && !useOutdoorEnvironment)
         {
             _stageBanner.text = stage;
             _stageBannerUntil = Time.time + 1.25f;
@@ -523,8 +530,17 @@ public class JemparinganGame : MonoBehaviour
             PlayerPrefs.Save();
         }
         _best = Mathf.Max(_previousBest, _score);
-        _scoreLabel.text = "SELESAI  •  " + _score + " POIN  •  " + _hits + "/" + _shots + " KENA";
-        if (_phaseLabel != null) _phaseLabel.text = "R O N D E  S E L E S A I";
+        _scoreLabel.text = useOutdoorEnvironment
+            ? "SELESAI  |  SKOR " + _score + "  |  " + _hits + " KENA"
+            : "SELESAI  •  " + _score + " POIN  •  " + _hits + "/" + _shots + " KENA";
+        if (_phaseLabel != null)
+            _phaseLabel.text = useOutdoorEnvironment ? "RONDE SELESAI" : "R O N D E  S E L E S A I";
+        if (_outdoorFeedbackPanel != null)
+        {
+            _outdoorFeedbackPanel.SetActive(false);
+            _feedbackLabel.text = "";
+            _feedbackUntil = 0f;
+        }
         SetInfo(Application.isEditor ? "R UNTUK ULANG  •  ATAU TAHAN KLIK KIRI" : "LEPASKAN, LALU TAHAN TARIK UNTUK ULANG");
         _bow.gameObject.SetActive(false);
         HidePreview();
@@ -540,14 +556,20 @@ public class JemparinganGame : MonoBehaviour
         {
             _resultsTitle.text = GetRoundTitle();
             int accuracy = JemparinganScoreRules.AccuracyPercent(_hits, _shots);
-            _resultsDetails.text = "SKOR  " + _score + "    AKURASI  " + accuracy + "%" +
-                "\nTITIK TENGAH  " + _bullseyes + "    KOMBO TERBAIK  " + _bestCombo +
-                "\nBONUS RASA  +" + _rasaBonus + "  (" + _rasaHits + " KENA)";
-            _resultsHint.text = newRecord
-                ? "REKOR BARU!  •  " + (Application.isEditor ? "R UNTUK ULANG" : "LEPAS + TAHAN TARIK")
-                : (Application.isEditor
-                    ? "R UNTUK ULANG  /  TAHAN KLIK KIRI 0.7 DETIK"
-                    : "LEPASKAN, LALU TAHAN TARIK 0.7 DETIK");
+            _resultsDetails.text = useOutdoorEnvironment
+                ? "SKOR " + _score + "  |  AKURASI " + accuracy + "%" +
+                    "\nTENGAH " + _bullseyes + "  |  KOMBO " + _bestCombo +
+                    "\nBONUS RASA +" + _rasaBonus
+                : "SKOR  " + _score + "    AKURASI  " + accuracy + "%" +
+                    "\nTITIK TENGAH  " + _bullseyes + "    KOMBO TERBAIK  " + _bestCombo +
+                    "\nBONUS RASA  +" + _rasaBonus + "  (" + _rasaHits + " KENA)";
+            _resultsHint.text = useOutdoorEnvironment && Application.isEditor
+                ? (newRecord ? "REKOR BARU!  |  R: ULANG" : "R: ULANG  |  TAHAN KIRI 0.7 D")
+                : (newRecord
+                    ? "REKOR BARU!  •  " + (Application.isEditor ? "R UNTUK ULANG" : "LEPAS + TAHAN TARIK")
+                    : (Application.isEditor
+                        ? "R UNTUK ULANG  /  TAHAN KLIK KIRI 0.7 DETIK"
+                        : "LEPASKAN, LALU TAHAN TARIK 0.7 DETIK"));
             _resultsPanel.SetActive(true);
         }
     }
@@ -614,7 +636,7 @@ public class JemparinganGame : MonoBehaviour
     {
         if (_scoreLabel != null)
             _scoreLabel.text = useOutdoorEnvironment
-                ? "SKOR " + _score + "  |  " + _shots + "/12 PANAH  |  KOMBO " + _combo
+                ? "SKOR " + _score + "  |  KENA " + _hits + "  |  PANAH " + _shots + "/" + arrowsPerRound
                 : "SKOR " + _score + "  •  KENA " + _hits + "/" + _shots + "  •  KOMBO " + _combo + "  •  REKOR " + _best;
         if (_phaseLabel != null && !_finished)
             _phaseLabel.text = JemparinganScoreRules.StageTitle(_shots);
@@ -640,7 +662,7 @@ public class JemparinganGame : MonoBehaviour
         {
             // Keep first-person VR hints short enough to fit the readable lower panel.
             if (value.StartsWith("SIAP") || value.StartsWith("Tahan klik kiri"))
-                value = "KIRI: TARIK / LEPAS   |   KANAN: BIDIK";
+                value = "KIRI TARIK  |  KANAN BIDIK  |  SHIFT HALUS";
             else if (value.StartsWith("Tangan belum"))
                 value = "TANGAN BELUM TERLACAK";
             else if (value.StartsWith("Pegang busur"))
@@ -654,6 +676,8 @@ public class JemparinganGame : MonoBehaviour
         _feedbackLabel.color = feedbackColor ?? new Color(.40f, .94f, .75f);
         _feedbackLabel.text = msg;
         _feedbackUntil = Time.time + 1.5f;
+        if (_outdoorFeedbackPanel != null)
+            _outdoorFeedbackPanel.SetActive(true);
     }
 
     private void BuildNockedArrow()
@@ -866,9 +890,10 @@ public class JemparinganGame : MonoBehaviour
         JemparinganArt.Part("HUD title gold top edge", PrimitiveType.Cube, hud,
             new Vector3(0f, 1.293f, .075f),
             new Vector3(1.88f, .015f, .022f), JemparinganArt.Tone.Gold);
-        JemparinganArt.Part("HUD feedback contrast panel", PrimitiveType.Cube, hud,
-            new Vector3(0f, .67f, .09f),
+        _outdoorFeedbackPanel = JemparinganArt.Part("HUD feedback contrast panel",
+            PrimitiveType.Cube, hud, new Vector3(0f, .67f, .09f),
             new Vector3(1.75f, .18f, .023f), JemparinganArt.Tone.DarkWood);
+        _outdoorFeedbackPanel.SetActive(false);
         JemparinganArt.Part("Instruction contrast panel", PrimitiveType.Cube, help,
             new Vector3(0f, 0f, .08f),
             new Vector3(1.77f, .18f, .022f), JemparinganArt.Tone.DarkWood);
@@ -1208,7 +1233,7 @@ public class JemparinganGame : MonoBehaviour
             _practiceSightRenderers[i] = part.GetComponent<Renderer>();
         }
         _practiceSightLabel = JemparinganArt.Label("Practice aim signal",
-            root, new Vector3(0f, -.118f, 0f), "BIDIK BANDULAN",
+            root, new Vector3(0f, -.118f, 0f), "",
             .0047f, new Color(.95f, .88f, .72f));
         _practiceSightLabel.fontStyle = FontStyle.Bold;
     }
@@ -1231,22 +1256,33 @@ public class JemparinganGame : MonoBehaviour
             out direction, out predictedTarget);
         bool aligned = canReach &&
             Vector3.Angle(aim, predictedTarget - origin) <= 2.8f;
-        var tone = aligned ? JemparinganArt.Tone.Jade : JemparinganArt.Tone.Paper;
-        Material material = JemparinganArt.Material(tone);
-        for (int i = 0; i < _practiceSightRenderers.Length; i++)
-            _practiceSightRenderers[i].sharedMaterial = material;
-        _practiceSightLabel.text = aligned
-            ? (drawing ? "HIJAU: LEPAS PANAH" : "SASARAN TERKUNCI")
-            : "BIDIK BANDULAN";
-        _practiceSightLabel.color = aligned
-            ? new Color(.40f, .94f, .75f)
-            : new Color(.95f, .88f, .72f);
+        // Leave the target unobscured; only show "LEPAS" when drawing
+        // and aligned. Avoid rewriting text/renderer materials every frame.
+        if (!_practiceSightStateKnown || aligned != _practiceSightWasAligned)
+        {
+            Material material = JemparinganArt.Material(aligned
+                ? JemparinganArt.Tone.Jade : JemparinganArt.Tone.Paper);
+            for (int i = 0; i < _practiceSightRenderers.Length; i++)
+                _practiceSightRenderers[i].sharedMaterial = material;
+        }
+        if (!_practiceSightStateKnown || aligned != _practiceSightWasAligned ||
+            drawing != _practiceSightWasDrawing)
+        {
+            _practiceSightLabel.text = aligned && drawing ? "LEPAS" : "";
+            _practiceSightLabel.color = aligned
+                ? new Color(.40f, .94f, .75f)
+                : new Color(.95f, .88f, .72f);
+        }
+        _practiceSightStateKnown = true;
+        _practiceSightWasAligned = aligned;
+        _practiceSightWasDrawing = drawing;
     }
 
     private void HideDesktopPracticeSight()
     {
         if (_desktopPracticeSight != null)
             _desktopPracticeSight.gameObject.SetActive(false);
+        _practiceSightStateKnown = false;
     }
 
     private void BuildPreview()
