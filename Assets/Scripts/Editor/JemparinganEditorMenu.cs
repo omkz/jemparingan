@@ -94,6 +94,20 @@ public static class JemparinganEditorMenu
             JemparinganScoreRules.StageIndex(11) == 2, ref total, ref failed);
         Check("stage label", JemparinganScoreRules.StageTitle(8).StartsWith("ROUND III"),
             ref total, ref failed);
+        Check("round IV begins after 12 arrows",
+            JemparinganScoreRules.StageIndex(12) == 3 &&
+            JemparinganScoreRules.StageIndex(15) == 3, ref total, ref failed);
+        Check("round IV named Extreme Swing",
+            JemparinganScoreRules.StageTitle(12).Contains("EXTREME SWING"),
+            ref total, ref failed);
+        Check("outdoor has 16 arrows in four rounds",
+            JemparinganScoreRules.OutdoorArrowCount == 16 &&
+            JemparinganScoreRules.OutdoorRoundCount == 4, ref total, ref failed);
+        Check("final swing is wider and faster",
+            JemparinganScoreRules.SwayAmountForStage(3) >
+                JemparinganScoreRules.SwayAmountForStage(2) &&
+            JemparinganScoreRules.SwaySpeedForStage(3) >
+                JemparinganScoreRules.SwaySpeedForStage(2), ref total, ref failed);
         Check("round title considers composure",
             JemparinganScoreRules.ResultTitle(9, 4).Contains("RASA"), ref total, ref failed);
         Check("round title distinguishes accuracy",
