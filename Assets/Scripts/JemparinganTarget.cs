@@ -3,6 +3,10 @@ using UnityEngine;
 // Procedural bandulan: swept hit test, lightweight recoil and reusable impact sparks.
 public class JemparinganTarget : MonoBehaviour
 {
+    public enum TraditionalZone { None, Awak, Jangga, Molo }
+    public TraditionalZone LastTraditionalZone { get; private set; }
+    private bool _useTraditionalScoring;
+    private JemparinganArt.Tone _normalBodyTone = JemparinganArt.Tone.Red;
     [Range(0f, 0.3f)] public float swayAmount = 0.10f;
     [Range(0f, 5f)] public float swaySpeed = 0.9f;
 
@@ -29,7 +33,17 @@ public class JemparinganTarget : MonoBehaviour
         _activeSwayAmount = swayAmount;
     }
 
-    public void SetBody(Renderer body) { _body = body; }
+    public void SetBody(Renderer body, JemparinganArt.Tone normalTone = JemparinganArt.Tone.Red)
+    {
+        _body = body;
+        _normalBodyTone = normalTone;
+    }
+
+    public void UseTraditionalScoring(bool traditional)
+    {
+        _useTraditionalScoring = traditional;
+        LastTraditionalZone = TraditionalZone.None;
+    }
 
     // Preserve the old waveform's phase when speed changes, and ease the
     // amplitude over a short window. No random jumps between rounds.
@@ -76,7 +90,7 @@ public class JemparinganTarget : MonoBehaviour
 
         if (_body != null && _flashUntil > 0f && Time.time >= _flashUntil)
         {
-            _body.sharedMaterial = JemparinganArt.Material(JemparinganArt.Tone.Red);
+            _body.sharedMaterial = JemparinganArt.Material(_normalBodyTone);
             _flashUntil = 0f;
         }
     }
@@ -98,6 +112,32 @@ public class JemparinganTarget : MonoBehaviour
     // Does not allocate or require Rigidbody/Collider on the target.
     public bool TestShot(Vector3 arrowFrom, Vector3 arrowTo, out bool bullseye)
     {
+        LastTraditionalZone = TraditionalZone.None;
+        if (_useTraditionalScoring)
+        {
+            // Traditional bandulan spans approximately -0.22 .. +0.195 in
+            // target local Y. The collision tolerance is intentionally more
+            // generous than historic 3 cm targets for a 10 m desktop demo.
+            Vector3 traditionalBottom = transform.TransformPoint(new Vector3(0f, -0.22f, 0f));
+            Vector3 traditionalTop = transform.TransformPoint(new Vector3(0f, 0.195f, 0f));
+            bool hitTraditional = SegmentDistanceSquared(arrowFrom, arrowTo,
+                traditionalBottom, traditionalTop) <= .07f * .07f;
+            if (!hitTraditional) { bullseye = false; return false; }
+
+            // Classify the swept arrow tip at the bandulan plane so the thin
+            // yellow neck is not swallowed by the head's collision tolerance.
+            Vector3 from = transform.InverseTransformPoint(arrowFrom);
+            Vector3 to = transform.InverseTransformPoint(arrowTo);
+            float dz = to.z - from.z;
+            float alpha = Mathf.Abs(dz) > .00001f
+                ? Mathf.Clamp01(-from.z / dz) : .5f;
+            float hitY = Mathf.Lerp(from.y, to.y, alpha);
+            LastTraditionalZone = hitY >= .105f ? TraditionalZone.Molo
+                : hitY >= .071f ? TraditionalZone.Jangga : TraditionalZone.Awak;
+            bullseye = LastTraditionalZone == TraditionalZone.Molo;
+            return true;
+        }
+
         Vector3 axisA = transform.TransformPoint(new Vector3(0f, -0.21f, 0f));
         Vector3 axisB = transform.TransformPoint(new Vector3(0f, 0.21f, 0f));
         float d2 = SegmentDistanceSquared(arrowFrom, arrowTo, axisA, axisB);
@@ -137,7 +177,7 @@ public class JemparinganTarget : MonoBehaviour
         _hitAt = -1f;
         _flashUntil = 0f;
         transform.localRotation = _restRotation;
-        if (_body != null) _body.sharedMaterial = JemparinganArt.Material(JemparinganArt.Tone.Red);
+        if (_body != null) _body.sharedMaterial = JemparinganArt.Material(_normalBodyTone);
         if (_fxRoot != null) _fxRoot.gameObject.SetActive(false);
     }
 
