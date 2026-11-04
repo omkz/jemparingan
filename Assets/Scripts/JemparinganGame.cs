@@ -781,6 +781,17 @@ public class JemparinganGame : MonoBehaviour
         UpdateHUD();
     }
 
+    private void UpdateIntroMode()
+    {
+        if (_introGoalLabel == null || _introTitleLabel == null) return;
+        _introTitleLabel.text = IsTraditionalMode() ?
+            "JEMPARINGAN  /  TRADITIONAL" : "JEMPARINGAN  /  RASA";
+        _introGoalLabel.text = IsTraditionalMode() ?
+            "12 ARROWS  |  MOLO 3  JANGGA 2  AWAK 1" :
+            arrowsPerRound + " ARROWS  |  " +
+                JemparinganScoreRules.OutdoorRoundCount + " ROUNDS  |  RASA +3";
+    }
+
     private void UpdateHUD()
     {
         if (_scoreLabel != null)
@@ -805,12 +816,22 @@ public class JemparinganGame : MonoBehaviour
         if (_shotPipRenderers == null) return;
         for (int i = 0; i < _shotPipRenderers.Length; i++)
         {
-            JemparinganArt.Tone tone = i < _shots ? JemparinganArt.Tone.Gold : JemparinganArt.Tone.Paper;
+            Renderer pip = _shotPipRenderers[i];
+            bool withinMode = i < arrowsPerRound;
+            if (pip.gameObject.activeSelf != withinMode)
+                pip.gameObject.SetActive(withinMode);
+            if (!withinMode) continue;
+            float x = arrowsPerRound <= 1 ? 0f :
+                Mathf.Lerp(-.46f, .46f, i / (float)(arrowsPerRound - 1));
+            pip.transform.localPosition = new Vector3(x, 0f, 0f);
+            JemparinganArt.Tone tone = i < _shots ?
+                JemparinganArt.Tone.Gold : JemparinganArt.Tone.Paper;
             int activeStage = Mathf.Min(_shots / JemparinganScoreRules.ArrowsPerStage,
                 (arrowsPerRound - 1) / JemparinganScoreRules.ArrowsPerStage);
-            bool inStage = i / JemparinganScoreRules.ArrowsPerStage == activeStage;
+            bool inStage = IsTraditionalMode() ||
+                i / JemparinganScoreRules.ArrowsPerStage == activeStage;
             if (!_finished && i >= _shots && inStage) tone = JemparinganArt.Tone.Jade;
-            _shotPipRenderers[i].sharedMaterial = JemparinganArt.Material(tone);
+            pip.sharedMaterial = JemparinganArt.Material(tone);
         }
     }
     private void SetInfo(string value)
@@ -819,7 +840,9 @@ public class JemparinganGame : MonoBehaviour
         {
             // Keep first-person VR hints short enough to fit the readable lower panel.
             if (value.StartsWith("READY") || value.StartsWith("Hold left mouse"))
-                value = "LMB DRAW  |  RMB AIM  |  SHIFT FINE";
+                value = IsTraditionalMode()
+                    ? "RED 3  |  YELLOW 2  |  WHITE 1"
+                    : "LMB DRAW  |  RMB AIM  |  SHIFT FINE";
             else if (value.StartsWith("Hand tracking"))
                 value = "HAND TRACKING LOST";
             else if (value.StartsWith("Hold the bow"))
@@ -1089,9 +1112,9 @@ public class JemparinganGame : MonoBehaviour
             Vector3.zero, new Vector3(1.46f, .55f, .016f), JemparinganArt.Tone.DarkWood);
         JemparinganArt.Part("Intro gold edge", PrimitiveType.Cube, intro.transform,
             new Vector3(0f, .268f, -.013f), new Vector3(1.46f, .012f, .01f), JemparinganArt.Tone.Gold);
-        JemparinganArt.Label("Intro title", intro.transform, new Vector3(0f, .16f, -.025f),
+        _introTitleLabel = JemparinganArt.Label("Intro title", intro.transform, new Vector3(0f, .16f, -.025f),
             "J E M P A R I N G A N   /   R A S A", .0045f, new Color(.98f, .82f, .51f));
-        JemparinganArt.Label("Intro goal", intro.transform, new Vector3(0f, .015f, -.025f),
+        _introGoalLabel = JemparinganArt.Label("Intro goal", intro.transform, new Vector3(0f, .015f, -.025f),
             arrowsPerRound + " ARROWS   •   " +
                 Mathf.CeilToInt(arrowsPerRound / (float)JemparinganScoreRules.ArrowsPerStage) +
                 " ROUNDS   •   RASA +3 WHEN STEADY", .0035f, Color.white);
@@ -1398,7 +1421,8 @@ public class JemparinganGame : MonoBehaviour
     private void UpdateLeadMarker(Vector3 arrowOrigin, float power)
     {
         if (_leadMarker == null || _target == null) return;
-        bool visible = _shots >= 4 && !_roundOver && power >= .35f;
+        bool visible = !IsTraditionalMode() && _shots >= 4 &&
+            !_roundOver && power >= .35f;
         if (!visible)
         {
             _leadMarker.gameObject.SetActive(false);
