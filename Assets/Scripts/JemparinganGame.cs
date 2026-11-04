@@ -534,7 +534,7 @@ public class JemparinganGame : MonoBehaviour
             ? "COMPLETE  |  SCORE " + _score + "  |  " + _hits + " HITS"
             : "COMPLETE  •  " + _score + " POINTS  •  " + _hits + "/" + _shots + " HITS";
         if (_phaseLabel != null)
-            _phaseLabel.text = useOutdoorEnvironment ? "ROUND COMPLETE" : "ROUND COMPLETE";
+            _phaseLabel.text = "ROUND COMPLETE";
         if (_outdoorFeedbackPanel != null)
         {
             _outdoorFeedbackPanel.SetActive(false);
@@ -566,7 +566,7 @@ public class JemparinganGame : MonoBehaviour
             _resultsHint.text = useOutdoorEnvironment && Application.isEditor
                 ? (newRecord ? "NEW RECORD!  |  R: RESTART" : "R: RESTART  |  HOLD LEFT 0.7s")
                 : (newRecord
-                    ? ""NEW RECORD!  •  " + (Application.isEditor ? "R TO RESTART" : "RELEASE + HOLD STRING")
+                    ? "NEW RECORD!  •  " + (Application.isEditor ? "R TO RESTART" : "RELEASE + HOLD STRING")
                     : (Application.isEditor
                         ? "R TO RESTART / HOLD LEFT 0.7s"
                         : "RELEASE, THEN HOLD STRING 0.7s"));
