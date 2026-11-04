@@ -91,7 +91,7 @@ public static class JemparinganEditorMenu
         Check("stage second at shot 4", JemparinganScoreRules.StageIndex(4) == 1 &&
             JemparinganScoreRules.StageIndex(7) == 1, ref total, ref failed);
         Check("stage third at shot 8", JemparinganScoreRules.StageIndex(8) == 2 &&
-            JemparinganScoreRules.StageIndex(12) == 2, ref total, ref failed);
+            JemparinganScoreRules.StageIndex(11) == 2, ref total, ref failed);
         Check("stage label", JemparinganScoreRules.StageTitle(8).StartsWith("ROUND III"),
             ref total, ref failed);
         Check("round title considers composure",
