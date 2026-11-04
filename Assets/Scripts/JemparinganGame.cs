@@ -17,7 +17,11 @@ public class JemparinganGame : MonoBehaviour
     private bool _modeChosen;
     private GameObject _classicBandulanVisual, _traditionalBandulanVisual;
     private Renderer _classicBandulanBody, _traditionalBandulanBody;
-    private Transform _traditionalPosture;
+    private Transform _traditionalPosture, _traditionalArmsRoot;
+    private Transform _traditionalLeftUpper, _traditionalLeftForearm, _traditionalLeftPalm;
+    private Transform _traditionalRightUpper, _traditionalRightForearm, _traditionalRightPalm;
+    private Vector3 _traditionalRightWrist;
+    private bool _traditionalRightWristReady;
     private TextMesh _introGoalLabel, _introTitleLabel;
 
     private bool IsTraditionalMode() { return useOutdoorEnvironment && _mode == GameMode.Traditional; }
@@ -1297,25 +1301,112 @@ public class JemparinganGame : MonoBehaviour
         traditional.SetActive(false);
     }
 
+    // The legs stay in world space at the seated shooting spot. They should
+    // not spin with camera aim as a camera-attached 3D sticker would.
     private void BuildTraditionalPosture(Camera camera)
     {
         if (!useOutdoorEnvironment) return;
         _traditionalPosture = new GameObject(
-            "Traditional seated silhouette (simplified)").transform;
-        _traditionalPosture.SetParent(camera.transform, false);
-        _traditionalPosture.localPosition = new Vector3(0f, -.43f, .90f);
-        JemparinganArt.Part("Seated cloth", PrimitiveType.Sphere,
-            _traditionalPosture, new Vector3(0f, -.075f, -.12f),
-            new Vector3(.47f, .14f, .40f), JemparinganArt.Tone.Indigo);
-        JemparinganArt.Part("Left folded leg", PrimitiveType.Sphere,
-            _traditionalPosture, new Vector3(-.22f, 0f, .09f),
-            new Vector3(.26f, .13f, .43f), JemparinganArt.Tone.Indigo,
-            Quaternion.Euler(0f, -35f, 0f));
-        JemparinganArt.Part("Right folded leg", PrimitiveType.Sphere,
-            _traditionalPosture, new Vector3(.22f, 0f, .09f),
-            new Vector3(.26f, .13f, .43f), JemparinganArt.Tone.Indigo,
-            Quaternion.Euler(0f, 35f, 0f));
+            "Traditional | cross-legged seated pose").transform;
+        Vector3 groundForward = Vector3.ProjectOnPlane(camera.transform.forward,
+            Vector3.up).normalized;
+        if (groundForward.sqrMagnitude < .01f) groundForward = Vector3.forward;
+        _traditionalPosture.SetPositionAndRotation(camera.transform.position,
+            Quaternion.LookRotation(groundForward, Vector3.up));
+
+        JemparinganArt.Part("Folded sarong at hips", PrimitiveType.Sphere,
+            _traditionalPosture, new Vector3(0f, -.69f, .82f),
+            new Vector3(.43f, .19f, .38f), JemparinganArt.Tone.TraditionalCloth);
+        Vector3 leftHip = new Vector3(-.16f, -.72f, .86f);
+        Vector3 rightHip = new Vector3(.16f, -.72f, .86f);
+        Vector3 leftKnee = new Vector3(-.38f, -1.06f, 2.12f);
+        Vector3 rightKnee = new Vector3(.38f, -1.06f, 2.12f);
+        Vector3 leftFoot = new Vector3(.18f, -1.22f, 2.38f);
+        Vector3 rightFoot = new Vector3(-.18f, -1.22f, 2.38f);
+        MakeTraditionalLimb("Left folded thigh", _traditionalPosture,
+            leftHip, leftKnee, .33f, JemparinganArt.Tone.TraditionalCloth);
+        MakeTraditionalLimb("Right folded thigh", _traditionalPosture,
+            rightHip, rightKnee, .33f, JemparinganArt.Tone.TraditionalCloth);
+        MakeTraditionalLimb("Left shin crosses right", _traditionalPosture,
+            leftKnee, leftFoot, .24f, JemparinganArt.Tone.TraditionalCloth);
+        MakeTraditionalLimb("Right shin crosses left", _traditionalPosture,
+            rightKnee, rightFoot, .24f, JemparinganArt.Tone.TraditionalCloth);
+        JemparinganArt.Part("Left knee cloth fold", PrimitiveType.Sphere,
+            _traditionalPosture, leftKnee, new Vector3(.20f, .15f, .23f),
+            JemparinganArt.Tone.TraditionalCloth);
+        JemparinganArt.Part("Right knee cloth fold", PrimitiveType.Sphere,
+            _traditionalPosture, rightKnee, new Vector3(.20f, .15f, .23f),
+            JemparinganArt.Tone.TraditionalCloth);
+        // A little textile trim makes the crossed folds readable without
+        // introducing imported clothing meshes or texture dependencies.
+        MakeTraditionalLimb("Left sarong edge", _traditionalPosture,
+            leftKnee + new Vector3(.08f, .10f, -.09f),
+            leftFoot + new Vector3(.08f, .10f, -.09f),
+            .016f, JemparinganArt.Tone.TraditionalTrim);
+        MakeTraditionalLimb("Right sarong edge", _traditionalPosture,
+            rightKnee + new Vector3(-.08f, .10f, -.09f),
+            rightFoot + new Vector3(-.08f, .10f, -.09f),
+            .016f, JemparinganArt.Tone.TraditionalTrim);
+        JemparinganArt.Part("Left bare foot", PrimitiveType.Sphere,
+            _traditionalPosture, leftFoot,
+            new Vector3(.13f, .055f, .20f), JemparinganArt.Tone.TraditionalSkin);
+        JemparinganArt.Part("Right bare foot", PrimitiveType.Sphere,
+            _traditionalPosture, rightFoot,
+            new Vector3(.13f, .055f, .20f), JemparinganArt.Tone.TraditionalSkin);
         _traditionalPosture.gameObject.SetActive(false);
+
+        // The arms move in camera coordinates: the bow remains in the same
+        // location as Classic, but sleeve and hand visuals reach its grip
+        // and the drawn string. They do not change any gameplay physics.
+        _traditionalArmsRoot = new GameObject(
+            "Traditional | first-person drawing arms").transform;
+        _traditionalArmsRoot.SetParent(camera.transform, false);
+        _traditionalLeftUpper = NewTraditionalLimb(
+            "Left upper sleeve", _traditionalArmsRoot,
+            JemparinganArt.Tone.TraditionalCloth);
+        _traditionalLeftForearm = NewTraditionalLimb(
+            "Left forearm sleeve", _traditionalArmsRoot,
+            JemparinganArt.Tone.TraditionalCloth);
+        _traditionalRightUpper = NewTraditionalLimb(
+            "Right upper sleeve", _traditionalArmsRoot,
+            JemparinganArt.Tone.TraditionalCloth);
+        _traditionalRightForearm = NewTraditionalLimb(
+            "Right forearm sleeve", _traditionalArmsRoot,
+            JemparinganArt.Tone.TraditionalCloth);
+        _traditionalLeftPalm = JemparinganArt.Part("Left grip hand",
+            PrimitiveType.Sphere, _traditionalArmsRoot, Vector3.zero,
+            new Vector3(.075f, .065f, .095f),
+            JemparinganArt.Tone.TraditionalSkin).transform;
+        _traditionalRightPalm = JemparinganArt.Part("Right draw hand",
+            PrimitiveType.Sphere, _traditionalArmsRoot, Vector3.zero,
+            new Vector3(.070f, .055f, .085f),
+            JemparinganArt.Tone.TraditionalSkin).transform;
+        _traditionalArmsRoot.gameObject.SetActive(false);
+    }
+
+    private static Transform NewTraditionalLimb(string name, Transform parent,
+        JemparinganArt.Tone tone)
+    {
+        return JemparinganArt.Part(name, PrimitiveType.Capsule, parent,
+            Vector3.zero, Vector3.one * .1f, tone).transform;
+    }
+
+    private static void PlaceTraditionalLimb(Transform limb, Vector3 start,
+        Vector3 end, float width)
+    {
+        Vector3 delta = end - start;
+        if (delta.sqrMagnitude < .0001f) return;
+        limb.localPosition = (start + end) * .5f;
+        limb.localRotation = Quaternion.FromToRotation(Vector3.up, delta.normalized);
+        // Unity Capsule has a local height of 2 units, radius 0.5.
+        limb.localScale = new Vector3(width, delta.magnitude * .5f, width);
+    }
+
+    private static void MakeTraditionalLimb(string name, Transform parent,
+        Vector3 start, Vector3 end, float width, JemparinganArt.Tone tone)
+    {
+        PlaceTraditionalLimb(NewTraditionalLimb(name, parent, tone),
+            start, end, width);
     }
 
     private void BuildBow()
