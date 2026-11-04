@@ -78,6 +78,17 @@ public class JemparinganGame : MonoBehaviour
     private int _lastPowerStep = -1;
     private bool _lastStableSignal;
 
+    // Web browser builds are mouse/keyboard demos. Keep Quest hand tracking
+    // reserved for native Quest builds and opt-in Editor tests.
+    private bool UsesDesktopInput()
+    {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        return true;
+#else
+        return Application.isEditor && !preferQuestHandsInEditor;
+#endif
+    }
+
     private IEnumerator Start()
     {
         if (desktopInput == null) desktopInput = GetComponent<DesktopBowInput>();
@@ -88,7 +99,7 @@ public class JemparinganGame : MonoBehaviour
 
     private void Update()
     {
-        if (Application.isEditor && Input.GetKeyDown(KeyCode.R) && _arrows != null)
+        if (UsesDesktopInput() && Input.GetKeyDown(KeyCode.R) && _arrows != null)
         {
             // Restart during a held string must not turn that release into a shot.
             bool stringWasHeld = _wasDrawing || Input.GetMouseButton(0);
@@ -96,7 +107,7 @@ public class JemparinganGame : MonoBehaviour
             _awaitStringRelease = stringWasHeld;
         }
         if (!_ready) return;
-        if (useOutdoorEnvironment && Application.isEditor &&
+        if (useOutdoorEnvironment && UsesDesktopInput() &&
             Input.GetKeyDown(KeyCode.T))
         {
             _desktopTrainingEnabled = !_desktopTrainingEnabled;
@@ -132,7 +143,7 @@ public class JemparinganGame : MonoBehaviour
             if (!anyFlying) { FinishRound(); return; }
         }
 
-        IJemparinganInput input = Application.isEditor && !preferQuestHandsInEditor
+        IJemparinganInput input = UsesDesktopInput()
             ? (IJemparinganInput)desktopInput : questInput;
         if (input == null || !input.TryReadPose(out JemparinganHandPose pose))
         {
@@ -241,7 +252,7 @@ public class JemparinganGame : MonoBehaviour
     // Editor also supports R as an immediate debug shortcut.
     private void HandleResultInput()
     {
-        IJemparinganInput input = Application.isEditor && !preferQuestHandsInEditor
+        IJemparinganInput input = UsesDesktopInput()
             ? (IJemparinganInput)desktopInput : questInput;
         JemparinganHandPose pose;
         if (input == null || !input.TryReadPose(out pose) || !pose.BowPinched)
@@ -396,8 +407,8 @@ public class JemparinganGame : MonoBehaviour
     {
         // Desktop Editor training only. Quest input and classic v0.9 shooting
         // retain the original assistance behavior and physics.
-        return useOutdoorEnvironment && Application.isEditor &&
-            !preferQuestHandsInEditor && _desktopTrainingEnabled;
+        return useOutdoorEnvironment && UsesDesktopInput() &&
+            _desktopTrainingEnabled;
     }
 
     // Only close-to-target desktop practice shots are corrected. Aim at the
@@ -541,7 +552,7 @@ public class JemparinganGame : MonoBehaviour
             _feedbackLabel.text = "";
             _feedbackUntil = 0f;
         }
-        SetInfo(Application.isEditor ? "PRESS R OR HOLD LEFT MOUSE TO RESTART" : "RELEASE STRING, THEN HOLD TO RESTART");
+        SetInfo(UsesDesktopInput() ? "PRESS R OR HOLD LEFT MOUSE TO RESTART" : "RELEASE STRING, THEN HOLD TO RESTART");
         _bow.gameObject.SetActive(false);
         HidePreview();
         if (_impactLabel != null) _impactLabel.text = "";
@@ -563,11 +574,11 @@ public class JemparinganGame : MonoBehaviour
                 : "SCORE  " + _score + "    ACCURACY  " + accuracy + "%" +
                     "\nBULLSEYES  " + _bullseyes + "    BEST COMBO  " + _bestCombo +
                     "\nRASA BONUS  +" + _rasaBonus + "  (" + _rasaHits + " HITS)";
-            _resultsHint.text = useOutdoorEnvironment && Application.isEditor
+            _resultsHint.text = useOutdoorEnvironment && UsesDesktopInput()
                 ? (newRecord ? "NEW RECORD!  |  R: RESTART" : "R: RESTART  |  HOLD LEFT 0.7s")
                 : (newRecord
-                    ? "NEW RECORD!  •  " + (Application.isEditor ? "R TO RESTART" : "RELEASE + HOLD STRING")
-                    : (Application.isEditor
+                    ? "NEW RECORD!  •  " + (UsesDesktopInput() ? "R TO RESTART" : "RELEASE + HOLD STRING")
+                    : (UsesDesktopInput()
                         ? "R TO RESTART / HOLD LEFT 0.7s"
                         : "RELEASE, THEN HOLD STRING 0.7s"));
             _resultsPanel.SetActive(true);
@@ -908,7 +919,7 @@ public class JemparinganGame : MonoBehaviour
                 label.text = "JEMPARINGAN  /  RASA";
             else if (label.name == "Intro goal")
                 label.text = "12 ARROWS  |  3 ROUNDS  |  RASA +3";
-            else if (label.name == "Intro start" && Application.isEditor)
+            else if (label.name == "Intro start" && UsesDesktopInput())
                 label.text = "HOLD LEFT TO START";
         }
     }
@@ -930,7 +941,7 @@ public class JemparinganGame : MonoBehaviour
         JemparinganArt.Label("Intro goal", intro.transform, new Vector3(0f, .015f, -.025f),
             "12 ARROWS   •   3 ROUNDS   •   RASA +3 WHEN STEADY", .0035f, Color.white);
         JemparinganArt.Label("Intro start", intro.transform, new Vector3(0f, -.14f, -.025f),
-            Application.isEditor ? "HOLD LEFT MOUSE TO START" : "PULL STRING TO START",
+            UsesDesktopInput() ? "HOLD LEFT MOUSE TO START" : "PULL STRING TO START",
             .0037f, new Color(.56f, .94f, .76f));
 
         var results = new GameObject("Round Results | Hidden Until Finish");
@@ -1206,8 +1217,7 @@ public class JemparinganGame : MonoBehaviour
 
     private void BuildDesktopPracticeSight(Camera camera)
     {
-        if (!useOutdoorEnvironment || !Application.isEditor ||
-            preferQuestHandsInEditor) return;
+        if (!useOutdoorEnvironment || !UsesDesktopInput()) return;
 
         // Four small strokes leave an open center; this is a sighting aid,
         // not a full opaque crosshair or a fake physical projectile.
