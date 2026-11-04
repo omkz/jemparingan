@@ -173,7 +173,6 @@ public class JemparinganGame : MonoBehaviour
         if (_traditionalPosture != null)
             _traditionalPosture.gameObject.SetActive(IsTraditionalMode());
         HideTraditionalArms();
-        if (_traditionalArcher != null) _traditionalArcher.ResetPose();
         _lastInfo = "";
         HideDesktopPracticeSight();
         ResetRound();
@@ -293,7 +292,7 @@ public class JemparinganGame : MonoBehaviour
         {
             // Keep the gandewa recognizably canted without laying it across
             // the sightline. Arrow flight still follows pose.AimDirection.
-            bowRotation *= Quaternion.Euler(0f, 0f, -20f);
+            bowRotation *= Quaternion.Euler(0f, 0f, -15f);
         }
         Vector3 visualBowPosition = pose.BowPosition;
         if (IsTraditionalMode() && UsesDesktopInput() && Camera.main != null)
@@ -304,7 +303,7 @@ public class JemparinganGame : MonoBehaviour
             // sightline, below eye level and reachable from the torso.
             Transform eye = Camera.main.transform;
             visualBowPosition = eye.position + aim * .74f
-                - eye.right * .34f - eye.up * .17f;
+                - eye.right * .36f - eye.up * .17f;
         }
         _bow.SetPositionAndRotation(visualBowPosition, bowRotation);
         bool drawing = pose.StringPinched;
@@ -351,7 +350,7 @@ public class JemparinganGame : MonoBehaviour
 
         // The contact targets must be current before posing hands. The old
         // call ran before the string moved and smoothed the hand away from it.
-        UpdateTraditionalArms(drawing);
+        UpdateTraditionalPresentation();
 
         // One uninterrupted draw-to-release transition fires exactly once.
         // Tracking loss / bow-unpinch resets without firing.
@@ -939,19 +938,12 @@ public class JemparinganGame : MonoBehaviour
             : pull;
     }
 
-    // The real rendered nocking point. A Traditional draw travels toward the
-    // player's anchor side as it comes back, rather than remaining directly
-    // behind the left grip. This affects only bow/string/hand artwork; launch
-    // origin, aim direction, draw power and projectile physics still use pose.
+    // One bow-local cosmetic nock drives the string bead, both string halves
+    // and the attached arrow. It deliberately stays independent from launch
+    // origin, aim direction, draw power and projectile physics.
     private Vector3 TraditionalNockLocalPosition(float pull)
     {
-        float visualPull = TraditionalVisualPull(pull);
-        Vector3 local = Vector3.back * visualPull;
-        if (!IsTraditionalMode() || Camera.main == null) return local;
-        float draw01 = Mathf.InverseLerp(.12f, maximumDraw, visualPull);
-        Vector3 towardFace = Camera.main.transform.right * (.20f * draw01)
-            + Camera.main.transform.up * (.018f * draw01);
-        return local + _bow.InverseTransformVector(towardFace);
+        return Vector3.back * TraditionalVisualPull(pull);
     }
 
     private void UpdateBowStrings(float pull)
@@ -1400,7 +1392,7 @@ public class JemparinganGame : MonoBehaviour
         _traditionalPosture.gameObject.SetActive(false);
 
         _traditionalArcher = _traditionalPosture.gameObject.AddComponent<JemparinganTraditionalArcher>();
-        _traditionalArcher.Build(_bow.Find("Leather-wrapped main grip"), _stringMarker, _bow);
+        _traditionalArcher.Build(_bow.Find("Leather-wrapped main grip"), _bow);
     }
 
     private static Transform NewTraditionalLimb(string name, Transform parent,
@@ -1428,10 +1420,10 @@ public class JemparinganGame : MonoBehaviour
             start, end, width);
     }
 
-    private void UpdateTraditionalArms(bool drawing)
+    private void UpdateTraditionalPresentation()
     {
         if (!IsTraditionalMode() || _traditionalArcher == null) return;
-        _traditionalArcher.Present(drawing);
+        _traditionalArcher.Present();
     }
 
     private void HideTraditionalArms()

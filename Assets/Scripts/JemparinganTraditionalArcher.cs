@@ -2,298 +2,184 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-// Traditional-only render geometry. No colliders, input, aim or projectile state.
-// Contact frames are the real leather handle and the real string junction.
+// Traditional-only first-person presentation. The visible hand is attached to
+// the real leather grip; the short sleeve is cosmetic and owns no gameplay,
+// input, aim, collider or projectile state.
 public sealed class JemparinganTraditionalArcher : MonoBehaviour
 {
     private const int Sides = 8;
-    private const float UpperLength = .36f, ForearmLength = .34f;
+    private const int ForearmRings = 5;
     private readonly List<Mesh> _meshes = new List<Mesh>();
-    private Transform _handle, _nock, _bow, _chest, _arms, _leftHand, _rightHand;
-    private Mesh _leftSleeve, _rightSleeve, _rightHandMesh;
-    private Vector3[] _closedFingers, _openFingers, _posedFingers;
-    private float _fingerOpenness;
-    private readonly Vector3[] _leftVertices = new Vector3[7 * Sides + 2];
-    private readonly Vector3[] _rightVertices = new Vector3[7 * Sides + 2];
-    private Vector3 _releasedContact;
-    private Quaternion _releasedRotation;
-    private float _releaseTime = 1f, _torsoYaw;
-    private bool _wasDrawing;
-    private static readonly Vector3 LeftWrist = new Vector3(-.026f, -.012f, -.095f);
-    private static readonly Vector3 RightWrist = new Vector3(.065f, -.015f, -.10f);
+    private readonly Vector3[] _forearmVertices =
+        new Vector3[ForearmRings * Sides + 2];
 
-    public void Build(Transform handle, Transform nock, Transform bow)
+    private Transform _handle, _bow, _visuals, _leftHand;
+    private Mesh _leftSleeve;
+
+    // The mesh wrist is behind the fingers, so the sleeve terminates inside
+    // the palm instead of leaving a visible gap at the grip.
+    private static readonly Vector3 LeftWrist =
+        new Vector3(-.026f, -.012f, -.095f);
+
+    public void Build(Transform handle, Transform bow)
     {
         _handle = handle;
-        _nock = nock;
         _bow = bow;
-        _chest = new GameObject("Traditional | shirt and shoulder frame").transform;
-        _chest.SetParent(transform, false);
-        // The eye is in front of the chest, rather than inside its front face.
-        _chest.localPosition = new Vector3(0f, -.94f, -.12f);
-        BuildShirt();
-        _arms = new GameObject("Traditional | arms and hands").transform;
-        _arms.SetParent(transform, false);
-        _leftHand = BuildHand("Left hand | fingers around leather handle", false);
-        _rightHand = BuildHand("Right hand | split fingers at string nock", true);
-        _leftSleeve = MakeMesh("Continuous left sleeve", true);
-        _rightSleeve = MakeMesh("Continuous right sleeve", true);
-        AddRenderer("Left shoulder to wrist", _arms, _leftSleeve,
-            JemparinganArt.Tone.TraditionalCloth);
-        AddRenderer("Right shoulder to wrist", _arms, _rightSleeve,
-            JemparinganArt.Tone.TraditionalCloth);
-        _arms.gameObject.SetActive(false);
-    }
 
-    public void ResetPose()
-    {
-        _wasDrawing = false;
-        _releaseTime = 1f;
-        _fingerOpenness = 0f;
+        _visuals = new GameObject(
+            "Traditional | left grip hand and partial forearm").transform;
+        _visuals.SetParent(transform, false);
+        _leftHand = BuildLeftHand();
+        _leftSleeve = MakeMesh("Traditional partial left forearm", true);
+        AddRenderer("Partial left forearm", _visuals, _leftSleeve,
+            JemparinganArt.Tone.TraditionalCloth);
+        _visuals.gameObject.SetActive(false);
     }
 
     public void HideArms()
     {
-        if (_arms != null) _arms.gameObject.SetActive(false);
-        ResetPose();
+        if (_visuals != null) _visuals.gameObject.SetActive(false);
     }
 
-    public void Present(bool drawing)
+    public void Present()
     {
-        if (_handle == null || _nock == null) return;
-        if (!_arms.gameObject.activeSelf) _arms.gameObject.SetActive(true);
-        // Only the upper torso turns. The seat and crossed legs never inherit
-        // camera yaw/pitch. All IK points below use this one seat-local frame.
-        Vector3 facing = transform.InverseTransformDirection(_bow.forward);
-        float yaw = Mathf.Clamp(Mathf.Atan2(facing.x, facing.z) * Mathf.Rad2Deg,
-            -50f, 50f);
-        _torsoYaw = Mathf.LerpAngle(_torsoYaw, yaw,
-            1f - Mathf.Exp(-10f * Time.deltaTime));
-        _chest.localRotation = Quaternion.Euler(0f, _torsoYaw, 0f);
+        if (_handle == null || _bow == null || Camera.main == null) return;
+        if (!_visuals.gameObject.activeSelf) _visuals.gameObject.SetActive(true);
 
-        // Grip in the lower half of the *actual* 15 cm leather wrap. This is
-        // a point on the handle, not a camera-space approximation of its origin.
-        Vector3 leftContact = _handle.TransformPoint(Vector3.down * .55f);
-        _leftHand.SetPositionAndRotation(leftContact, _handle.rotation);
-
-        Vector3 contact = _nock.position;
-        Quaternion rotation = _bow.rotation;
-        if (_wasDrawing && !drawing)
-        {
-            _releaseTime = 0f;
-            _releasedContact = _rightHand.localPosition;
-            _releasedRotation = _rightHand.localRotation;
-        }
-        if (!drawing && _releaseTime < .32f)
-        {
-            _releaseTime += Time.deltaTime;
-            // The fingers let go; the string can spring forward immediately
-            // without dragging the hand with it. Brief follow-through, then
-            // an eased return to the current nock (also while turning).
-            Vector3 back = transform.InverseTransformDirection(-_bow.forward) * .035f;
-            Vector3 follow = _releasedContact + back *
-                Mathf.Sin(Mathf.Clamp01(_releaseTime / .32f) * Mathf.PI);
-            float t = Mathf.SmoothStep(0f, 1f,
-                Mathf.InverseLerp(.08f, .32f, _releaseTime));
-            contact = transform.TransformPoint(Vector3.Lerp(follow,
-                transform.InverseTransformPoint(_nock.position), t));
-            rotation = transform.rotation * Quaternion.Slerp(_releasedRotation,
-                Quaternion.Inverse(transform.rotation) * _bow.rotation, t);
-        }
-        _rightHand.SetPositionAndRotation(contact, rotation);
-        float open = !drawing && _releaseTime < .26f ? 1f : 0f;
-        _fingerOpenness = Mathf.MoveTowards(_fingerOpenness, open, Time.deltaTime * 18f);
-        for (int i = 0; i < _posedFingers.Length; i++)
-            _posedFingers[i] = Vector3.Lerp(_closedFingers[i], _openFingers[i], _fingerOpenness);
-        _rightHandMesh.vertices = _posedFingers;
-        _rightHandMesh.RecalculateNormals();
-        _rightHandMesh.RecalculateBounds();
-        _wasDrawing = drawing;
-
-        Vector3 leftShoulder = transform.InverseTransformPoint(
-            _chest.TransformPoint(new Vector3(-.20f, .60f, .17f)));
-        Vector3 rightShoulder = transform.InverseTransformPoint(
-            _chest.TransformPoint(new Vector3(.20f, .60f, .17f)));
-        Vector3 leftWrist = transform.InverseTransformPoint(_leftHand.TransformPoint(LeftWrist));
-        Vector3 rightWrist = transform.InverseTransformPoint(_rightHand.TransformPoint(RightWrist));
-        // The bow arm opens gently to the left; the draw elbow stays wide and
-        // near shoulder height. Strong downward hints made both sleeves fall
-        // out of the bottom of the first-person view like disconnected tubes.
-        Vector3 leftBend = transform.InverseTransformDirection(
-            _chest.TransformDirection(new Vector3(-.8f, -.32f, -.05f)));
-        Vector3 rightBend = transform.InverseTransformDirection(
-            _chest.TransformDirection(new Vector3(.95f, -.12f, -.05f)));
-        PoseSleeve(_leftSleeve, _leftVertices, leftShoulder, leftWrist, leftBend,
-            transform.InverseTransformDirection(_leftHand.TransformDirection(new Vector3(0f, .012f, .065f))));
-        PoseSleeve(_rightSleeve, _rightVertices, rightShoulder, rightWrist, rightBend,
-            transform.InverseTransformDirection(_rightHand.TransformDirection(new Vector3(-.031f, .003f, .058f))));
+        // Grip the lower half of the actual scaled leather wrap. No camera-
+        // space hand offset is applied after this contact point is resolved.
+        Vector3 contact = _handle.TransformPoint(Vector3.down * .55f);
+        _leftHand.SetPositionAndRotation(contact, _handle.rotation);
+        PosePartialForearm(Camera.main.transform);
     }
 
-    private void PoseSleeve(Mesh mesh, Vector3[] vertices,
-        Vector3 shoulder, Vector3 wrist, Vector3 bendHint, Vector3 wristDirection)
+    private void PosePartialForearm(Transform eye)
     {
-        Vector3 delta = wrist - shoulder;
-        float distance = delta.magnitude;
-        Vector3 axis = delta.normalized;
-        // Small scapular protraction keeps the chain reachable at the edges
-        // of the desktop view, without stretching either bone or moving a hand.
-        if (distance > UpperLength + ForearmLength - .015f)
+        Vector3 wristWorld = _leftHand.TransformPoint(LeftWrist);
+        // Start the visible sleeve close to the lower-left edge of the view.
+        // This is intentionally a short first-person forearm, not an IK chain:
+        // the seated torso remains implied and no hidden elbow is evaluated.
+        Vector3 startWorld = wristWorld - eye.right * .20f
+            - eye.up * .17f - eye.forward * .18f;
+        Vector3 controlWorld = Vector3.Lerp(startWorld, wristWorld, .52f)
+            + eye.up * .018f - eye.right * .010f;
+
+        Vector3 start = transform.InverseTransformPoint(startWorld);
+        Vector3 control = transform.InverseTransformPoint(controlWorld);
+        Vector3 wrist = transform.InverseTransformPoint(wristWorld);
+        Vector3 viewForward = transform.InverseTransformDirection(eye.forward);
+
+        for (int ring = 0; ring < ForearmRings; ring++)
         {
-            shoulder += axis * (distance - (UpperLength + ForearmLength - .015f));
-            delta = wrist - shoulder;
-            distance = delta.magnitude;
-        }
-        float d = Mathf.Clamp(distance, .025f, UpperLength + ForearmLength - .001f);
-        float along = (UpperLength * UpperLength - ForearmLength * ForearmLength + d * d) / (2f * d);
-        float height = Mathf.Sqrt(Mathf.Max(0f, UpperLength * UpperLength - along * along));
-        Vector3 bend = Vector3.ProjectOnPlane(bendHint, axis).normalized;
-        if (bend.sqrMagnitude < .01f) bend = Vector3.ProjectOnPlane(Vector3.down, axis).normalized;
-        Vector3 elbow = shoulder + axis * along + bend * height;
-        Vector3 upper = (elbow - shoulder).normalized;
-        Vector3 lower = (wrist - elbow).normalized;
-        for (int ring = 0; ring < 7; ring++)
-        {
-            Vector3 point, direction;
-            float radius;
-            if (ring < 3)
-            {
-                float t = ring / 3f;
-                point = Vector3.Lerp(shoulder, elbow, t);
-                direction = upper;
-                radius = Mathf.Lerp(.058f, .040f, t);
-            }
-            else
-            {
-                float t = (ring - 3) / 3f;
-                point = Vector3.Lerp(elbow, wrist, t);
-                direction = ring == 3 ? (upper + lower).normalized : lower;
-                radius = Mathf.Lerp(.040f, .022f, t);
-                if (ring == 6) direction = wristDirection.normalized;
-            }
-            Vector3 across = Vector3.Cross(direction, bend).normalized;
-            Vector3 normal = Vector3.Cross(direction, across).normalized;
+            float t = (float)ring / (ForearmRings - 1);
+            Vector3 a = Vector3.Lerp(start, control, t);
+            Vector3 b = Vector3.Lerp(control, wrist, t);
+            Vector3 point = Vector3.Lerp(a, b, t);
+            Vector3 tangent = (2f * (1f - t) * (control - start)
+                + 2f * t * (wrist - control)).normalized;
+            Vector3 across = Vector3.Cross(tangent, viewForward).normalized;
+            if (across.sqrMagnitude < .01f)
+                across = Vector3.Cross(tangent, Vector3.up).normalized;
+            Vector3 normal = Vector3.Cross(tangent, across).normalized;
+            float radius = Mathf.Lerp(.046f, .021f, t);
+
             for (int side = 0; side < Sides; side++)
             {
-                float a = side * Mathf.PI * 2f / Sides;
-                vertices[ring * Sides + side] = point + radius *
-                    (across * Mathf.Cos(a) + normal * Mathf.Sin(a));
+                float angle = side * Mathf.PI * 2f / Sides;
+                _forearmVertices[ring * Sides + side] = point + radius *
+                    (across * Mathf.Cos(angle) + normal * Mathf.Sin(angle));
             }
         }
-        vertices[7 * Sides] = shoulder;
-        vertices[7 * Sides + 1] = wrist;
-        mesh.vertices = vertices;
-        if (mesh.GetIndexCount(0) == 0) mesh.triangles = TubeIndices(7);
-        mesh.RecalculateNormals();
-        mesh.RecalculateBounds();
+
+        _forearmVertices[ForearmRings * Sides] = start;
+        _forearmVertices[ForearmRings * Sides + 1] = wrist;
+        _leftSleeve.vertices = _forearmVertices;
+        if (_leftSleeve.GetIndexCount(0) == 0)
+            _leftSleeve.triangles = TubeIndices(ForearmRings);
+        _leftSleeve.RecalculateNormals();
+        _leftSleeve.RecalculateBounds();
     }
 
-    private void BuildShirt()
-    {
-        var vertices = new Vector3[6 * Sides + 2];
-        float[] levels = { 0f, .12f, .36f, .53f, .62f, .67f };
-        float[] widths = { .17f, .18f, .22f, .235f, .20f, .085f };
-        float[] depths = { .105f, .12f, .135f, .13f, .11f, .075f };
-        for (int r = 0; r < 6; r++)
-        for (int s = 0; s < Sides; s++)
-        {
-            float a = s * Mathf.PI * 2f / Sides;
-            vertices[r * Sides + s] = new Vector3(Mathf.Cos(a) * widths[r],
-                levels[r], levels[r] * .22f + Mathf.Sin(a) * depths[r]);
-        }
-        vertices[6 * Sides] = Vector3.zero;
-        vertices[6 * Sides + 1] = new Vector3(0f, .67f, .1474f);
-        Mesh mesh = MakeMesh("Shaped traditional shirt", false);
-        mesh.vertices = vertices;
-        mesh.triangles = TubeIndices(6);
-        mesh.RecalculateNormals(); mesh.RecalculateBounds();
-        AddRenderer("Traditional shirt", _chest, mesh, JemparinganArt.Tone.TraditionalCloth);
-    }
-
-    private Transform BuildHand(string name, bool right)
+    private Transform BuildLeftHand()
     {
         var vertices = new List<Vector3>();
         var triangles = new List<int>();
-        HandGeometry(right, false, vertices, triangles);
-        Mesh mesh = MakeMesh(name, right);
-        mesh.SetVertices(vertices); mesh.SetTriangles(triangles, 0);
-        mesh.RecalculateNormals(); mesh.RecalculateBounds();
-        if (right)
-        {
-            _rightHandMesh = mesh;
-            _closedFingers = vertices.ToArray();
-            _posedFingers = new Vector3[_closedFingers.Length];
-            vertices.Clear(); triangles.Clear();
-            HandGeometry(true, true, vertices, triangles);
-            _openFingers = vertices.ToArray();
-        }
-        return AddRenderer(name, _arms, mesh, JemparinganArt.Tone.TraditionalSkin);
-    }
+        Vector3 palm = new Vector3(-.026f, 0f, -.030f);
 
-    private static void HandGeometry(bool right, bool open, List<Vector3> vertices, List<int> triangles)
-    {
-        Vector3 wrist = right ? RightWrist : LeftWrist;
-        Vector3 palm = right ? new Vector3(.034f, -.012f, -.042f) : new Vector3(-.026f, 0f, -.030f);
-        AddTube(vertices, triangles, new[] { wrist, Vector3.Lerp(wrist, palm, .45f), palm },
+        AddTube(vertices, triangles,
+            new[] { LeftWrist, Vector3.Lerp(LeftWrist, palm, .45f), palm },
             new[] { .025f, .027f, .031f }, .65f);
         for (int finger = 0; finger < 4; finger++)
         {
-            // Index above the arrow; middle/ring below it. Leave an actual
-            // gap for the shaft rather than curling a finger through the nock.
-            float y = right ? (finger == 0 ? .022f : -.020f - (finger - 1) * .019f)
-                : .021f - finger * .017f;
-            Vector3[] path = right
-                ? new[] { new Vector3(.035f, y, -.038f), new Vector3(.012f, y, -.015f),
-                    new Vector3(-.010f, y, -.010f), new Vector3(-.013f, y, .007f), new Vector3(.002f, y, .010f) }
-                : new[] { new Vector3(-.032f, y, -.022f), new Vector3(-.006f, y, -.026f),
-                    new Vector3(.023f, y, -.017f), new Vector3(.026f, y, .008f), new Vector3(.008f, y, .022f) };
-            if (right && open)
-                path = new[] { new Vector3(.035f, y, -.038f), new Vector3(.012f, y, -.022f),
-                    new Vector3(-.012f, y, -.015f), new Vector3(-.035f, y, -.011f), new Vector3(-.047f, y, -.008f) };
-            AddTube(vertices, triangles, path, new[] { .009f, .009f, .0085f, .008f, .006f }, 1f);
+            float y = .021f - finger * .017f;
+            AddTube(vertices, triangles, new[] {
+                    new Vector3(-.032f, y, -.022f),
+                    new Vector3(-.006f, y, -.026f),
+                    new Vector3(.023f, y, -.017f),
+                    new Vector3(.026f, y, .008f),
+                    new Vector3(.008f, y, .022f) },
+                new[] { .009f, .009f, .0085f, .008f, .006f }, 1f);
         }
-        AddTube(vertices, triangles, right
-            ? new[] { palm + Vector3.down * .023f, new Vector3(.020f, -.035f, -.015f), new Vector3(.006f, -.018f, -.008f) }
-            : new[] { palm + Vector3.down * .028f, new Vector3(-.027f, -.035f, .003f), new Vector3(-.005f, -.023f, .021f) },
+        AddTube(vertices, triangles, new[] {
+                palm + Vector3.down * .028f,
+                new Vector3(-.027f, -.035f, .003f),
+                new Vector3(-.005f, -.023f, .021f) },
             new[] { .013f, .011f, .008f }, 1f);
+
+        Mesh mesh = MakeMesh("Left hand around leather handle", false);
+        mesh.SetVertices(vertices);
+        mesh.SetTriangles(triangles, 0);
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
+        return AddRenderer("Left hand | fingers around leather handle",
+            _visuals, mesh, JemparinganArt.Tone.TraditionalSkin);
     }
 
     private static void AddTube(List<Vector3> vertices, List<int> triangles,
         Vector3[] path, float[] radii, float flatten)
     {
         int start = vertices.Count;
-        for (int r = 0; r < path.Length; r++)
+        for (int ring = 0; ring < path.Length; ring++)
         {
-            Vector3 tangent = (path[Mathf.Min(r + 1, path.Length - 1)] - path[Mathf.Max(0, r - 1)]).normalized;
+            Vector3 tangent = (path[Mathf.Min(ring + 1, path.Length - 1)]
+                - path[Mathf.Max(0, ring - 1)]).normalized;
             Vector3 across = Vector3.Cross(tangent, Vector3.up).normalized;
             if (across.sqrMagnitude < .01f) across = Vector3.right;
             Vector3 normal = Vector3.Cross(tangent, across).normalized;
-            for (int s = 0; s < Sides; s++)
+            for (int side = 0; side < Sides; side++)
             {
-                float a = s * Mathf.PI * 2f / Sides;
-                vertices.Add(path[r] + radii[r] *
-                    (across * Mathf.Cos(a) * Mathf.Lerp(1f, flatten, (float)r / (path.Length - 1)) + normal * Mathf.Sin(a)));
+                float angle = side * Mathf.PI * 2f / Sides;
+                vertices.Add(path[ring] + radii[ring] *
+                    (across * Mathf.Cos(angle) * Mathf.Lerp(1f, flatten,
+                        (float)ring / (path.Length - 1))
+                    + normal * Mathf.Sin(angle)));
             }
         }
-        vertices.Add(path[0]); vertices.Add(path[path.Length - 1]);
-        foreach (int index in TubeIndices(path.Length)) triangles.Add(start + index);
+        vertices.Add(path[0]);
+        vertices.Add(path[path.Length - 1]);
+        foreach (int index in TubeIndices(path.Length))
+            triangles.Add(start + index);
     }
 
     private static int[] TubeIndices(int rings)
     {
         var indices = new List<int>((rings - 1) * Sides * 6 + Sides * 6);
-        for (int r = 0; r < rings - 1; r++)
-        for (int s = 0; s < Sides; s++)
+        for (int ring = 0; ring < rings - 1; ring++)
+        for (int side = 0; side < Sides; side++)
         {
-            int a = r * Sides + s, b = r * Sides + (s + 1) % Sides;
-            int c = a + Sides, d = b + Sides;
+            int a = ring * Sides + side;
+            int b = ring * Sides + (side + 1) % Sides;
+            int c = a + Sides;
+            int d = b + Sides;
             indices.Add(a); indices.Add(b); indices.Add(c);
             indices.Add(b); indices.Add(d); indices.Add(c);
         }
-        for (int s = 0; s < Sides; s++)
+        for (int side = 0; side < Sides; side++)
         {
-            int next = (s + 1) % Sides;
-            indices.Add(rings * Sides); indices.Add(next); indices.Add(s);
-            indices.Add(rings * Sides + 1); indices.Add((rings - 1) * Sides + s);
+            int next = (side + 1) % Sides;
+            indices.Add(rings * Sides); indices.Add(next); indices.Add(side);
+            indices.Add(rings * Sides + 1);
+            indices.Add((rings - 1) * Sides + side);
             indices.Add((rings - 1) * Sides + next);
         }
         return indices.ToArray();
@@ -307,7 +193,8 @@ public sealed class JemparinganTraditionalArcher : MonoBehaviour
         return mesh;
     }
 
-    private static Transform AddRenderer(string name, Transform parent, Mesh mesh, JemparinganArt.Tone tone)
+    private static Transform AddRenderer(string name, Transform parent,
+        Mesh mesh, JemparinganArt.Tone tone)
     {
         var go = new GameObject(name, typeof(MeshFilter), typeof(MeshRenderer));
         go.transform.SetParent(parent, false);
@@ -315,11 +202,13 @@ public sealed class JemparinganTraditionalArcher : MonoBehaviour
         var renderer = go.GetComponent<MeshRenderer>();
         renderer.sharedMaterial = JemparinganArt.Material(tone);
         renderer.shadowCastingMode = ShadowCastingMode.Off;
+        renderer.receiveShadows = false;
         return go.transform;
     }
 
     private void OnDestroy()
     {
-        foreach (Mesh mesh in _meshes) if (mesh != null) Destroy(mesh);
+        foreach (Mesh mesh in _meshes)
+            if (mesh != null) Destroy(mesh);
     }
 }

@@ -28,37 +28,34 @@ public static class TraditionalArmsValidation
     {
         var root=(Transform)Get("_traditionalPosture");
         var left=ArcherField<Transform>("_leftHand");
-        var right=ArcherField<Transform>("_rightHand");
         var handle=ArcherField<Transform>("_handle");
         var nock=(Transform)Get("_stringMarker");
         var l=ArcherField<Mesh>("_leftSleeve").vertices;
-        var r=ArcherField<Mesh>("_rightSleeve").vertices;
-        var torso=ArcherField<Transform>("_chest");
+        var visuals=ArcherField<Transform>("_visuals");
+        var arrow=(Transform)Get("_nockedArrow");
         bool visible=root.gameObject.activeSelf;
         float leftError=Vector3.Distance(left.position,handle.TransformPoint(Vector3.down*.55f));
-        float rightError=Vector3.Distance(right.position,nock.position);
-        float lu=l.Length>0?Vector3.Distance(Ring(l,0),Ring(l,3)):0f;
-        float lf=l.Length>0?Vector3.Distance(Ring(l,3),Ring(l,6)):0f;
-        float ru=r.Length>0?Vector3.Distance(Ring(r,0),Ring(r,3)):0f;
-        float rf=r.Length>0?Vector3.Distance(Ring(r,3),Ring(r,6)):0f;
+        float forearmLength=l.Length>0?Vector3.Distance(Ring(l,0),Ring(l,4)):0f;
+        int rightRenderers=visuals.GetComponentsInChildren<Renderer>(true)
+            .Count(x=>x.name.IndexOf("right",StringComparison.OrdinalIgnoreCase)>=0);
+        float arrowNockError=Vector3.Distance(nock.position,arrow.position);
         var result=new { mode=Get("_mode").ToString(), arrowsPerRound=Get("arrowsPerRound"),
             frame=Time.frameCount, time=Time.time, shots=Get("_shots"), hits=Get("_hits"), score=Get("_score"),
             molo=Get("_moloHits"), jangga=Get("_janggaHits"), awak=Get("_awakHits"),
             finished=Get("_finished"), drawing=Get("_wasDrawing"), bodyVisible=visible,
             cameraAngles=Camera.main.transform.eulerAngles.ToString("F3"), seatAngles=root.eulerAngles.ToString("F3"),
-            leftGripError=leftError, rightNockError=rightError,
-            leftUpper=lu,leftForearm=lf,rightUpper=ru,rightForearm=rf,
-            shoulderProtraction=l.Length>0?Vector3.Distance(Ring(r,0),root.InverseTransformPoint(torso.TransformPoint(new Vector3(.20f,.60f,.17f)))):0f,
+            leftGripError=leftError, arrowNockError=arrowNockError,
+            visibleForearmLength=forearmLength,rightPresentationRenderers=rightRenderers,
             targetSway=((JemparinganTarget)Get("_target")).swayAmount,
             targetSpeed=((JemparinganTarget)Get("_target")).swaySpeed,
             classicTarget=((GameObject)Get("_classicBandulanVisual")).activeSelf,
             traditionalTarget=((GameObject)Get("_traditionalBandulanVisual")).activeSelf };
-        if(visible && (bool)Get("_wasDrawing") &&
-            (leftError>.0001f || rightError>.0001f || Mathf.Abs(lu-.36f)>.001f || Mathf.Abs(lf-.34f)>.001f ||
-             Mathf.Abs(ru-.36f)>.001f || Mathf.Abs(rf-.34f)>.001f))
-            throw new Exception("Rendered hand contact or bone length regression: "+JsonUtility.ToJson(result));
+        if(visible && (leftError>.0001f || arrowNockError>.0001f ||
+            forearmLength<.20f || forearmLength>.40f || rightRenderers!=0))
+            throw new Exception("First-person presentation regression: "+result);
         Debug.Log("Traditional arm visual QA: mode="+Get("_mode")+" shots="+Get("_shots")+
-            " gripError="+leftError+" nockError="+rightError+" bones="+lu+","+lf+","+ru+","+rf);
+            " gripError="+leftError+" arrowNockError="+arrowNockError+
+            " forearm="+forearmLength+" rightRenderers="+rightRenderers);
         return result;
     }
     public static async Task<object> Mode(string mode)
@@ -90,7 +87,7 @@ public static class TraditionalArmsValidation
     // but XTest button events are not reported by Unity's legacy Input API.
     // This validation-only component feeds a deterministic hand pose through
     // the production IJemparinganInput path; the game still updates the real
-    // bow, string, arrow preview and IK targets in its normal Update loop.
+    // bow, string, arrow preview and left-hand presentation in its normal Update loop.
     sealed class ValidationBowInput : DesktopBowInput, IJemparinganInput
     {
         public float Progress;
@@ -156,6 +153,38 @@ public static class TraditionalArmsValidation
         if(!input.TryReadPose(out var pose)) throw new Exception("No desktop pose");
         Call("Shoot",pose.BowPosition+pose.AimDirection*.25f,pose.AimDirection,
             (float)Get("maximumDraw"),false);
+        await Task.Delay(100);
+        float deadline=Time.realtimeSinceStartup+5f;
+        while(((JemparinganArrow[])Get("_arrows")).Any(a=>a.IsFlying))
+        {
+            if(Time.realtimeSinceStartup>deadline) throw new Exception("Projectile did not settle");
+            await Task.Delay(50);
+        }
+        await Task.Delay(100);
+        return Snapshot();
+    }
+
+    // Fires the production projectile at a real Traditional scoring zone.
+    // The helper computes only the release direction; Shoot, arrow pooling,
+    // gravity, swept collision, scoring and callbacks remain unmodified.
+    public static async Task<object> FireAtZone(float zoneY)
+    {
+        Time.timeScale=1f;
+        var input=UnityEngine.Object.FindFirstObjectByType<DesktopBowInput>();
+        if(!input.TryReadPose(out var pose)) throw new Exception("No desktop pose");
+        Vector3 origin=pose.BowPosition+pose.AimDirection*.25f;
+        Vector3 target=((JemparinganTarget)Get("_target")).transform.TransformPoint(
+            new Vector3(0f,zoneY,0f));
+        float speed=(float)Get("maximumArrowSpeed"),gravity=(float)Get("simulatedGravity");
+        Vector3 delta=target-origin;
+        Vector3 flat=Vector3.ProjectOnPlane(delta,Vector3.up);
+        float distance=flat.magnitude,speed2=speed*speed;
+        float discriminant=speed2*speed2-gravity*(gravity*distance*distance+2f*delta.y*speed2);
+        if(discriminant<=0f) throw new Exception("Zone is not ballistically reachable");
+        float tangent=(speed2-Mathf.Sqrt(discriminant))/(gravity*distance);
+        float angle=Mathf.Atan(tangent);
+        Vector3 direction=(flat.normalized*Mathf.Cos(angle)+Vector3.up*Mathf.Sin(angle)).normalized;
+        Call("Shoot",origin,direction,(float)Get("maximumDraw"),false);
         await Task.Delay(100);
         float deadline=Time.realtimeSinceStartup+5f;
         while(((JemparinganArrow[])Get("_arrows")).Any(a=>a.IsFlying))
