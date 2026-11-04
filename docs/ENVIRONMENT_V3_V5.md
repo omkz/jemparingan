@@ -97,6 +97,22 @@ The initial target distance is 10m. Try the complete 12-shot scoring cycle befor
 
 **No scene regeneration required**: these behavior and UI objects are configured at runtime. Pull changes, open the existing `JemparinganPlayableEnvironment_v05.unity`, and press Play. The implementation and default training behavior require Unity Editor verification; this is not a Quest-validated aiming technique.
 
+## Outdoor HUD polish v5.4 — concise and less distracting
+
+The outdoor gameplay HUD now keeps the **upper-right layout** while reducing repeated text:
+
+- Score line: **SKOR / KENA / PANAH** rather than a long score+combo label. The session results still report combo and bonus RASA.
+- Stage changes no longer show a duplicate floating stage banner in the outdoor scene; the phase/status remain visible.
+- The dark **feedback strip appears only while a message is active** and hides after ~1.5 seconds. No permanently empty banner.
+- Instructions in idle state are shortened to **KIRI TARIK | KANAN BIDIK | SHIFT HALUS**. During draw, the help line still shows **TARIK % | RASA FOKUS/TENANG**. Training mode **T** and restart **R** are documented in the aim section above.
+- The training reticle remains visible, but its center text is **empty by default**. Only a green, aligned shot while drawing shows the short instruction **LEPAS**.
+- Reticle color/material and text are updated **only when alignment or draw state changes**, rather than rewriting the same content every frame.
+- The outdoor end-of-round panel uses shorter two-to-three-line results; the original v0.9 scene's labels and results are unchanged.
+
+**Test:** Pull `feature/safe-environment-preview-v1`, open `JemparinganPlayableEnvironment_v05.unity`, press **Play**. Confirm the bow (left) and bandulan (center) stay unobstructed. Check feedback appears then disappears after a shot, the reticle changes color at the target and shows **LEPAS** only while drawing, and the results panel still includes score/accuracy/center hits/combo/bonus after 12 shots. Test **T**, **R**, and one legacy round if possible.
+
+**No scene regeneration required:** all changes are in runtime UI logic. This is a low-dependency TextMesh cleanup, **not a migration to TextMeshPro**, and Unity/Quest visual validation remains outstanding.
+
 ## Safety notes and limitations
 
 - The existing v0.9 gameplay scene remains on its old 2.65 m near-target setup by default.
