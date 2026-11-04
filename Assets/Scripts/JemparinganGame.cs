@@ -175,6 +175,8 @@ public class JemparinganGame : MonoBehaviour
             JemparinganArt.Tone.BandulanWhite : JemparinganArt.Tone.Red);
         if (_traditionalPosture != null)
             _traditionalPosture.gameObject.SetActive(IsTraditionalMode());
+        HideTraditionalArms();
+        _traditionalRightWristReady = false;
         _lastInfo = "";
         HideDesktopPracticeSight();
         ResetRound();
@@ -190,6 +192,7 @@ public class JemparinganGame : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.M) && (_shots == 0 || _finished))
             {
                 ResetRound();
+                HideTraditionalArms();
                 _modeChosen = false;
                 return;
             }
@@ -247,6 +250,7 @@ public class JemparinganGame : MonoBehaviour
             ? (IJemparinganInput)desktopInput : questInput;
         if (input == null || !input.TryReadPose(out JemparinganHandPose pose))
         {
+            HideTraditionalArms();
             if (_bow != null) _bow.gameObject.SetActive(false);
             HideDesktopPracticeSight();
             HidePreview();
@@ -256,6 +260,7 @@ public class JemparinganGame : MonoBehaviour
         }
         if (_roundOver)
         {
+            HideTraditionalArms();
             _bow.gameObject.SetActive(false);
             HideDesktopPracticeSight();
             HidePreview();
@@ -263,6 +268,7 @@ public class JemparinganGame : MonoBehaviour
         }
         if (!pose.BowPinched)
         {
+            HideTraditionalArms();
             _bow.gameObject.SetActive(false);
             HideDesktopPracticeSight();
             HidePreview();
@@ -296,6 +302,8 @@ public class JemparinganGame : MonoBehaviour
         bool drawing = pose.StringPinched;
         float distance = Mathf.Clamp(Vector3.Dot(pose.BowPosition - pose.StringPosition, aim), 0f, maximumDraw);
         float power = Mathf.InverseLerp(minimumDraw, maximumDraw, distance);
+        UpdateTraditionalArms(pose.BowPosition,
+            pose.StringPinched ? distance : 0f, pose.StringPinched);
         UpdateDesktopPracticeSight(pose.BowPosition + aim * .25f,
             aim, Mathf.Lerp(minimumArrowSpeed, maximumArrowSpeed, power), drawing);
 
@@ -689,6 +697,7 @@ public class JemparinganGame : MonoBehaviour
         }
         SetInfo(UsesDesktopInput() ? "PRESS R OR HOLD LEFT MOUSE TO RESTART" : "RELEASE STRING, THEN HOLD TO RESTART");
         _bow.gameObject.SetActive(false);
+        HideTraditionalArms();
         HidePreview();
         if (_impactLabel != null) _impactLabel.text = "";
         _impactLabelUntil = 0f;
@@ -1407,6 +1416,53 @@ public class JemparinganGame : MonoBehaviour
     {
         PlaceTraditionalLimb(NewTraditionalLimb(name, parent, tone),
             start, end, width);
+    }
+
+    // All these transforms were built once. Only their local transforms
+    // change as the bowstring moves; no new meshes are created per frame.
+    private void UpdateTraditionalArms(Vector3 bowWorldPosition,
+        float stringPull, bool drawing)
+    {
+        if (!IsTraditionalMode() || _traditionalArmsRoot == null) return;
+        if (!_traditionalArmsRoot.gameObject.activeSelf)
+            _traditionalArmsRoot.gameObject.SetActive(true);
+
+        Vector3 grip = _traditionalArmsRoot.InverseTransformPoint(bowWorldPosition);
+        Vector3 leftShoulder = new Vector3(-.23f, -.26f, .09f);
+        Vector3 leftElbow = new Vector3(-.31f, -.37f, .47f);
+        Vector3 leftWrist = grip + new Vector3(.01f, -.025f, -.03f);
+
+        Vector3 rightShoulder = new Vector3(.23f, -.26f, .08f);
+        Vector3 rightElbow = new Vector3(.36f, -.41f, .33f);
+        Vector3 restingRight = new Vector3(.18f, -.38f, .44f);
+        Vector3 rightTarget = drawing
+            ? _traditionalArmsRoot.InverseTransformPoint(
+                _bow.TransformPoint(Vector3.back * stringPull)) +
+                new Vector3(.025f, -.022f, -.04f)
+            : restingRight;
+        if (!_traditionalRightWristReady)
+        {
+            _traditionalRightWrist = restingRight;
+            _traditionalRightWristReady = true;
+        }
+        _traditionalRightWrist = Vector3.Lerp(_traditionalRightWrist,
+            rightTarget, Mathf.Clamp01(Time.deltaTime * 13f));
+
+        PlaceTraditionalLimb(_traditionalLeftUpper, leftShoulder, leftElbow, .15f);
+        PlaceTraditionalLimb(_traditionalLeftForearm, leftElbow, leftWrist, .115f);
+        PlaceTraditionalLimb(_traditionalRightUpper,
+            rightShoulder, rightElbow, .15f);
+        PlaceTraditionalLimb(_traditionalRightForearm,
+            rightElbow, _traditionalRightWrist, .115f);
+        _traditionalLeftPalm.localPosition = leftWrist;
+        _traditionalRightPalm.localPosition = _traditionalRightWrist;
+    }
+
+    private void HideTraditionalArms()
+    {
+        if (_traditionalArmsRoot != null &&
+            _traditionalArmsRoot.gameObject.activeSelf)
+            _traditionalArmsRoot.gameObject.SetActive(false);
     }
 
     private void BuildBow()
