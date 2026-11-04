@@ -17,9 +17,18 @@ public class DesktopBowInput : MonoBehaviour, IJemparinganInput
         // Hold RMB and move mouse to aim on desktop.
         if (Input.GetMouseButton(1) && Camera.main != null)
         {
+            // The old 2.5x sensitivity is usable at 2.65m but overshoots a
+            // 5cm-wide bandulan at 10–30m. Only the outdoor desktop preview
+            // uses a calmer base speed and a finer Shift-aim adjustment.
+            float multiplier = outdoorBowPresentation
+                ? (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)
+                    ? 0.12f : 0.32f)
+                : 1f;
             var cam = Camera.main.transform;
-            cam.Rotate(Vector3.up, Input.GetAxis("Mouse X") * lookSensitivity, Space.World);
-            cam.Rotate(Vector3.right, -Input.GetAxis("Mouse Y") * lookSensitivity, Space.Self);
+            cam.Rotate(Vector3.up, Input.GetAxis("Mouse X") *
+                lookSensitivity * multiplier, Space.World);
+            cam.Rotate(Vector3.right, -Input.GetAxis("Mouse Y") *
+                lookSensitivity * multiplier, Space.Self);
         }
     }
 
