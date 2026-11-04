@@ -87,6 +87,7 @@ public class JemparinganGame : MonoBehaviour
     private float _replayHoldStartedAt = -1f, _stageBannerUntil;
     private int _shots, _hits, _score, _combo, _best, _poolCursor;
     private int _previousBest, _bullseyes, _bestCombo, _rasaHits, _rasaBonus;
+    private int _moloHits, _janggaHits, _awakHits;
     private string _lastInfo = "";
     private int _lastPowerStep = -1;
     private bool _lastStableSignal;
@@ -493,8 +494,9 @@ public class JemparinganGame : MonoBehaviour
         _shots++;
         _audio.PlayOneShot(_shotSound, 0.48f);
         ShowFeedback("ARROW RELEASED");
-        if (_shots == 4 || _shots == 8 ||
-            (useOutdoorEnvironment && _shots == 12)) UpdateLevel();
+        if (!IsTraditionalMode() &&
+            (_shots == 4 || _shots == 8 ||
+            (useOutdoorEnvironment && _shots == 12))) UpdateLevel();
         if (_shots >= arrowsPerRound) _roundOver = true;
         UpdateHUD();
     }
@@ -532,7 +534,11 @@ public class JemparinganGame : MonoBehaviour
             (0.5f * simulatedGravity * flightTime * flightTime)).normalized;
         float angularError = Vector3.Angle(aim, direction);
         if (angularError > 8f) return aim;
-        float strength = aimAssist * Mathf.InverseLerp(8f, 0f, angularError);
+        // Traditional defaults to a subtle assist, without magnetic
+        // ballistic snapping unless training is explicitly enabled with T.
+        float limitedAssist = IsTraditionalMode() ?
+            Mathf.Min(aimAssist, .20f) : aimAssist;
+        float strength = limitedAssist * Mathf.InverseLerp(8f, 0f, angularError);
         return Vector3.Slerp(aim, direction, strength).normalized;
     }
 
@@ -579,6 +585,29 @@ public class JemparinganGame : MonoBehaviour
 
     private void OnArrowImpact(JemparinganArrow arrow, bool bullseye)
     {
+        if (IsTraditionalMode())
+        {
+            // Classification comes from the very hit-test that triggered this
+            // callback; an active shot cannot change modes mid-flight.
+            JemparinganTarget.TraditionalZone zone = _target.LastTraditionalZone;
+            int points = JemparinganScoreRules.TraditionalPointsForZone(zone);
+            _hits++;
+            if (zone == JemparinganTarget.TraditionalZone.Molo) _moloHits++;
+            else if (zone == JemparinganTarget.TraditionalZone.Jangga) _janggaHits++;
+            else if (zone == JemparinganTarget.TraditionalZone.Awak) _awakHits++;
+            _score += points;
+            if (_score > _best) _best = _score;
+            _audio.PlayOneShot(zone == JemparinganTarget.TraditionalZone.Molo ?
+                _bullseyeSound : _hitSound, .50f);
+            string zoneName = zone == JemparinganTarget.TraditionalZone.Molo ? "MOLO" :
+                zone == JemparinganTarget.TraditionalZone.Jangga ? "JANGGA" : "AWAK";
+            ShowImpactLabel("+" + points + "  " + zoneName,
+                zone == JemparinganTarget.TraditionalZone.Molo ?
+                new Color(.98f, .81f, .40f) : new Color(.40f, .94f, .75f));
+            ShowFeedback(zoneName + "  +" + points);
+            UpdateHUD();
+            return;
+        }
         _hits++;
         _combo++;
         if (bullseye) _bullseyes++;
@@ -632,7 +661,7 @@ public class JemparinganGame : MonoBehaviour
         bool newRecord = _score > _previousBest;
         if (newRecord)
         {
-            PlayerPrefs.SetInt("JemparinganRasaBest", _score);
+            PlayerPrefs.SetInt(BestKey(), _score);
             PlayerPrefs.Save();
         }
         _best = Mathf.Max(_previousBest, _score);
@@ -662,14 +691,21 @@ public class JemparinganGame : MonoBehaviour
         {
             _resultsTitle.text = GetRoundTitle();
             int accuracy = JemparinganScoreRules.AccuracyPercent(_hits, _shots);
-            _resultsDetails.text = useOutdoorEnvironment
+            _resultsDetails.text = IsTraditionalMode()
+                ? "SCORE " + _score + "  |  ACCURACY " + accuracy + "%" +
+                    "\nMOLO " + _moloHits + "  |  JANGGA " + _janggaHits +
+                    "\nAWAK " + _awakHits + "  |  BEST " + _best
+                : useOutdoorEnvironment
                 ? "SCORE " + _score + "  |  ACCURACY " + accuracy + "%" +
                     "\nBULLSEYES " + _bullseyes + "  |  COMBO " + _bestCombo +
                     "\nRASA BONUS +" + _rasaBonus
                 : "SCORE  " + _score + "    ACCURACY  " + accuracy + "%" +
                     "\nBULLSEYES  " + _bullseyes + "    BEST COMBO  " + _bestCombo +
                     "\nRASA BONUS  +" + _rasaBonus + "  (" + _rasaHits + " HITS)";
-            _resultsHint.text = useOutdoorEnvironment && UsesDesktopInput()
+            _resultsHint.text = IsTraditionalMode() && UsesDesktopInput()
+                ? (newRecord ? "NEW BEST  |  R: RETRY  |  M: MODES"
+                    : "R: RETRY  |  M: MODES")
+                : useOutdoorEnvironment && UsesDesktopInput()
                 ? (newRecord ? "NEW RECORD!  |  R: RESTART" : "R: RESTART  |  HOLD LEFT 0.7s")
                 : (newRecord
                     ? "NEW RECORD!  •  " + (UsesDesktopInput() ? "R TO RESTART" : "RELEASE + HOLD STRING")
@@ -684,7 +720,9 @@ public class JemparinganGame : MonoBehaviour
     // Evaluate both precision and composure; every player receives a positive result.
     private string GetRoundTitle()
     {
-        return JemparinganScoreRules.ResultTitle(_hits, _rasaHits);
+        return IsTraditionalMode()
+            ? "TRADITIONAL  •  COMPLETE"
+            : JemparinganScoreRules.ResultTitle(_hits, _rasaHits);
     }
 
     private void ShowImpactLabel(string message, Color color)
@@ -716,7 +754,8 @@ public class JemparinganGame : MonoBehaviour
         for (int i = 0; i < _arrows.Length; i++) _arrows[i].Cancel();
         _shots = _hits = _score = _combo = _poolCursor = 0;
         _bullseyes = _bestCombo = _rasaHits = _rasaBonus = 0;
-        _previousBest = PlayerPrefs.GetInt("JemparinganRasaBest", 0);
+        _moloHits = _janggaHits = _awakHits = 0;
+        _previousBest = PlayerPrefs.GetInt(BestKey(), 0);
         _best = _previousBest;
         ClearDrawState();
         _replayArmed = _awaitStringRelease = false;
@@ -727,26 +766,37 @@ public class JemparinganGame : MonoBehaviour
         if (_resultsPanel != null) _resultsPanel.SetActive(false);
         _roundOver = _finished = false;
         _ready = true;
-        _target.SetSway(JemparinganScoreRules.SwayAmountForStage(0),
-            JemparinganScoreRules.SwaySpeedForStage(0), true);
+        _target.SetSway(IsTraditionalMode() ? 0f :
+                JemparinganScoreRules.SwayAmountForStage(0),
+            IsTraditionalMode() ? 0f :
+                JemparinganScoreRules.SwaySpeedForStage(0), true);
         _target.ResetReaction();
         UpdateNockedArrow(0f, true);
         HidePreview();
         if (_impactLabel != null) _impactLabel.text = "";
         _impactLabelUntil = 0f;
-        ShowFeedback("ROUND I  •  CALM");
+        ShowFeedback(IsTraditionalMode() ?
+            "TRADITIONAL  •  FOCUS" : "ROUND I  •  CALM");
+        UpdateIntroMode();
         UpdateHUD();
     }
 
     private void UpdateHUD()
     {
         if (_scoreLabel != null)
-            _scoreLabel.text = useOutdoorEnvironment
-                ? "SCORE " + _score + "  |  HITS " + _hits + "  |  ARROWS " + _shots + "/" + arrowsPerRound
-                : "SCORE " + _score + "  •  HITS " + _hits + "/" + _shots + "  •  COMBO " + _combo + "  •  BEST " + _best;
+            _scoreLabel.text = IsTraditionalMode()
+                ? "SCORE " + _score + "  |  HITS " + _hits +
+                    "  |  ARROWS " + _shots + "/" + arrowsPerRound
+                : useOutdoorEnvironment
+                    ? "SCORE " + _score + "  |  HITS " + _hits +
+                        "  |  ARROWS " + _shots + "/" + arrowsPerRound
+                    : "SCORE " + _score + "  •  HITS " + _hits + "/" + _shots +
+                        "  •  COMBO " + _combo + "  •  BEST " + _best;
         if (_phaseLabel != null && !_finished)
-            _phaseLabel.text = JemparinganScoreRules.StageTitle(
-                useOutdoorEnvironment ? _shots : Mathf.Min(_shots, 11));
+            _phaseLabel.text = IsTraditionalMode() ?
+                "TRADITIONAL  •  MATARAM-INSPIRED" :
+                JemparinganScoreRules.StageTitle(
+                    useOutdoorEnvironment ? _shots : Mathf.Min(_shots, 11));
         UpdateShotPips();
     }
 
