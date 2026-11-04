@@ -10,6 +10,19 @@ public class JemparinganGame : MonoBehaviour
     [SerializeField] private MetaQuestBowInput questInput;
     [SerializeField] private bool preferQuestHandsInEditor;
 
+    public enum GameMode { Classic, Traditional }
+    [Header("Outdoor game mode (Classic v1 remains unchanged)")]
+    [SerializeField] private GameMode initialOutdoorMode = GameMode.Classic;
+    private GameMode _mode = GameMode.Classic;
+    private bool _modeChosen;
+    private GameObject _classicBandulanVisual, _traditionalBandulanVisual;
+    private Renderer _classicBandulanBody, _traditionalBandulanBody;
+    private Transform _traditionalPosture;
+    private TextMesh _introGoalLabel, _introTitleLabel;
+
+    private bool IsTraditionalMode() { return useOutdoorEnvironment && _mode == GameMode.Traditional; }
+    private string BestKey() { return IsTraditionalMode() ? "JemparinganTraditionalBest" : "JemparinganRasaBest"; }
+
     [Header("Gameplay tuning")]
     [SerializeField, Range(6, 30)] private int arrowsPerRound = 12;
     [SerializeField, Range(0.06f, 0.3f)] private float minimumDraw = 0.10f;
@@ -95,10 +108,93 @@ public class JemparinganGame : MonoBehaviour
         if (questInput == null) questInput = GetComponent<MetaQuestBowInput>();
         yield return null;
         _ready = BuildScene();
+        if (_ready && useOutdoorEnvironment)
+        {
+            // Desktop/Web use an explicit menu. For a future native Quest
+            // scene, the Inspector selects the initial mode without IMGUI.
+            _modeChosen = !UsesDesktopInput();
+            if (initialOutdoorMode == GameMode.Traditional)
+                ChooseMode(GameMode.Traditional);
+            if (UsesDesktopInput()) _modeChosen = false;
+        }
+    }
+
+    private void OnGUI()
+    {
+        // Only the desktop/Web demo uses immediate-mode mouse buttons. The
+        // Quest build keeps native gameplay and may start Traditional via
+        // initialOutdoorMode in the Inspector.
+        if (!_ready || !useOutdoorEnvironment || !UsesDesktopInput() || _modeChosen)
+            return;
+
+        float width = Mathf.Min(520f, Screen.width - 24f);
+        float height = 260f;
+        Rect panel = new Rect((Screen.width - width) * .5f,
+            (Screen.height - height) * .5f, width, height);
+        GUI.Box(panel, "");
+        GUIStyle header = new GUIStyle(GUI.skin.label);
+        header.fontSize = 21;
+        header.fontStyle = FontStyle.Bold;
+        header.alignment = TextAnchor.MiddleCenter;
+        GUI.Label(new Rect(panel.x + 15f, panel.y + 15f, width - 30f, 36f),
+            "JEMPARINGAN: RASA", header);
+        GUI.Label(new Rect(panel.x + 15f, panel.y + 58f, width - 30f, 24f),
+            "CHOOSE YOUR MODE", GUI.skin.box);
+        float buttonWidth = (width - 46f) * .5f;
+        if (GUI.Button(new Rect(panel.x + 15f, panel.y + 102f, buttonWidth, 100f),
+            "CLASSIC\n16 ARROWS  |  4 ROUNDS\nARCADE SCORING"))
+            ChooseMode(GameMode.Classic);
+        if (GUI.Button(new Rect(panel.x + 31f + buttonWidth, panel.y + 102f,
+            buttonWidth, 100f),
+            "TRADITIONAL\n12 ARROWS  |  3-2-1 SCORING\nMATARAM-INSPIRED"))
+            ChooseMode(GameMode.Traditional);
+        GUI.Label(new Rect(panel.x + 15f, panel.y + 216f, width - 30f, 24f),
+            "Keys: 1 Classic   |   2 Traditional", GUI.skin.box);
+    }
+
+    private void ChooseMode(GameMode next)
+    {
+        if (!useOutdoorEnvironment || !_ready) return;
+        _mode = next;
+        _modeChosen = true;
+        arrowsPerRound = IsTraditionalMode()
+            ? 12 : JemparinganScoreRules.OutdoorArrowCount;
+        _desktopTrainingEnabled = !IsTraditionalMode();
+        _target.UseTraditionalScoring(IsTraditionalMode());
+        if (_classicBandulanVisual != null)
+            _classicBandulanVisual.SetActive(!IsTraditionalMode());
+        if (_traditionalBandulanVisual != null)
+            _traditionalBandulanVisual.SetActive(IsTraditionalMode());
+        _target.SetBody(IsTraditionalMode() ? _traditionalBandulanBody :
+            _classicBandulanBody, IsTraditionalMode() ?
+            JemparinganArt.Tone.BandulanWhite : JemparinganArt.Tone.Red);
+        if (_traditionalPosture != null)
+            _traditionalPosture.gameObject.SetActive(IsTraditionalMode());
+        _lastInfo = "";
+        HideDesktopPracticeSight();
+        ResetRound();
+        // Mouse selection is a UI click, never a shot.
+        _awaitStringRelease = UsesDesktopInput() && Input.GetMouseButton(0);
     }
 
     private void Update()
     {
+        if (!_ready) return;
+        if (useOutdoorEnvironment && UsesDesktopInput())
+        {
+            if (Input.GetKeyDown(KeyCode.M) && (_shots == 0 || _finished))
+            {
+                ResetRound();
+                _modeChosen = false;
+                return;
+            }
+            if (!_modeChosen)
+            {
+                if (Input.GetKeyDown(KeyCode.Alpha1)) ChooseMode(GameMode.Classic);
+                else if (Input.GetKeyDown(KeyCode.Alpha2)) ChooseMode(GameMode.Traditional);
+                return;
+            }
+        }
         if (UsesDesktopInput() && Input.GetKeyDown(KeyCode.R) && _arrows != null)
         {
             // Restart during a held string must not turn that release into a shot.
@@ -106,7 +202,6 @@ public class JemparinganGame : MonoBehaviour
             ResetRound();
             _awaitStringRelease = stringWasHeld;
         }
-        if (!_ready) return;
         if (useOutdoorEnvironment && UsesDesktopInput() &&
             Input.GetKeyDown(KeyCode.T))
         {
