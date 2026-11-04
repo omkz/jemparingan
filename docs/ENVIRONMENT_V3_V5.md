@@ -113,6 +113,25 @@ The outdoor gameplay HUD now keeps the **upper-right layout** while reducing rep
 
 **No scene regeneration required:** all changes are in runtime UI logic. This is a low-dependency TextMesh cleanup, **not a migration to TextMeshPro**, and Unity/Quest visual validation remains outstanding.
 
+## English-only player-facing UI (internationalization pass)
+
+All in-game Indonesian labels are now in **English**, in both the outdoor playable scene and the original v0.9 gameplay UI. The historical/cultural identity **JEMPARINGAN**, the mechanic name **RASA**, and the target name **bandulan** remain unchanged where used as names.
+
+| Context | English player-visible copy |
+|---|---|
+| Round headers | `ROUND I • CALM`, `ROUND II • WIND`, `ROUND III • RASA CHALLENGE` |
+| Core status | `SCORE`, `HITS`, `ARROWS`, `DRAW`, `RASA: STEADY/FOCUS` |
+| Shot events | `ARROW RELEASED`, `HIT`, `BULLSEYE`, `MISS`, `DRAW FURTHER` |
+| Practice | `AIM TRAINING ON/OFF`, `RELEASE`, `LMB DRAW | RMB AIM | SHIFT FINE` |
+| End of session | `ROUND COMPLETE`, `ACCURACY`, `BEST COMBO`, `RASA BONUS`, `NEW RECORD`, `RESTART` |
+| Results | `RASA IN BALANCE`, `TRUE AIM`, `FINDING CALM`, `FIRST STEPS` |
+
+The titles come from `JemparinganScoreRules.cs`, and the rest from `JemparinganGame.cs`. `JemparinganEditorMenu.cs` gameplay QA strings were updated to assert the English names, avoiding failures caused only by translation.
+
+**How to test:** pull the branch, open the existing `JemparinganPlayableEnvironment_v05.unity`, press **Play** and check the intro, aim training (`T`), idle/drawing HUD, stage transitions, hits/misses, final results and restart (`R`). Also inspect the original `JemparinganOptimized_v02.unity` gameplay UI.
+
+**No scene regeneration needed** because the text is generated at runtime. This is an English copy pass rather than a fully switchable localization system. Unity rendering and Play Mode QA have not been run here.
+
 ## Safety notes and limitations
 
 - The existing v0.9 gameplay scene remains on its old 2.65 m near-target setup by default.
