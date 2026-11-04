@@ -27,6 +27,17 @@ The final round adds four shots (arrows 13–16). The bandulan moves 1.8× farth
 
 These changes are source-reviewed, not Unity/Quest-tested in this environment.
 
+## Game modes (Playable Environment v5)
+
+Outdoor mode now offers **two separate experiences** in the existing scene, with a clickable mode selector on Unity Editor and Web:
+
+- **Classic** — the existing **16 arrows / 4 rounds**, including Extreme Swing, combo and RASA bonuses, and its original red/gold bandulan.
+- **Traditional** — a **Mataram-inspired 12-arrow session**, with a still bandulan whose **molo (red) scores 3**, **jangga (yellow) scores 2**, and **awak (white) scores 1**. Arcade combo bonuses are not applied, and records are stored separately. Adds low first-person seated posture cues and a more horizontal gandewa visualization.
+
+Choose with the on-screen buttons (or **1 / 2**), press **M** to reopen mode selection before your first shot or after finishing, **R** to restart, and **T** for optional aim training. Classic is the default for native headset builds until native UI selection exists.
+
+**Both modes are runtime-generated; no scene regeneration.** Traditional is an **inspired adaptation**, not yet a fully faithful reconstruction of historical rules or posture. See [Traditional Mode v1](docs/TRADITIONAL_MODE_V1.md). The Unity Play upload must be rebuilt and republished after local testing.
+
 ## Gameplay and visual features (v0.9)
 
 - A 12-shot round with three difficulty stages, combo scoring, bullseye/stability bonus, and local best-score persistence.
