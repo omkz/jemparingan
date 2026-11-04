@@ -13,6 +13,19 @@ public static class JemparinganScoreRules
             (consecutiveHits >= 3 ? 2 : 0);
     }
 
+    // Simplified Mataram-inspired red/yellow/white bandulan scoring.
+    // Arcade combo and RASA bonus remain exclusive to Classic Mode.
+    public static int TraditionalPointsForZone(JemparinganTarget.TraditionalZone zone)
+    {
+        switch (zone)
+        {
+            case JemparinganTarget.TraditionalZone.Molo: return 3;
+            case JemparinganTarget.TraditionalZone.Jangga: return 2;
+            case JemparinganTarget.TraditionalZone.Awak: return 1;
+            default: return 0;
+        }
+    }
+
     public static int AccuracyPercent(int hits, int shots)
     {
         if (shots <= 0) return 0;
