@@ -132,6 +132,26 @@ The titles come from `JemparinganScoreRules.cs`, and the rest from `JemparinganG
 
 **No scene regeneration needed** because the text is generated at runtime. This is an English copy pass rather than a fully switchable localization system. Unity rendering and Play Mode QA have not been run here.
 
+## Web browser demo (Unity 6, Web/WebGL)
+
+A desktop-browser version complements the competition's separate native Meta Quest experience. It is **not WebXR**: the web demo is controlled by mouse/keyboard; the Quest build requires its own XR integration and hardware QA.
+
+### Source compatibility
+
+`JemparinganGame.UsesDesktopInput()` now selects `DesktopBowInput` on `UNITY_WEBGL && !UNITY_EDITOR` and preserves the previous Editor-vs-Quest behavior on other builds. The practice reticle and training toggle, `R` restart, `T` training, left mouse draw/release, and right mouse aim are available in browser builds. Physics, RASA scoring, and `JemparinganTarget` are not changed for Web.
+
+### Build on Linux Mint using Unity 6000.2.x
+
+1. Unity Hub → **Installs** → find the same editor version as this project → **Add Modules** → **Web Build Support**. Restart the Editor if needed.
+2. Switch to `feature/safe-environment-preview-v1` and pull the latest source.
+3. Unity → **File → Build Profiles → Add Build Profile → Web** (if needed), then **Switch Profile**.
+4. In Scene List, include **`Assets/Jemparingan/Scenes/JemparinganPlayableEnvironment_v05.unity`** as **scene 0**. Remove or disable old prototype scenes for this demo.
+5. Select **Build and Run** first, targeting e.g. `Builds/Jemparingan-Web`. Unity serves it locally and opens your default browser. Do not assume a build works when opening `index.html` using the `file://` protocol.
+6. Play and verify: crosshair appears and changes green at the bandulan; left mouse draws/releases; right mouse aims; Shift precision; `T` toggles training; `R` restarts; score and stages still work.
+7. With a successful local run, use **Publish to Play** in the Web Build Profile for a Unity Play project. Confirm visibility (private/unlisted vs public) **before sharing**. Alternatively, zip the Web build output **contents**, keeping `index.html` at the root, and upload it as an HTML game on itch.io.
+
+**Limitations:** Actual Web compilation, browser graphics, input focus, caching, download size and live play require local building and testing. This document does **not** claim deployment is complete. Browser WebGL is separate from Quest VR. Keep Web output folders ignored by Git (the project already ignores `Builds/`). Beware of HTTPS/compression server configuration on custom hosts.
+
 ## Safety notes and limitations
 
 - The existing v0.9 gameplay scene remains on its old 2.65 m near-target setup by default.
