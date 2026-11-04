@@ -39,7 +39,7 @@ This only overwrites `Assets/Jemparingan/Scenes/JemparinganEnvironmentPreview_v0
 3. In Edit Mode, run **Tools > Jemparingan > Environment > Validate Playable v5 Setup**. It verifies the serialized outdoor target anchor, single camera, gameplay controller, desktop input, and no duplicated static bandulan.
 4. Press **Play**. The original 12-arrow, three-stage game loop runs inside the large outdoor pendopo environment.
 5. Hold **left mouse** to draw, release to fire; hold **right mouse + move mouse** to aim; press **R** to replay.
-6. Shoot all 12 arrows and verify hit/miss feedback, score, stage transitions at shots 4 and 8, results, and restart. Inspect Console errors and warnings.
+6. Shoot all 16 arrows and verify hit/miss feedback, score, stage transitions at shots 4, 8, and 12, results, and restart. Inspect Console errors and warnings.
 7. Return to **Edit Mode**. Use **Tools > Jemparingan > Environment > Set Target 20m** or **30m**, save the scene and enter Play Mode again. The target stand and its runtime bandulan move together.
 
 **The default Playable v5 target is 10 m.** Speed (20–27 m/s), gravity (4.5 m/s²), aim assist (0.65), and flight lifetime (3 s) are preview tuning values serialized **only in this new scene**. A longer predicted-path marker is used for these shots. They are not physically calibrated simulations of traditional arrows.
@@ -91,7 +91,7 @@ The outdoor playable scene now has an **Editor-only training aid**. The bandulan
 - **T:** toggle training assist/reticle **ON/OFF** during Play Mode. With training OFF, the original 8° falloff aim-assist continues to apply.
 - **R:** reset the round.
 
-The initial target distance is 10m. Try the complete 12-shot scoring cycle before increasing to 20m and 30m.
+The initial target distance is 10m. Try the complete 16-shot scoring cycle before increasing to 20m and 30m.
 
 **Implementation:** `DesktopBowInput.cs` modifies sensitivity only when `outdoorBowPresentation` is enabled. `JemparinganGame.cs` adds an Editor-only training sight and solves a low-angle ballistic trajectory with predicted target sway; it does **not** change `JemparinganArrow`, `JemparinganTarget`, scoring, or the Quest input handler.
 
@@ -105,11 +105,11 @@ The outdoor gameplay HUD now keeps the **upper-right layout** while reducing rep
 - Stage changes no longer show a duplicate floating stage banner in the outdoor scene; the phase/status remain visible.
 - The dark **feedback strip appears only while a message is active** and hides after ~1.5 seconds. No permanently empty banner.
 - Instructions in idle state are shortened to **KIRI TARIK | KANAN BIDIK | SHIFT HALUS**. During draw, the help line still shows **TARIK % | RASA FOKUS/TENANG**. Training mode **T** and restart **R** are documented in the aim section above.
-- The training reticle remains visible, but its center text is **empty by default**. Only a green, aligned shot while drawing shows the short instruction **LEPAS**.
+- The training reticle remains visible, but its center text is **empty by default**. Only a green, aligned shot while drawing shows the short instruction **RELEASE**.
 - Reticle color/material and text are updated **only when alignment or draw state changes**, rather than rewriting the same content every frame.
 - The outdoor end-of-round panel uses shorter two-to-three-line results; the original v0.9 scene's labels and results are unchanged.
 
-**Test:** Pull `feature/safe-environment-preview-v1`, open `JemparinganPlayableEnvironment_v05.unity`, press **Play**. Confirm the bow (left) and bandulan (center) stay unobstructed. Check feedback appears then disappears after a shot, the reticle changes color at the target and shows **LEPAS** only while drawing, and the results panel still includes score/accuracy/center hits/combo/bonus after 12 shots. Test **T**, **R**, and one legacy round if possible.
+**Test:** Pull `feature/safe-environment-preview-v1`, open `JemparinganPlayableEnvironment_v05.unity`, press **Play**. Confirm the bow (left) and bandulan (center) stay unobstructed. Check feedback appears then disappears after a shot, the reticle changes color at the target and shows **RELEASE** only while drawing, and the results panel still includes score/accuracy/center hits/combo/bonus after 16 shots. Test **T**, **R**, and one legacy round if possible.
 
 **No scene regeneration required:** all changes are in runtime UI logic. This is a low-dependency TextMesh cleanup, **not a migration to TextMeshPro**, and Unity/Quest visual validation remains outstanding.
 
@@ -152,6 +152,27 @@ A desktop-browser version complements the competition's separate native Meta Que
 
 **Limitations:** Actual Web compilation, browser graphics, input focus, caching, download size and live play require local building and testing. This document does **not** claim deployment is complete. Browser WebGL is separate from Quest VR. Keep Web output folders ignored by Git (the project already ignores `Builds/`). Beware of HTTPS/compression server configuration on custom hosts.
 
+## Round IV — Extreme Swing (16-arrow outdoor play)
+
+The first three rounds stay intact. The **existing Playable v5 scene** now adds one final challenge:
+
+| Round | Arrows | Lateral sway amplitude | Sway speed |
+|---|---|---|---|
+| I — Calm | 1–4 | 0.06 m | 0.70 |
+| II — Wind | 5–8 | 0.105 m | 1.22 |
+| III — RASA Challenge | 9–12 | 0.15 m | 1.74 |
+| **IV — Extreme Swing** | **13–16** | **0.27 m** | **2.35** |
+
+Stage IV moves **1.8× as far** and about **1.35× as fast** as Stage III. The bandulan follows a predictable side-to-side **sine wave**, slowing at each end before turning back. The phase remains continuous when the round changes, while amplitude ramps in gradually to avoid a sudden sideways jump. `PredictCenter` uses the same motion phase and transition for the training sight and moving-target lead.
+
+- Same target dimensions, scoring and RASA bonus, bow controls, scene, and ballistics; **no new wind force**.
+- Stage IV begins after shooting arrow 12; results appear after arrow 16 finishes flying.
+- `JemparinganGame.BuildScene()` upgrades outdoor playable mode from the previously saved scene's serialized 12-arrow count to 16 **at runtime**. The original indoor v0.9 scene remains at 12 arrows and three rounds. **Do not regenerate** a modified scene just to play Round IV.
+- Newly generated outdoor scenes serialize 16 arrows through `JemparinganEnvironmentPreviewBuilder`.
+- The HUD, intro card, shot markers and results follow the active 16-arrow count.
+
+**QA:** Run **Tools → Jemparingan → Run Gameplay QA v0.9** for stage boundaries, new title, shot-pool size, and swing tuning. In Play Mode, verify the three transitions (shots 4, 8, 12), visible Round IV movement without jumps, the full 16 shots and results, and `R` restart. The Unity web build on Unity Play must be **rebuilt and republished** to receive this change.
+
 ## Safety notes and limitations
 
 - The existing v0.9 gameplay scene remains on its old 2.65 m near-target setup by default.
@@ -160,7 +181,7 @@ A desktop-browser version complements the competition's separate native Meta Que
 - `JemparinganArrow.Launch` accepts an optional maximum-flight lifetime, defaulting to the previous **1.6 s**. The outdoor scene uses **3 s**.
 - The decorative static bandulan appears only in the scenic preview. In the playable scene, the old game instantiates its single live bandulan beneath the new frame.
 - This is still programmer-art blockout. It is not final stylized realism, historically exact Joglo reconstruction, or an optimized Quest build.
-- **Unity Editor compilation, actual Play Mode hits, 12-shot rounds, headset hand tracking, and 72 FPS on Quest have not been verified here.** Validate them locally; send the Game-view screenshot and Console output if there is a problem.
+- **Unity Editor compilation, actual Play Mode hits, 16-shot outdoor rounds, headset hand tracking, and 72 FPS on Quest have not been verified here.** Validate them locally; send the Game-view screenshot and Console output if there is a problem.
 - Unity-generated `.unity`, `.mat`, `.asset`, and matching `.meta` files are local until you explicitly commit them.
 - To go back to the unmodified main branch, save/stash any local changes, then `git switch main`.
 
@@ -171,6 +192,6 @@ A desktop-browser version complements the competition's separate native Meta Que
 - [ ] Roof and saka guru frame the player's view without blocking the lane
 - [ ] Distant mountains read as layered ridges, not giant oval primitives
 - [ ] Setup validation reports PASS
-- [ ] 12 shots complete and results/replay work in the playable scene
+- [ ] 16 shots complete and results/replay work in the playable scene
 - [ ] Target at 10/20/30m can be repositioned in Edit Mode
 - [ ] The original `JemparinganOptimized_v02.unity` scene still plays unchanged
