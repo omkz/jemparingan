@@ -398,7 +398,8 @@ public class JemparinganGame : MonoBehaviour
         _shots++;
         _audio.PlayOneShot(_shotSound, 0.48f);
         ShowFeedback("ARROW RELEASED");
-        if (_shots == 4 || _shots == 8) UpdateLevel();
+        if (_shots == 4 || _shots == 8 ||
+            (useOutdoorEnvironment && _shots == 12)) UpdateLevel();
         if (_shots >= arrowsPerRound) _roundOver = true;
         UpdateHUD();
     }
@@ -447,7 +448,7 @@ public class JemparinganGame : MonoBehaviour
         sightTarget = Vector3.zero;
         if (_target == null || speed < 0.1f) return false;
 
-        // Iteration matters on stages II-III because the bandulan sways while
+        // Iteration matters on stages II-IV because the bandulan sways while
         // the arrow is flying. Time-to-target and lead are solved together.
         float travelTime = Vector3.Distance(origin, _target.transform.position) / speed;
         float gravity = Mathf.Max(0f, simulatedGravity);
@@ -514,15 +515,14 @@ public class JemparinganGame : MonoBehaviour
     private void UpdateLevel()
     {
         int level = JemparinganScoreRules.StageIndex(_shots);
-        _target.swayAmount = 0.06f + level * 0.045f;
-        _target.swaySpeed = 0.7f + level * 0.52f;
-        string stage = level == 1 ? "ROUND II  •  WIND" : "ROUND III  •  RASA CHALLENGE";
-        ShowFeedback(stage);
+        _target.SetSway(JemparinganScoreRules.SwayAmountForStage(level),
+            JemparinganScoreRules.SwaySpeedForStage(level));
+        ShowFeedback(JemparinganScoreRules.StageTitle(_shots));
         // The outdoor phase row and status already communicate the new
         // stage: avoid a second banner duplicating the same information.
         if (_stageBanner != null && !useOutdoorEnvironment)
         {
-            _stageBanner.text = stage;
+            _stageBanner.text = JemparinganScoreRules.StageTitle(_shots);
             _stageBannerUntil = Time.time + 1.25f;
         }
         if (_audio != null && _stageSound != null) _audio.PlayOneShot(_stageSound, .23f);
@@ -632,8 +632,8 @@ public class JemparinganGame : MonoBehaviour
         if (_resultsPanel != null) _resultsPanel.SetActive(false);
         _roundOver = _finished = false;
         _ready = true;
-        _target.swayAmount = 0.06f;
-        _target.swaySpeed = 0.7f;
+        _target.SetSway(JemparinganScoreRules.SwayAmountForStage(0),
+            JemparinganScoreRules.SwaySpeedForStage(0), true);
         _target.ResetReaction();
         UpdateNockedArrow(0f, true);
         HidePreview();
@@ -650,7 +650,8 @@ public class JemparinganGame : MonoBehaviour
                 ? "SCORE " + _score + "  |  HITS " + _hits + "  |  ARROWS " + _shots + "/" + arrowsPerRound
                 : "SCORE " + _score + "  •  HITS " + _hits + "/" + _shots + "  •  COMBO " + _combo + "  •  BEST " + _best;
         if (_phaseLabel != null && !_finished)
-            _phaseLabel.text = JemparinganScoreRules.StageTitle(_shots);
+            _phaseLabel.text = JemparinganScoreRules.StageTitle(
+                useOutdoorEnvironment ? _shots : Mathf.Min(_shots, 11));
         UpdateShotPips();
     }
 
@@ -660,9 +661,9 @@ public class JemparinganGame : MonoBehaviour
         for (int i = 0; i < _shotPipRenderers.Length; i++)
         {
             JemparinganArt.Tone tone = i < _shots ? JemparinganArt.Tone.Gold : JemparinganArt.Tone.Paper;
-            bool inStage = (_shots < 4 && i < 4) ||
-                (_shots >= 4 && _shots < 8 && i >= 4 && i < 8) ||
-                (_shots >= 8 && i >= 8);
+            int activeStage = Mathf.Min(_shots / JemparinganScoreRules.ArrowsPerStage,
+                (arrowsPerRound - 1) / JemparinganScoreRules.ArrowsPerStage);
+            bool inStage = i / JemparinganScoreRules.ArrowsPerStage == activeStage;
             if (!_finished && i >= _shots && inStage) tone = JemparinganArt.Tone.Jade;
             _shotPipRenderers[i].sharedMaterial = JemparinganArt.Material(tone);
         }
@@ -778,6 +779,11 @@ public class JemparinganGame : MonoBehaviour
     {
         Camera camera = Camera.main;
         if (camera == null) { Debug.LogError("Jemparingan: MainCamera missing."); return false; }
+        // Existing Playable v5 scenes still serialize 12 shots. Upgrade only
+        // outdoor gameplay at runtime so no scene regeneration or overwriting
+        // user-customized environment assets is required. Legacy stays at 12.
+        if (useOutdoorEnvironment)
+            arrowsPerRound = JemparinganScoreRules.OutdoorArrowCount;
         Vector3 forward = Vector3.ProjectOnPlane(camera.transform.forward, Vector3.up).normalized;
         if (forward.sqrMagnitude < 0.1f) forward = Vector3.forward;
         Quaternion facing = Quaternion.LookRotation(forward);
@@ -918,7 +924,8 @@ public class JemparinganGame : MonoBehaviour
             if (label.name == "Intro title")
                 label.text = "JEMPARINGAN  /  RASA";
             else if (label.name == "Intro goal")
-                label.text = "12 ARROWS  |  3 ROUNDS  |  RASA +3";
+                label.text = arrowsPerRound + " ARROWS  |  " +
+                    JemparinganScoreRules.OutdoorRoundCount + " ROUNDS  |  RASA +3";
             else if (label.name == "Intro start" && UsesDesktopInput())
                 label.text = "HOLD LEFT TO START";
         }
@@ -939,7 +946,9 @@ public class JemparinganGame : MonoBehaviour
         JemparinganArt.Label("Intro title", intro.transform, new Vector3(0f, .16f, -.025f),
             "J E M P A R I N G A N   /   R A S A", .0045f, new Color(.98f, .82f, .51f));
         JemparinganArt.Label("Intro goal", intro.transform, new Vector3(0f, .015f, -.025f),
-            "12 ARROWS   •   3 ROUNDS   •   RASA +3 WHEN STEADY", .0035f, Color.white);
+            arrowsPerRound + " ARROWS   •   " +
+                Mathf.CeilToInt(arrowsPerRound / (float)JemparinganScoreRules.ArrowsPerStage) +
+                " ROUNDS   •   RASA +3 WHEN STEADY", .0035f, Color.white);
         JemparinganArt.Label("Intro start", intro.transform, new Vector3(0f, -.14f, -.025f),
             UsesDesktopInput() ? "HOLD LEFT MOUSE TO START" : "PULL STRING TO START",
             .0037f, new Color(.56f, .94f, .76f));
@@ -967,7 +976,7 @@ public class JemparinganGame : MonoBehaviour
     private void BuildShotPips(Transform hud)
     {
         _shotPipRenderers = new Renderer[arrowsPerRound];
-        var parent = new GameObject("12 Shot Progress").transform;
+        var parent = new GameObject(arrowsPerRound + " Shot Progress").transform;
         parent.SetParent(hud, false);
         parent.localPosition = new Vector3(0f, .56f, 0f);
         const float width = .92f;
@@ -1191,7 +1200,7 @@ public class JemparinganGame : MonoBehaviour
 
     private void BuildLeadMarker(Transform root)
     {
-        _leadMarker = JemparinganArt.Part("Lead cue | Stages II and III", PrimitiveType.Sphere,
+        _leadMarker = JemparinganArt.Part("Lead cue | Stages II-IV", PrimitiveType.Sphere,
             root, Vector3.zero, Vector3.one * .023f, JemparinganArt.Tone.Jade).transform;
         _leadMarker.gameObject.SetActive(false);
     }
