@@ -118,6 +118,14 @@ public static class JemparinganEditorMenu
             JemparinganScoreRules.PoolCapacity(16, 14) == 16, ref total, ref failed);
         Check("arrow pool 30",
             JemparinganScoreRules.PoolCapacity(30, 14) == 30, ref total, ref failed);
+        Check("Traditional red 3", JemparinganScoreRules.TraditionalPointsForZone(
+            JemparinganTarget.TraditionalZone.Molo) == 3, ref total, ref failed);
+        Check("Traditional yellow 2", JemparinganScoreRules.TraditionalPointsForZone(
+            JemparinganTarget.TraditionalZone.Jangga) == 2, ref total, ref failed);
+        Check("Traditional white 1", JemparinganScoreRules.TraditionalPointsForZone(
+            JemparinganTarget.TraditionalZone.Awak) == 1, ref total, ref failed);
+        Check("Traditional miss 0", JemparinganScoreRules.TraditionalPointsForZone(
+            JemparinganTarget.TraditionalZone.None) == 0, ref total, ref failed);
 
         Vector3 flat = JemparinganTrajectory.Position(Vector3.zero, Vector3.forward * 10f, 0f, 1f);
         Vector3 falling = JemparinganTrajectory.Position(Vector3.zero, Vector3.forward * 10f, 2f, 1f);
