@@ -7,9 +7,13 @@ public class JemparinganTarget : MonoBehaviour
     [Range(0f, 5f)] public float swaySpeed = 0.9f;
 
     private const float BurstDuration = 0.40f;
+    // Fade between round amplitudes instead of teleporting the bandulan.
+    private const float SwayAmplitudeTransitionPerSecond = 0.34f;
     private const int SparkCount = 8;
     private Vector3 _rest;
     private Quaternion _restRotation;
+    private float _activeSwayAmount;
+    private float _swayPhaseOffset;
     private Renderer _body;
     private Transform _fxRoot;
     private Transform[] _sparks;
@@ -22,13 +26,37 @@ public class JemparinganTarget : MonoBehaviour
     {
         _rest = transform.localPosition;
         _restRotation = transform.localRotation;
+        _activeSwayAmount = swayAmount;
     }
 
     public void SetBody(Renderer body) { _body = body; }
 
+    // Preserve the old waveform's phase when speed changes, and ease the
+    // amplitude over a short window. No random jumps between rounds.
+    public void SetSway(float amount, float speed, bool resetImmediately = false)
+    {
+        amount = Mathf.Clamp(amount, 0f, 0.3f);
+        speed = Mathf.Clamp(speed, 0f, 5f);
+        if (resetImmediately)
+        {
+            _activeSwayAmount = amount;
+            _swayPhaseOffset = 0f;
+        }
+        else
+        {
+            _swayPhaseOffset += Time.time * (swaySpeed - speed);
+        }
+        swayAmount = amount;
+        swaySpeed = speed;
+    }
+
     private void Update()
     {
-        transform.localPosition = _rest + Vector3.right * (Mathf.Sin(Time.time * swaySpeed) * swayAmount);
+        _activeSwayAmount = Mathf.MoveTowards(_activeSwayAmount, swayAmount,
+            SwayAmplitudeTransitionPerSecond * Time.deltaTime);
+        float phase = Time.time * swaySpeed + _swayPhaseOffset;
+        transform.localPosition = _rest +
+            Vector3.right * (Mathf.Sin(phase) * _activeSwayAmount);
 
         if (_hitAt >= 0f)
         {
@@ -57,7 +85,11 @@ public class JemparinganTarget : MonoBehaviour
     // Uses the same deterministic sine function as Update; no random wind.
     public Vector3 PredictCenter(float secondsAhead)
     {
-        float predictedSway = Mathf.Sin((Time.time + Mathf.Max(0f, secondsAhead)) * swaySpeed) * swayAmount;
+        float ahead = Mathf.Max(0f, secondsAhead);
+        float predictedAmount = Mathf.MoveTowards(_activeSwayAmount, swayAmount,
+            SwayAmplitudeTransitionPerSecond * ahead);
+        float predictedPhase = (Time.time + ahead) * swaySpeed + _swayPhaseOffset;
+        float predictedSway = Mathf.Sin(predictedPhase) * predictedAmount;
         Vector3 localCenter = _rest + Vector3.right * predictedSway;
         return transform.parent != null ? transform.parent.TransformPoint(localCenter) : localCenter;
     }
