@@ -80,6 +80,23 @@ The **outdoor playable scene** now uses a 1.30m curved, tapered wooden bow gener
 
 This is a procedural prototype, not the final Blender art. **Unity compilation, first-person appearance and real Quest performance are not verified here.** See [Bow Polish v1 design and QA spec](BOW_POLISH_V1_SPEC.md).
 
+## Desktop training aim v5.3 — easier aiming without changing Quest
+
+The outdoor playable scene now has an **Editor-only training aid**. The bandulan is genuinely small, and the former aim-assist only worked if the player had already accounted for arrow drop. Training mode is enabled by default in **Unity Editor only**.
+
+- **Right mouse + move:** aim the camera, at a lower outdoor-only sensitivity than v0.9.
+- **Hold Shift while right-mouse aiming:** even finer precision for the narrow bandulan.
+- **Small reticle at the center:** normally cream; **green when the bandulan is within the training cone (2.8°)**. For green shots, the system corrects gravitational drop and anticipates the existing target sway at the current draw power.
+- **Left mouse hold/release:** draw and shoot exactly as before. The reticle is a visual guide, not an extra arrow.
+- **T:** toggle training assist/reticle **ON/OFF** during Play Mode. With training OFF, the original 8° falloff aim-assist continues to apply.
+- **R:** reset the round.
+
+The initial target distance is 10m. Try the complete 12-shot scoring cycle before increasing to 20m and 30m.
+
+**Implementation:** `DesktopBowInput.cs` modifies sensitivity only when `outdoorBowPresentation` is enabled. `JemparinganGame.cs` adds an Editor-only training sight and solves a low-angle ballistic trajectory with predicted target sway; it does **not** change `JemparinganArrow`, `JemparinganTarget`, scoring, or the Quest input handler.
+
+**No scene regeneration required**: these behavior and UI objects are configured at runtime. Pull changes, open the existing `JemparinganPlayableEnvironment_v05.unity`, and press Play. The implementation and default training behavior require Unity Editor verification; this is not a Quest-validated aiming technique.
+
 ## Safety notes and limitations
 
 - The existing v0.9 gameplay scene remains on its old 2.65 m near-target setup by default.
