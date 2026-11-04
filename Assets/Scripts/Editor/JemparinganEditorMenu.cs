@@ -112,8 +112,10 @@ public static class JemparinganEditorMenu
             JemparinganScoreRules.ResultTitle(9, 4).Contains("RASA"), ref total, ref failed);
         Check("round title distinguishes accuracy",
             JemparinganScoreRules.ResultTitle(9, 1).Contains("TRUE AIM"), ref total, ref failed);
-        Check("arrow pool default 12",
+        Check("legacy pool handles 12 arrows",
             JemparinganScoreRules.PoolCapacity(12, 14) == 14, ref total, ref failed);
+        Check("outdoor pool handles 16 arrows",
+            JemparinganScoreRules.PoolCapacity(16, 14) == 16, ref total, ref failed);
         Check("arrow pool 30",
             JemparinganScoreRules.PoolCapacity(30, 14) == 30, ref total, ref failed);
 
