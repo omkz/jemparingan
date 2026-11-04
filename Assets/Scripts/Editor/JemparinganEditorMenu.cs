@@ -165,6 +165,29 @@ public static class JemparinganEditorMenu
             Check("Traditional red zone", head, ref total, ref failed);
             Check("Traditional yellow zone", neck, ref total, ref failed);
             Check("Traditional white zone", body, ref total, ref failed);
+            bool nearNeckBottom = target.TestShot(new Vector3(0f, .055f, -.2f),
+                new Vector3(0f, .055f, .2f), out bullseye) &&
+                target.LastTraditionalZone == JemparinganTarget.TraditionalZone.Jangga;
+            bool nearHeadBottom = target.TestShot(new Vector3(0f, .105f, -.2f),
+                new Vector3(0f, .105f, .2f), out bullseye) &&
+                target.LastTraditionalZone == JemparinganTarget.TraditionalZone.Molo;
+            bool belowNeck = target.TestShot(new Vector3(0f, .045f, -.2f),
+                new Vector3(0f, .045f, .2f), out bullseye) &&
+                target.LastTraditionalZone == JemparinganTarget.TraditionalZone.Awak;
+            bool aboveTop = !target.TestShot(new Vector3(0f, .22f, -.2f),
+                new Vector3(0f, .22f, .2f), out bullseye);
+            bool belowBottom = !target.TestShot(new Vector3(0f, -.24f, -.2f),
+                new Vector3(0f, -.24f, .2f), out bullseye);
+            Check("Traditional neck lower visual boundary",
+                nearNeckBottom, ref total, ref failed);
+            Check("Traditional head lower visual boundary",
+                nearHeadBottom, ref total, ref failed);
+            Check("Traditional white ends at neck",
+                belowNeck, ref total, ref failed);
+            Check("Traditional above visible target misses",
+                aboveTop, ref total, ref failed);
+            Check("Traditional below visible target misses",
+                belowBottom, ref total, ref failed);
             target.UseTraditionalScoring(false);
             Check("Classic target remains intact", target.TestShot(
                 new Vector3(0f, 0f, -.2f), new Vector3(0f, 0f, .2f),
