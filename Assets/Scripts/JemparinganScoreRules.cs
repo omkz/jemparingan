@@ -3,6 +3,10 @@ using UnityEngine;
 // Pure gameplay rules shared by runtime and editor QA checks.
 public static class JemparinganScoreRules
 {
+    public const int ArrowsPerStage = 4;
+    public const int OutdoorRoundCount = 4;
+    public const int OutdoorArrowCount = ArrowsPerStage * OutdoorRoundCount;
+
     public static int PointsForHit(bool bullseye, bool stableRelease, int consecutiveHits)
     {
         return (bullseye ? 10 : 5) + (stableRelease ? 3 : 0) +
@@ -17,14 +21,32 @@ public static class JemparinganScoreRules
 
     public static int StageIndex(int shotsFired)
     {
-        return shotsFired < 4 ? 0 : shotsFired < 8 ? 1 : 2;
+        return Mathf.Clamp(Mathf.Max(0, shotsFired) / ArrowsPerStage,
+            0, OutdoorRoundCount - 1);
     }
 
     public static string StageTitle(int shotsFired)
     {
-        int stage = StageIndex(shotsFired);
-        return stage == 0 ? "ROUND I  •  CALM" :
-            stage == 1 ? "ROUND II  •  WIND" : "ROUND III  •  RASA CHALLENGE";
+        switch (StageIndex(shotsFired))
+        {
+            case 0: return "ROUND I  •  CALM";
+            case 1: return "ROUND II  •  WIND";
+            case 2: return "ROUND III  •  RASA CHALLENGE";
+            default: return "ROUND IV  •  EXTREME SWING";
+        }
+    }
+
+    // First three stages keep their existing swing settings. The final stage
+    // has 1.8x the Round III travel and ~1.35x its angular speed. Sine-based
+    // motion naturally eases at both turning points; there is no randomness.
+    public static float SwayAmountForStage(int stage)
+    {
+        return stage >= 3 ? 0.27f : 0.06f + Mathf.Clamp(stage, 0, 2) * 0.045f;
+    }
+
+    public static float SwaySpeedForStage(int stage)
+    {
+        return stage >= 3 ? 2.35f : 0.7f + Mathf.Clamp(stage, 0, 2) * 0.52f;
     }
 
     public static string ResultTitle(int hits, int stableHits)
