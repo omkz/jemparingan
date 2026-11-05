@@ -35,8 +35,9 @@ public class JemparinganGame : MonoBehaviour
     [SerializeField, Range(-.10f, .40f)] private float modernBowRightOffset = .20f;
     [SerializeField, Range(-.05f, .40f)] private float modernBowDownOffset = .18f;
     [SerializeField, Range(.70f, 1.10f)] private float modernBowVisualScale = .94f;
-    // Simulates a separate viewmodel lens by scaling the cosmetic bow only.
-    // It does not change the main camera's FOV or the world projection.
+    // Used only by the older non-screenshot v2 preset. The screenshot
+    // calibration instead solves the actual bow projection and smoothly
+    // changes the real camera FOV for modest Modern aim zoom.
     [SerializeField, Range(45f, 85f)] private float modernViewmodelFov = 65f;
     [SerializeField, Range(.50f, 1.30f)] private float modernRightHandScale = .92f;
 
@@ -1231,6 +1232,10 @@ public class JemparinganGame : MonoBehaviour
         if (useArrowCam && UsesDesktopInput() &&
             desktopInput != null && Camera.main != null)
         {
+            // Arrow Cam inherits MainCamera settings via CopyFrom. Restore
+            // the original FOV before its snapshot so cinematic framing
+            // stays identical to the pre-zoom gameplay baseline.
+            if (IsModernMode()) RestoreModernCameraFov();
             if (_arrowCam == null)
                 _arrowCam = gameObject.AddComponent<JemparinganArrowFollowCamera>();
             // Do not steal an existing follow during an automated rapid-fire test.
