@@ -128,6 +128,21 @@ obtrusive, and it hides on release or near-camera clipping. Check the
 original left grip hand and aim remain unchanged. This is still a low-poly
 procedural placeholder, not a rigged 3D hand asset.
 
+### Draw-hand proportion tuning
+
+The bow remains at its established first-person position; moving it would
+also shift the existing projectile launch origin. Instead, the cosmetic
+Modern right hand has been scaled down to **64%** at its reference camera
+distance (0.65m). Its visual-only local scale decreases as the nock gets
+closer to the camera, so drawing the string does not make the hand appear
+enormous in perspective. The fingertips remain at the true nock position.
+
+In Play Mode, compare Modern before drawing, mid-draw and full-draw at the
+same camera angle. The right hand should have a consistent apparent size,
+remain subordinate to the bow, stay attached to the string, and not block
+the target. Check Arrow Cam, Classic, Traditional and Challenge for any
+regressions. This adjustment has not been rendered or tested in Unity yet.
+
 ## Validate in Unity
 
 This document records a **test plan**, not a claim that Unity Play Mode
