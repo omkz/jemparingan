@@ -6,6 +6,68 @@ first-person camera/input, procedural environment, arrow pool and
 gravity-based projectile. No external assets, scene regeneration, or
 separate physics system are required.
 
+## CURRENT: Archery Master-style one-button controls (Modern desktop)
+
+This update **supersedes the earlier RMB full-draw aim experiment below**.
+Modern now uses a single held **LMB** for quick drawing, mouse look
+and sight refinement. **RMB is not required for Modern.**
+
+- **Hold LMB:** the existing nock/string pulls smoothly to full power
+  over **0.28 seconds** by default (Inspector:
+  `DesktopBowInput.modernFullDrawSeconds`). Mouse movement during the
+  hold turns the first-person camera. This supports the familiar
+  click → reach full draw → hold/move mouse → release flow.
+- **After near-full draw (96% power by default):** the cosmetic bow
+  transitions automatically into the screenshot-calibrated precision
+  pose and the camera smoothly zooms toward **60° FOV**. No RMB press
+  is required. Before that, the bow is raised but not yet in the
+  final calibrated sight pose.
+- **Release LMB:** fire using the original shot origin, power-to-speed
+  curve, gravity, collisions, scoring and optional Arrow Cam. Releasing
+  early can still yield a weaker shot under the existing draw rules.
+- **Shift + LMB mouse movement:** finer aiming at the existing outdoor
+  precision multiplier (the Modern mode uses this regardless of the
+  old `outdoorBowPresentation` Inspector flag).
+- **G:** toggle the camera-axis **debug crosshair** (visible only
+  while full-draw aiming, when V2 screenshot framing is enabled).
+  It does **not** predict the ballistically affected impact.
+- **V:** compare V1 static viewmodel framing against the V2
+  screenshot-calibrated pose. **One-button mouse controls remain the
+  same in both views**.
+- **Hands remain hidden:** `modernShowHands = false` by default.
+  Both hands are not deleted; Traditional/Challenge are untouched.
+
+**Other modes:** Classic, Traditional and Challenge keep their original
+**RMB camera look**, **LMB one-second draw**, and LMB release to shoot.
+Quest input, target/scoring rules, and the real projectile have not
+been modified by this update.
+
+### One-button Unity Play Mode QA (not yet executed)
+
+1. Enter Modern, hold **RMB alone**: there must be no aim zoom or
+   Modern mouse-look activation. Move mouse while **LMB is held**:
+   the camera should turn immediately.
+2. Hold **LMB** through the ~0.28s draw. The bow raises, then settles
+   to the screenshot pose when its draw reaches 96%; zoom begins.
+   Mouse movement remains responsive while held.
+3. Still holding LMB, move mouse over each target; add **Shift**
+   for fine aim. Release LMB: exactly **one** projectile fires and
+   Arrow Cam follows it. Ensure there is no second shot.
+4. Toggle **G** mid-hold and check camera-axis marker visibility.
+   Turn V1 on with **V**, verify one-button aiming still works.
+5. Release before full draw: only pre-existing minimum draw/hold
+   rules apply; a quick tap must not accidentally become a full shot.
+6. Press **R** while holding LMB, exit with **M**, enter Classic,
+   Traditional and Challenge: no extra shots, no stuck camera,
+   no residual zoom, and RMB-only camera look is restored.
+7. On startup with initialOutdoorMode=Modern, the mode selection
+   menu must not activate the Modern mouse controls until selection.
+8. Repeat after the Arrow Cam exit/skip with Esc; look must resume
+   only when another LMB draw is started.
+
+**Validation boundary:** source-level checks only. Unity compilation,
+camera motion and actual screenshot matching require editor Play Mode.
+
 ## Current experiment — Modern full draw → RMB precision aim
 
 **This is the current behavior.** Sections below describe the history of
