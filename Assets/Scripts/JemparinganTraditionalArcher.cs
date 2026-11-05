@@ -53,7 +53,8 @@ public sealed class JemparinganTraditionalArcher : MonoBehaviour
         if (_visuals != null) _visuals.gameObject.SetActive(false);
     }
 
-    public void Present(bool modernRightHandDrawing = false, Transform nock = null)
+    public void Present(bool modernRightHandDrawing = false, Transform nock = null,
+        float rightHandTuning = 1f)
     {
         if (_handle == null || _bow == null || Camera.main == null) return;
         if (!_visuals.gameObject.activeSelf) _visuals.gameObject.SetActive(true);
@@ -71,7 +72,7 @@ public sealed class JemparinganTraditionalArcher : MonoBehaviour
         if (_modernRightHand != null)
         {
             bool show = modernRightHandDrawing && nock != null &&
-                PoseModernRightHand(Camera.main, nock);
+                PoseModernRightHand(Camera.main, nock, rightHandTuning);
             if (_modernRightHand.gameObject.activeSelf != show)
                 _modernRightHand.gameObject.SetActive(show);
         }
@@ -148,7 +149,8 @@ public sealed class JemparinganTraditionalArcher : MonoBehaviour
         _modernRightHand.gameObject.SetActive(false);
     }
 
-    private bool PoseModernRightHand(Camera camera, Transform nock)
+    private bool PoseModernRightHand(Camera camera, Transform nock,
+        float rightHandTuning)
     {
         // The established bow pose is the source of truth. The right hand
         // aligns to the *same* bow rotation as the leather grip, arrow and
@@ -172,8 +174,14 @@ public sealed class JemparinganTraditionalArcher : MonoBehaviour
         // fixed local origin keeps its pinch anchored to the same string.
         float depthFactor = Mathf.Clamp(
             projected.z / ModernRightHandReferenceDepth, .53f, 1f);
-        _modernRightHand.localScale =
-            Vector3.one * (ModernRightHandVisualScale * depthFactor);
+        // The right hand is not parented under the bow, so account for the
+        // Modern viewmodel bow scaling explicitly. Inspector hand tuning
+        // controls relative size without affecting grip or bow geometry.
+        float relativeScale = Mathf.Clamp(rightHandTuning, .50f, 1.30f);
+        float bowVisualScale = Mathf.Max(.01f, _bow.lossyScale.x);
+        _modernRightHand.localScale = Vector3.one *
+            (ModernRightHandVisualScale * depthFactor *
+             relativeScale * bowVisualScale);
         return true;
     }
 
