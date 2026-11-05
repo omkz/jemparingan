@@ -52,6 +52,9 @@ public class JemparinganGame : MonoBehaviour
     [SerializeField, Range(.50f, .95f)] private float modernReferenceGripDepth = .70f;
     [SerializeField, Range(.90f, 1.30f)] private float modernReferenceTipViewportY = 1.075f;
     [SerializeField, Range(-12f, 12f)] private float modernBowCantDegrees = -2f;
+    // A previously saved scene may still serialize the old -6° default.
+    // Migrate only that historical default; preserve other user tuning.
+    [SerializeField, HideInInspector] private bool modernUprightV3Migrated;
     [SerializeField, Range(48f, 75f)] private float modernReferenceAimFov = 60f;
     [Header("Modern full-draw then precision aim (desktop only)")]
     [SerializeField, Range(.80f, 1f)] private float modernPrecisionDrawThreshold = .96f;
@@ -597,6 +600,12 @@ public class JemparinganGame : MonoBehaviour
 
     private void StartModernMode()
     {
+        if (!modernUprightV3Migrated)
+        {
+            if (Mathf.Approximately(modernBowCantDegrees, -6f))
+                modernBowCantDegrees = -2f;
+            modernUprightV3Migrated = true;
+        }
         _mode = GameMode.Modern;
         _modeChosen = true;
         // The 3D sight is now the default; HUD crosshair is opt-in
