@@ -10,7 +10,7 @@ public class JemparinganGame : MonoBehaviour
     [SerializeField] private MetaQuestBowInput questInput;
     [SerializeField] private bool preferQuestHandsInEditor;
 
-    public enum GameMode { Classic, Traditional, Challenge }
+    public enum GameMode { Classic, Traditional, Challenge, Modern }
     [Header("Outdoor game mode (Classic v1 remains unchanged)")]
     [SerializeField] private GameMode initialOutdoorMode = GameMode.Classic;
     private GameMode _mode = GameMode.Classic;
@@ -19,6 +19,10 @@ public class JemparinganGame : MonoBehaviour
     private Renderer _classicBandulanBody, _traditionalBandulanBody;
     private Transform _traditionalPosture;
     private JemparinganTraditionalArcher _traditionalArcher;
+    private Renderer[] _seatedBodyRenderers;
+    private Transform _modernTargetsRoot, _bandulanSuspension;
+    private JemparinganModernTarget[] _modernTargets;
+    [SerializeField, Range(6, 30)] private int modernArrowCount = 12;
     private TextMesh _introGoalLabel, _introTitleLabel;
 
     [Header("Challenge Mode tuning")]
@@ -42,7 +46,11 @@ public class JemparinganGame : MonoBehaviour
 
     private bool IsTraditionalMode() { return useOutdoorEnvironment && _mode == GameMode.Traditional; }
     private bool IsChallengeMode() { return useOutdoorEnvironment && _mode == GameMode.Challenge; }
-    private bool UsesTraditionalPresentation() { return IsTraditionalMode() || IsChallengeMode(); }
+    private bool IsModernMode() { return useOutdoorEnvironment && _mode == GameMode.Modern; }
+    private bool UsesTraditionalPresentation()
+    {
+        return IsTraditionalMode() || IsChallengeMode() || IsModernMode();
+    }
     private JemparinganChallengeRules.MissionConfig ActiveChallengeConfig()
     {
         return JemparinganChallengeRules.GetConfig(_activeChallengeMission, movingChallengeSway, movingChallengeSpeed);
@@ -50,6 +58,7 @@ public class JemparinganGame : MonoBehaviour
     private string BestKey()
     {
         if (IsChallengeMode()) return "JemparinganChallenge_" + _activeChallengeMission + "_BestScore";
+        if (IsModernMode()) return "JemparinganModernBestScore";
         return IsTraditionalMode() ? "JemparinganTraditionalBest" : "JemparinganRasaBest";
     }
 
@@ -148,6 +157,8 @@ public class JemparinganGame : MonoBehaviour
                 ChooseMode(GameMode.Traditional);
             else if (initialOutdoorMode == GameMode.Challenge)
                 ChooseMode(GameMode.Challenge);
+            else if (initialOutdoorMode == GameMode.Modern)
+                ChooseMode(GameMode.Modern);
             if (UsesDesktopInput()) _modeChosen = false;
         }
     }
@@ -172,11 +183,16 @@ public class JemparinganGame : MonoBehaviour
             else
                 DrawChallengeInGameHUD();
         }
+        else if (IsModernMode())
+        {
+            if (_finished) DrawModernResultsGUI();
+            else DrawModernInGameHUD();
+        }
     }
 
     private void DrawMainModeSelectGUI()
     {
-        float width = Mathf.Min(640f, Screen.width - 24f);
+        float width = Mathf.Min(800f, Screen.width - 24f);
         float height = 260f;
         Rect panel = new Rect((Screen.width - width) * .5f,
             (Screen.height - height) * .5f, width, height);
@@ -189,7 +205,7 @@ public class JemparinganGame : MonoBehaviour
             "JEMPARINGAN: RASA", header);
         GUI.Label(new Rect(panel.x + 15f, panel.y + 58f, width - 30f, 24f),
             "CHOOSE YOUR MODE", GUI.skin.box);
-        float buttonWidth = (width - 60f) / 3f;
+        float buttonWidth = (width - 75f) / 4f;
         if (GUI.Button(new Rect(panel.x + 15f, panel.y + 102f, buttonWidth, 100f),
             "CLASSIC\n16 ARROWS  |  4 ROUNDS\nARCADE SCORING"))
             ChooseMode(GameMode.Classic);
@@ -201,8 +217,12 @@ public class JemparinganGame : MonoBehaviour
             buttonWidth, 100f),
             "CHALLENGE\nMEDAL MISSIONS\nPRECISION & MOTION"))
             ChooseMode(GameMode.Challenge);
+        if (GUI.Button(new Rect(panel.x + 60f + buttonWidth * 3f, panel.y + 102f,
+            buttonWidth, 100f),
+            "MODERN ARCHERY\n3 ROUND TARGETS\nRING SCORING"))
+            ChooseMode(GameMode.Modern);
         GUI.Label(new Rect(panel.x + 15f, panel.y + 216f, width - 30f, 24f),
-            "Keys: 1 Classic   |   2 Traditional   |   3 Challenge", GUI.skin.box);
+            "Keys: 1 Classic   |   2 Traditional   |   3 Challenge   |   4 Modern", GUI.skin.box);
     }
 
     private void DrawChallengeMissionSelectGUI()
