@@ -6,6 +6,63 @@ first-person camera/input, procedural environment, arrow pool and
 gravity-based projectile. No external assets, scene regeneration, or
 separate physics system are required.
 
+## CURRENT: bow-mounted physical sight (no default HUD crosshair)
+
+The successful one-button LMB aiming and ballistic zeroing are kept
+**unchanged**. The next step is visual: a 3D recurve-style **aperture ring
+with a small fiber-style pin**, mounted on the Modern cosmetic bow.
+
+- **Physical model:** new `JemparinganModernBowSight.cs`, attached to the
+  bow's own transform. A brass mounting plate near the upper grip connects
+  via an adjustable metal arm to a small circular aperture and its pin.
+  It is genuine Unity 3D geometry with no `OnGUI` reticle, no collider and
+  no new imported assets.
+- **Calibrated at stable full draw:** only after the one-button
+  precision pose is almost settled, place the pin at the world point
+  where the real camera forward axis crosses the bow-depth plane.
+  Convert that point into **bow-local coordinates**; the bracket remains
+  visibly connected to the bow, and adapts to the camera FOV/viewmodel
+  scaling rather than drifting when zooming. The physical sight is
+  visible in lowered/drawing states too and follows the bow geometry.
+- **HUD crosshair off by default** on entering Modern. Press **G**
+  during full draw to turn on the original camera-axis debug mark to
+  compare the physical pin with the screen center. G does not alter aim
+  or shot physics. Turn G off to return to sight-only gameplay.
+- **Modern V2 only:** the sight is hidden if **V** selects the old static
+  view, or `modernUseReferenceFraming` is unchecked. Other modes do
+  not render a Modern sight. Inspector toggle `modernUsePhysicalSight`
+  allows quick bow-only comparison.
+- **Hands stay hidden** via `modernShowHands = false`. Rebuild them
+  separately once the sight and bow composition are visually approved.
+- Ballistics, target hit tests, scoring, Arrow Cam, input and zoom are
+  unchanged by this visual feature.
+
+### Physical-sight Play Mode checklist
+
+1. Start Modern, hold LMB until full draw. Check the **3D ring/pin is
+   attached to the riser** and moves with the bow through the draw.
+2. At full draw, press **G**. The center of the **physical pin** should
+   overlap the small debug HUD crosshair after the aim pose settles.
+   Toggle G off and shoot the middle board: the arrow should still hit
+   the marked ring as in the previous accurate version.
+3. Aim left/right/up/down and shoot all three targets. Check physical
+   sight stays visible and attached, does not noticeably drift, and
+   its ring does not block the entire target.
+4. Change Game View aspect ratio and test again; the pin anchor uses
+   the actual camera FOV and perspective, not a fixed pixel offset.
+5. While holding LMB, press **V** to switch old/new view models. New
+   sight should disappear with V1, and return with V2. Release LMB
+   exactly one shot should fire.
+6. Trigger Arrow Cam, Esc skip, R retry, M modes, and switch to Classic,
+   Traditional, Challenge. No extra sight or HUD marker should leak
+   into those modes; FOV and input restoration remain intact.
+7. Leave **hands disabled** for this round. The old procedural hands
+   are retained for Traditional/Challenge and are **not** the new
+   Modern hand rig.
+
+**Verification state:** source/static inspection only. This is not a
+claim of successful Unity compilation or Play Mode screenshots.
+
 ## CURRENT FIX: sight reticle vs real arrow impact
 
 The full-draw one-button LMB control is unchanged. The earlier HUD
