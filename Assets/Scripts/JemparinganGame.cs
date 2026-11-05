@@ -28,6 +28,11 @@ public class JemparinganGame : MonoBehaviour
     [SerializeField] private JemparinganChallengeRules.MissionId nonDesktopChallengeMission =
         JemparinganChallengeRules.MissionId.Precision;
 
+    [Header("Experimental Challenge Arrow Cam (desktop only)")]
+    [SerializeField] private bool challengeFirstShotArrowCam = true;
+    private JemparinganArrowFollowCamera _challengeArrowCam;
+    private bool _restoreAfterArrowCam;
+
     private JemparinganChallengeRules.MissionId _activeChallengeMission = JemparinganChallengeRules.MissionId.Precision;
     private bool _challengeInMissionSelect;
     private int _challengeObjectiveHits;
@@ -296,7 +301,9 @@ public class JemparinganGame : MonoBehaviour
 
         // Bottom hint bar
         GUI.Label(new Rect(16f, Screen.height - 34f, 360f, 24f),
-            "R: Retry   |   C: Missions   |   M: Main Modes", GUI.skin.box);
+            _challengeArrowCam != null && _challengeArrowCam.IsActive
+                ? "ARROW CAM   |   ESC: SKIP"
+                : "R: Retry   |   C: Missions   |   M: Main Modes", GUI.skin.box);
     }
 
     private void DrawChallengeResultsGUI()
@@ -503,6 +510,22 @@ public class JemparinganGame : MonoBehaviour
         }
         // Challenge medals must not be earned with toggleable desktop
         // training aid; Classic and Traditional retain their existing T key.
+        // During the first-shot cinematic, the real projectile continues its
+        // normal lifecycle. Pause only the player's draw/aim update.
+        if (_challengeArrowCam != null && _challengeArrowCam.IsActive)
+        {
+            if (UsesDesktopInput() && Input.GetKeyDown(KeyCode.Escape))
+                _challengeArrowCam.Stop();
+            else
+                return;
+        }
+        if (_restoreAfterArrowCam)
+        {
+            _restoreAfterArrowCam = false;
+            ClearDrawState();
+            _awaitStringRelease = UsesDesktopInput() && Input.GetMouseButton(0);
+        }
+
         if (useOutdoorEnvironment && UsesDesktopInput() && !IsChallengeMode() &&
             Input.GetKeyDown(KeyCode.T))
         {
@@ -830,6 +853,16 @@ public class JemparinganGame : MonoBehaviour
         arrow.StableRelease = stable;
         arrow.Launch(origin, aim * speed, simulatedGravity, _target, OnArrowImpact, OnArrowMiss,
             useOutdoorEnvironment ? outdoorArrowLifetime : 1.6f);
+        // One experimental cinematic per Challenge attempt: the very first
+        // projectile only. Never activate for Classic, Traditional or VR.
+        if (IsChallengeMode() && UsesDesktopInput() && challengeFirstShotArrowCam &&
+            _shots == 0 && !_challengeInMissionSelect && desktopInput != null &&
+            Camera.main != null)
+        {
+            if (_challengeArrowCam == null)
+                _challengeArrowCam = gameObject.AddComponent<JemparinganArrowFollowCamera>();
+            _restoreAfterArrowCam = _challengeArrowCam.Begin(arrow, Camera.main, desktopInput);
+        }
         _shots++;
         _audio.PlayOneShot(_shotSound, 0.48f);
         ShowFeedback("ARROW RELEASED");
@@ -1182,6 +1215,10 @@ public class JemparinganGame : MonoBehaviour
 
     private void ResetRound()
     {
+        // A retry, mode switch or mission switch must never leave a cinematic
+        // camera on top of the main view or mouse-look locked.
+        if (_challengeArrowCam != null) _challengeArrowCam.Stop();
+        _restoreAfterArrowCam = false;
         for (int i = 0; i < _arrows.Length; i++) _arrows[i].Cancel();
         _shots = _hits = _score = _combo = _poolCursor = 0;
         _bullseyes = _bestCombo = _rasaHits = _rasaBonus = 0;
