@@ -66,6 +66,30 @@ is reused, but the seated character geometry is hidden.
 7. Run Unity Play Mode and gameplay QA; verify Console. These checks
    have **not** been executed by this GitHub-only code change.
 
+## First-person hand and forearm cleanup
+
+The same procedural left grip hand appears in Traditional, Challenge and Modern.
+Earlier the forearm mesh started within the camera frustum, exposing a flat
+sleeve end and making the arm look cut off. The mesh now begins below the
+visible frame (computed from the camera FOV), uses more interpolation rings,
+and includes a small palm volume behind the procedural fingers.
+
+Play Mode visual checks:
+
+1. Modern: keep the bow idle and rotate view left/right/up/down. The left
+   sleeve should enter smoothly from the lower screen edge, without a visible
+   severed flat cap.
+2. Draw and release several shots. The hand stays attached to the actual
+   leather grip without obscuring the sightline or affecting arrow origin.
+3. Check Traditional and Challenge: same first-person hand improvement,
+   unchanged scoring, posture visibility and Arrow Cam.
+4. Check Modern Arrow Cam and Esc skip: mouse look resumes normally when
+   the follow ends and the hand returns to the first-person bow view.
+5. If a half-hand is still visible, capture a Game View screenshot and
+   camera FOV; it may be a different clipping/framing issue.
+
+This is a code-only change; Unity compile and rendering tests are pending.
+
 ## Validate in Unity
 
 This document records a **test plan**, not a claim that Unity Play Mode
