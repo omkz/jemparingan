@@ -51,7 +51,7 @@ public class JemparinganGame : MonoBehaviour
     [SerializeField, Range(.15f, .45f)] private float modernReferenceGripViewportY = .270f;
     [SerializeField, Range(.50f, .95f)] private float modernReferenceGripDepth = .70f;
     [SerializeField, Range(.90f, 1.30f)] private float modernReferenceTipViewportY = 1.075f;
-    [SerializeField, Range(-12f, 12f)] private float modernBowCantDegrees = -6f;
+    [SerializeField, Range(-12f, 12f)] private float modernBowCantDegrees = -2f;
     [SerializeField, Range(48f, 75f)] private float modernReferenceAimFov = 60f;
     [Header("Modern full-draw then precision aim (desktop only)")]
     [SerializeField, Range(.80f, 1f)] private float modernPrecisionDrawThreshold = .96f;
@@ -1289,8 +1289,8 @@ public class JemparinganGame : MonoBehaviour
             visualBowPosition += -eye.right * (.035f * fullDraw) +
                 eye.up * (.025f * fullDraw);
 
-        // Modern target archery keeps the riser nearly upright at full
-        // draw (~6 degrees), with only a little extra relaxed cant at idle.
+        // Modern target archery keeps the riser almost upright at full
+        // draw (~2 degrees), with a little more relaxed cant at idle.
         // The camera/aim and actual launch direction are still independent.
         if (modernUseReferenceFraming)
             bowRotation = referenceAimRotation *
@@ -1302,8 +1302,8 @@ public class JemparinganGame : MonoBehaviour
                 Mathf.Lerp(-11f, 0f, raised) + 2f * fullDraw);
     }
 
-    // A realistic target-archery cant is a design choice, not something
-    // inferred from an older highly-canted screenshot. Keep the screenshot's
+    // Use an almost upright 2-degree target-archery cant, not a
+    // lean inherited from the older screenshot composition. Keep the screenshot's
     // grip and upper-tip HEIGHT, then solve scale at a fixed subtle roll.
     // With dy = tipViewportY - gripViewportY, k=2*tan(FOV/2),
     // scaledTipY/(depth + scaledTipZ) = dy*k.
