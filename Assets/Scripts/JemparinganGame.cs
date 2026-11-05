@@ -40,16 +40,22 @@ public class JemparinganGame : MonoBehaviour
     [SerializeField, Range(45f, 85f)] private float modernViewmodelFov = 65f;
     [SerializeField, Range(.50f, 1.30f)] private float modernRightHandScale = .92f;
 
-    [Header("Modern gameplay screenshot framing (V2 desktop only)")]
-    // Screen-space reference from Archery Master full draw: the grip sits
-    // around the lower-right aiming lane, with the upper limb clipping above
-    // the screen and a left forearm entering from below-left. World targets
-    // and shooting remain on the existing Main Camera/physics coordinates.
+    [Header("Modern screenshot calibration (desktop only)")]
+    // Measured approximate points from the provided 1493x893 screenshot:
+    // grip (827,652) -> viewport (.554,.270); projected upper tip
+    // (1082,-67) -> viewport (.725,1.075) (above top edge).
+    // Solve model scale AND cant from these landmarks and camera FOV/aspect.
     [SerializeField] private bool modernUseReferenceFraming = true;
-    [SerializeField, Range(.45f, .75f)] private float modernReferenceGripViewportX = .56f;
-    [SerializeField, Range(.15f, .45f)] private float modernReferenceGripViewportY = .29f;
+    [SerializeField] private bool modernShowHands = false;
+    [SerializeField, Range(.45f, .75f)] private float modernReferenceGripViewportX = .554f;
+    [SerializeField, Range(.15f, .45f)] private float modernReferenceGripViewportY = .270f;
     [SerializeField, Range(.50f, .95f)] private float modernReferenceGripDepth = .70f;
-    [SerializeField, Range(.90f, 1.40f)] private float modernReferenceBowScaleBoost = 1.16f;
+    [SerializeField, Range(.55f, .90f)] private float modernReferenceTipViewportX = .725f;
+    [SerializeField, Range(.90f, 1.30f)] private float modernReferenceTipViewportY = 1.075f;
+    [SerializeField, Range(48f, 75f)] private float modernReferenceAimFov = 60f;
+    private Camera _playerCamera;
+    private float _playerBaseFov = 65f;
+    private float _modernReferenceCalculatedScale = 1f;
 
     [Header("Modern FPS bow poses (idle / drawing / full draw)")]
     [SerializeField, Range(.08f, .35f)] private float modernIdleRightShift = .22f;
@@ -177,6 +183,30 @@ public class JemparinganGame : MonoBehaviour
 #else
         return Application.isEditor && !preferQuestHandsInEditor;
 #endif
+    }
+
+    // Slight aiming zoom affects projection only, never camera rotation,
+    // physics, aim compensation or the real projectile trajectory.
+    private void UpdateModernCameraFov()
+    {
+        if (!UsesDesktopInput() || _playerCamera == null) return;
+        bool zoom = _modeChosen && IsModernMode() &&
+            modernViewmodelRigV2 && modernUseReferenceFraming &&
+            !_finished && (_arrowCam == null || !_arrowCam.IsActive) &&
+            (Input.GetMouseButton(0) || Input.GetMouseButton(1));
+        float targetFov = zoom ? modernReferenceAimFov : _playerBaseFov;
+        _playerCamera.fieldOfView = Mathf.MoveTowards(
+            _playerCamera.fieldOfView, targetFov, 48f * Time.deltaTime);
+    }
+
+    private void RestoreModernCameraFov()
+    {
+        if (_playerCamera != null) _playerCamera.fieldOfView = _playerBaseFov;
+    }
+
+    private void OnDisable()
+    {
+        RestoreModernCameraFov();
     }
 
     private IEnumerator Start()
@@ -521,6 +551,7 @@ public class JemparinganGame : MonoBehaviour
     public void ChooseMode(GameMode next)
     {
         if (!useOutdoorEnvironment || !_ready) return;
+        RestoreModernCameraFov();
         _mode = next;
         _modeChosen = true;
         // Return every shared scene element to its original state before
@@ -612,6 +643,7 @@ public class JemparinganGame : MonoBehaviour
 
     public void ReturnToModeSelect()
     {
+        RestoreModernCameraFov();
         if (_modernTargetsRoot != null)
             _modernTargetsRoot.gameObject.SetActive(false);
         if (_target != null) _target.gameObject.SetActive(true);
@@ -643,6 +675,7 @@ public class JemparinganGame : MonoBehaviour
     private void Update()
     {
         if (!_ready) return;
+        UpdateModernCameraFov();
         if (useOutdoorEnvironment && UsesDesktopInput())
         {
             if (!_modeChosen)
@@ -673,7 +706,8 @@ public class JemparinganGame : MonoBehaviour
             if (IsModernMode() && Input.GetKeyDown(KeyCode.V))
             {
                 modernViewmodelRigV2 = !modernViewmodelRigV2;
-                _modernRaisedPose = 0f;
+                _modernRaisedPose = (Input.GetMouseButton(0) ||
+                    Input.GetMouseButton(1)) ? 1f : 0f;
                 ShowFeedback(modernViewmodelRigV2
                     ? "MODERN FPS POSES  |  IDLE / DRAW / AIM"
                     : "VIEWMODEL V1  |  ORIGINAL FRAMING");
@@ -844,7 +878,12 @@ public class JemparinganGame : MonoBehaviour
             float raised = Mathf.SmoothStep(0f, 1f, _modernRaisedPose);
             visualBowScale *= Mathf.Lerp(modernIdleBowScale, 1f, raised);
             if (modernUseReferenceFraming)
-                visualBowScale *= modernReferenceBowScaleBoost;
+            {
+                // The landmark solver accounts for the real FOV and the
+                // upper-tip depth. Never stack the old virtual FOV/boost.
+                visualBowScale = _modernReferenceCalculatedScale *
+                    Mathf.Lerp(modernIdleBowScale, 1f, raised);
+            }
         }
         _bow.localScale = Vector3.one * visualBowScale;
         _bow.SetPositionAndRotation(visualBowPosition, bowRotation);
@@ -1079,15 +1118,11 @@ public class JemparinganGame : MonoBehaviour
 
         Vector3 aimPose = eye.position + aim * modernBowForwardDistance +
             eye.right * modernBowRightOffset - eye.up * modernBowDownOffset;
-        if (modernUseReferenceFraming)
+        Quaternion referenceAimRotation = bowRotation;
+        if (modernUseReferenceFraming && _playerCamera != null)
         {
-            // A viewport-space grip anchor makes the real gameplay screenshot
-            // reproducible across aspect ratios. No main-camera movement or
-            // change to the bowOrigin that powers actual arrows.
-            Camera mainCamera = Camera.main;
-            aimPose = mainCamera.ViewportToWorldPoint(new Vector3(
-                modernReferenceGripViewportX, modernReferenceGripViewportY,
-                modernReferenceGripDepth));
+            SolveModernScreenshotBowPose(_playerCamera, out aimPose,
+                out referenceAimRotation, out _modernReferenceCalculatedScale);
         }
         Vector3 idle = aimPose + aim * modernIdleForwardShift +
             eye.right * modernIdleRightShift -
@@ -1106,10 +1141,64 @@ public class JemparinganGame : MonoBehaviour
             visualBowPosition += -eye.right * (.035f * fullDraw) +
                 eye.up * (.025f * fullDraw);
 
-        // Additional idle cant gives a more recognizable lower-ready pose;
-        // when aiming, return to the existing -8 degree base cant.
-        bowRotation *= Quaternion.Euler(0f, 0f,
-            Mathf.Lerp(-11f, 0f, raised) + 2f * fullDraw);
+        // The full-aim screenshot reference has a measured -16° to -17°
+        // cant, not the previous fixed -8°. Its exact value follows from
+        // the viewport tip landmark and changes with the camera aspect.
+        if (modernUseReferenceFraming)
+            bowRotation = referenceAimRotation *
+                Quaternion.Euler(0f, 0f, Mathf.Lerp(-10f, 0f, raised));
+        else
+            bowRotation *= Quaternion.Euler(0f, 0f,
+                Mathf.Lerp(-11f, 0f, raised) + 2f * fullDraw);
+    }
+
+    // Given camera projection and the bow's actual local upper tip, solve
+    // the scale s and roll alpha that put BOTH the grip and upper tip at
+    // screenshot landmarks. Orthographic/approximate offsets aren't enough.
+    //
+    // Let kY=2*tan(verticalFOV/2), kX=kY*aspect and depth=d. For each
+    // projected axis the tip displacement after scaling is:
+    //   s * rotatedTipAxis = A + s*B
+    //   A = (tipViewport-gripViewport)*k*d
+    //   B = (tipViewport-.5)*k*localTipZ
+    // A rotation preserves |tipXY|, so with q=1/s:
+    //   |A|^2*q^2 + 2(A·B)*q + |B|^2-|tipXY|^2 = 0.
+    // Solve the positive root for q, then recover the roll from atan2.
+    private void SolveModernScreenshotBowPose(Camera camera,
+        out Vector3 position, out Quaternion rotation, out float scale)
+    {
+        float depth = Mathf.Max(.40f, modernReferenceGripDepth);
+        float gripX = modernReferenceGripViewportX;
+        float gripY = modernReferenceGripViewportY;
+        float tipX = modernReferenceTipViewportX;
+        float tipY = modernReferenceTipViewportY;
+        float kY = 2f * Mathf.Tan(camera.fieldOfView *
+            Mathf.Deg2Rad * .5f);
+        float kX = kY * camera.aspect;
+        Vector3 localTip = JemparinganBowVisual.UpperTip;
+        float ax = (tipX - gripX) * kX * depth;
+        float ay = (tipY - gripY) * kY * depth;
+        float bx = (tipX - .5f) * kX * localTip.z;
+        float by = (tipY - .5f) * kY * localTip.z;
+        float a2 = Mathf.Max(.00001f, ax * ax + ay * ay);
+        float ab = ax * bx + ay * by;
+        float tipXY2 = localTip.x * localTip.x +
+            localTip.y * localTip.y;
+        float b2 = bx * bx + by * by;
+        float discriminant = Mathf.Max(0f,
+            ab * ab + a2 * (tipXY2 - b2));
+        float inverseScale = (-ab + Mathf.Sqrt(discriminant)) / a2;
+        scale = Mathf.Clamp(1f / Mathf.Max(.001f, inverseScale),
+            .70f, 2f);
+        float projectedLocalX = ax / scale + bx;
+        float projectedLocalY = ay / scale + by;
+        float roll = (Mathf.Atan2(projectedLocalY, projectedLocalX) -
+            Mathf.Atan2(localTip.y, localTip.x)) * Mathf.Rad2Deg;
+
+        position = camera.ViewportToWorldPoint(
+            new Vector3(gripX, gripY, depth));
+        rotation = camera.transform.rotation *
+            Quaternion.Euler(0f, 0f, roll);
     }
 
     private void Shoot(Vector3 origin, Vector3 rawAim, float draw, bool stable)
@@ -1826,6 +1915,8 @@ public class JemparinganGame : MonoBehaviour
     {
         Camera camera = Camera.main;
         if (camera == null) { Debug.LogError("Jemparingan: MainCamera missing."); return false; }
+        _playerCamera = camera;
+        _playerBaseFov = camera.fieldOfView;
         // Existing Playable v5 scenes still serialize 12 shots. Upgrade only
         // outdoor gameplay at runtime so no scene regeneration or overwriting
         // user-customized environment assets is required. Legacy stays at 12.
@@ -2293,6 +2384,13 @@ public class JemparinganGame : MonoBehaviour
     private void UpdateTraditionalPresentation(bool stringDrawing)
     {
         if (!UsesTraditionalPresentation() || _traditionalArcher == null) return;
+        // Modern calibration pass: hide BOTH arms and both hands for clear
+        // bow-only evaluation. The setting does not touch other modes.
+        if (IsModernMode() && !modernShowHands)
+        {
+            HideTraditionalArms();
+            return;
+        }
         // The right hand is a small cosmetic visual only while Modern desktop
         // players pull the string. Other modes retain their left-only view.
         bool showRightDrawHand = IsModernMode() && UsesDesktopInput() &&
