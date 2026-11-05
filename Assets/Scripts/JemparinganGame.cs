@@ -404,8 +404,10 @@ public class JemparinganGame : MonoBehaviour
             " / " + arrowsPerRound + "   Hits: " + _hits);
         GUI.Label(new Rect(hud.x + 12f, hud.y + 82f, 285f, 21f),
             "Rings: 10  /  8  /  6  /  4  /  2");
-        GUI.Label(new Rect(16f, Screen.height - 34f, 295f, 24f),
-            "R: RESTART   |   M: MODES", GUI.skin.box);
+        GUI.Label(new Rect(16f, Screen.height - 34f,
+            Mathf.Min(620f, Screen.width - 32f), 24f),
+            "LMB DRAW  |  RMB AIM  |  SHIFT FINE  |  R RETRY  |  M MODES",
+            GUI.skin.box);
     }
 
     private void DrawModernResultsGUI()
@@ -1446,6 +1448,10 @@ public class JemparinganGame : MonoBehaviour
 
     private void UpdateIntroMode()
     {
+        if (_titleLabel != null && useOutdoorEnvironment)
+            _titleLabel.text = IsModernMode()
+                ? "MODERN ARCHERY  |  TARGET RANGE"
+                : "JEMPARINGAN  |  RASA";
         if (_introGoalLabel == null || _introTitleLabel == null) return;
         if (IsModernMode())
         {
