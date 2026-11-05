@@ -2,13 +2,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-// Traditional-only first-person presentation. The visible hand is attached to
-// the real leather grip; the short sleeve is cosmetic and owns no gameplay,
-// input, aim, collider or projectile state.
+// Shared first-person hand presentation for Traditional, Challenge and Modern.
+// The hand is attached to the real leather grip. The visual-only forearm
+// enters from below the camera frustum instead of ending visibly mid-screen.
+// This changes no gameplay, input, aim, collider or projectile state.
 public sealed class JemparinganTraditionalArcher : MonoBehaviour
 {
     private const int Sides = 8;
-    private const int ForearmRings = 5;
+    private const int ForearmRings = 8;
     private readonly List<Mesh> _meshes = new List<Mesh>();
     private readonly Vector3[] _forearmVertices =
         new Vector3[ForearmRings * Sides + 2];
@@ -27,12 +28,16 @@ public sealed class JemparinganTraditionalArcher : MonoBehaviour
         _bow = bow;
 
         _visuals = new GameObject(
-            "Traditional | left grip hand and partial forearm").transform;
+            "First-person | left grip hand and continuous forearm").transform;
         _visuals.SetParent(transform, false);
         _leftHand = BuildLeftHand();
-        _leftSleeve = MakeMesh("Traditional partial left forearm", true);
-        AddRenderer("Partial left forearm", _visuals, _leftSleeve,
-            JemparinganArt.Tone.TraditionalCloth);
+        _leftSleeve = MakeMesh("First-person left forearm (screen-edge)", true);
+        // Register topology once: each frame updates only the deforming
+        // vertices, never a recreated mesh or changing index buffer.
+        _leftSleeve.vertices = _forearmVertices;
+        _leftSleeve.triangles = TubeIndices(ForearmRings);
+        AddRenderer("Left sleeve entering from below view", _visuals,
+            _leftSleeve, JemparinganArt.Tone.TraditionalCloth);
         _visuals.gameObject.SetActive(false);
     }
 
@@ -50,18 +55,25 @@ public sealed class JemparinganTraditionalArcher : MonoBehaviour
         // space hand offset is applied after this contact point is resolved.
         Vector3 contact = _handle.TransformPoint(Vector3.down * .55f);
         _leftHand.SetPositionAndRotation(contact, _handle.rotation);
-        PosePartialForearm(Camera.main.transform);
+        PoseForearm(Camera.main);
     }
 
-    private void PosePartialForearm(Transform eye)
+    private void PoseForearm(Camera camera)
     {
+        Transform eye = camera.transform;
         Vector3 wristWorld = _leftHand.TransformPoint(LeftWrist);
-        // Start the visible sleeve at the lower-left boundary of the first-person
-        // view, entering naturally toward the grip hand positioned slightly right of center.
-        Vector3 startWorld = eye.position + eye.forward * .46f
-            - eye.right * .16f - eye.up * .23f;
-        Vector3 controlWorld = Vector3.Lerp(startWorld, wristWorld, .50f)
-            + eye.up * .020f - eye.right * .012f;
+        // The old endpoint sat INSIDE the camera view (0.23m down at 0.46m
+        // depth with a 65-degree FOV), exposing a flat severed sleeve cap.
+        // Start it below the lower frustum boundary, leaving a generous
+        // margin for tube radius and different desktop aspect ratios.
+        float startDepth = Mathf.Max(.55f, camera.nearClipPlane + .18f);
+        float halfViewHeight = Mathf.Tan(camera.fieldOfView *
+            Mathf.Deg2Rad * .5f) * startDepth;
+        Vector3 startWorld = eye.position + eye.forward * startDepth
+            - eye.right * .27f - eye.up * (halfViewHeight + .14f);
+        // Curve gently into the real wrist without crossing the sightline.
+        Vector3 controlWorld = Vector3.Lerp(startWorld, wristWorld, .56f)
+            + eye.up * .018f - eye.right * .010f;
 
         Vector3 start = transform.InverseTransformPoint(startWorld);
         Vector3 control = transform.InverseTransformPoint(controlWorld);
@@ -93,8 +105,6 @@ public sealed class JemparinganTraditionalArcher : MonoBehaviour
         _forearmVertices[ForearmRings * Sides] = start;
         _forearmVertices[ForearmRings * Sides + 1] = wrist;
         _leftSleeve.vertices = _forearmVertices;
-        if (_leftSleeve.GetIndexCount(0) == 0)
-            _leftSleeve.triangles = TubeIndices(ForearmRings);
         _leftSleeve.RecalculateNormals();
         _leftSleeve.RecalculateBounds();
     }
@@ -130,8 +140,16 @@ public sealed class JemparinganTraditionalArcher : MonoBehaviour
         mesh.SetTriangles(triangles, 0);
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
-        return AddRenderer("Left hand | fingers around leather handle",
+        Transform hand = AddRenderer("Left hand | fingers around leather handle",
             _visuals, mesh, JemparinganArt.Tone.TraditionalSkin);
+        // The procedural finger tubes were floating over a narrow wrist tube,
+        // making the hand silhouette look incomplete at some view angles.
+        // Add a small, noninteractive palm volume behind the fingers.
+        JemparinganArt.Part("Palm fullness | cosmetic", PrimitiveType.Sphere,
+            hand, new Vector3(-.018f, -.003f, -.030f),
+            new Vector3(.058f, .061f, .062f),
+            JemparinganArt.Tone.TraditionalSkin);
+        return hand;
     }
 
     private static void AddTube(List<Vector3> vertices, List<int> triangles,
