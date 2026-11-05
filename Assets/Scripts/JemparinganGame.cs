@@ -28,6 +28,17 @@ public class JemparinganGame : MonoBehaviour
     private JemparinganModernTarget[] _modernTargets;
     // Reuse the outdoor scene's 16-shot arrow and HUD pool.
     [SerializeField, Range(6, 16)] private int modernArrowCount = 12;
+
+    [Header("Modern first-person rig v2 (desktop visual only)")]
+    [SerializeField] private bool modernViewmodelRigV2 = true;
+    [SerializeField, Range(.60f, 1.00f)] private float modernBowForwardDistance = .78f;
+    [SerializeField, Range(-.10f, .40f)] private float modernBowRightOffset = .20f;
+    [SerializeField, Range(-.05f, .40f)] private float modernBowDownOffset = .18f;
+    [SerializeField, Range(.70f, 1.10f)] private float modernBowVisualScale = .94f;
+    // Simulates a separate viewmodel lens by scaling the cosmetic bow only.
+    // It does not change the main camera's FOV or the world projection.
+    [SerializeField, Range(45f, 85f)] private float modernViewmodelFov = 65f;
+    [SerializeField, Range(.50f, 1.30f)] private float modernRightHandScale = .92f;
     private TextMesh _introGoalLabel, _introTitleLabel;
 
     [Header("Challenge Mode tuning")]
@@ -414,7 +425,7 @@ public class JemparinganGame : MonoBehaviour
             Mathf.Min(620f, Screen.width - 32f), 24f),
             _arrowCam != null && _arrowCam.IsActive
                 ? "ARROW CAM  |  ESC SKIP  |  R RETRY  |  M MODES"
-                : "LMB DRAW  |  RMB AIM  |  SHIFT FINE  |  R RETRY  |  M MODES",
+                : "LMB DRAW  |  RMB AIM  |  SHIFT FINE  |  V VIEW  |  R RETRY  |  M MODES",
             GUI.skin.box);
     }
 
@@ -639,6 +650,15 @@ public class JemparinganGame : MonoBehaviour
                 return;
             }
 
+            // In-Play A/B comparison without changing any projectile state.
+            if (IsModernMode() && Input.GetKeyDown(KeyCode.V))
+            {
+                modernViewmodelRigV2 = !modernViewmodelRigV2;
+                ShowFeedback(modernViewmodelRigV2
+                    ? "VIEWMODEL V2  |  VISUAL ONLY"
+                    : "VIEWMODEL V1  |  ORIGINAL FRAMING");
+            }
+
             if (_mode == GameMode.Challenge && Input.GetKeyDown(KeyCode.C) && (_shots == 0 || _finished))
             {
                 ReturnToChallengeSelect();
@@ -760,18 +780,40 @@ public class JemparinganGame : MonoBehaviour
             // the sightline. Arrow flight still follows pose.AimDirection.
             bowRotation *= Quaternion.Euler(0f, 0f, -8f);
         }
+        // Keep the working shot origin separate from the Modern visual pose.
+        // This original 0.70m / 0.15m / -0.16m anchor remains the basis for
+        // trajectory, assist, preview and Arrow Cam even when V2 is enabled.
+        Vector3 gameplayBowPosition = pose.BowPosition;
         Vector3 visualBowPosition = pose.BowPosition;
         if (UsesTraditionalPresentation() && UsesDesktopInput() && Camera.main != null)
         {
-            // Position the gandewa slightly right of center, held naturally at
-            // seated chest height, leaving the central target sightline open.
             Transform eye = Camera.main.transform;
-            visualBowPosition = eye.position + aim * .70f
+            gameplayBowPosition = eye.position + aim * .70f
                 + eye.right * .15f - eye.up * .16f;
+            visualBowPosition = gameplayBowPosition;
+            if (IsModernMode() && modernViewmodelRigV2)
+            {
+                visualBowPosition = eye.position + aim * modernBowForwardDistance
+                    + eye.right * modernBowRightOffset - eye.up * modernBowDownOffset;
+            }
         }
+        float visualBowScale = 1f;
+        if (IsModernMode() && modernViewmodelRigV2 && UsesDesktopInput()
+            && Camera.main != null)
+        {
+            // Approximate an independent viewmodel FOV without changing the
+            // target/world FOV: multiply visual scale by the ratio of tangents.
+            // Keep the factor bounded to avoid extreme near-plane clipping.
+            float worldFov = Camera.main.fieldOfView;
+            float lensFactor = Mathf.Tan(worldFov * Mathf.Deg2Rad * .5f) /
+                Mathf.Tan(modernViewmodelFov * Mathf.Deg2Rad * .5f);
+            visualBowScale = modernBowVisualScale *
+                Mathf.Clamp(lensFactor, .76f, 1.25f);
+        }
+        _bow.localScale = Vector3.one * visualBowScale;
         _bow.SetPositionAndRotation(visualBowPosition, bowRotation);
         Vector3 bowOrigin = (UsesTraditionalPresentation() && UsesDesktopInput())
-            ? visualBowPosition
+            ? gameplayBowPosition
             : pose.BowPosition;
         Vector3 launchAim = aim;
         if (UsesTraditionalPresentation() && UsesDesktopInput() && Camera.main != null)
@@ -2173,7 +2215,8 @@ public class JemparinganGame : MonoBehaviour
         // players pull the string. Other modes retain their left-only view.
         bool showRightDrawHand = IsModernMode() && UsesDesktopInput() &&
             stringDrawing && _stringMarker != null;
-        _traditionalArcher.Present(showRightDrawHand, _stringMarker);
+        _traditionalArcher.Present(showRightDrawHand, _stringMarker,
+            IsModernMode() && modernViewmodelRigV2 ? modernRightHandScale : 1f);
     }
 
     private void HideTraditionalArms()
