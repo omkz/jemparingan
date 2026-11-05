@@ -72,48 +72,91 @@ public sealed class JemparinganTraditionalArcher : MonoBehaviour
     private void BuildModernRightHand()
     {
         _modernRightHand = new GameObject(
-            "Modern | small right draw hand (visual only)").transform;
+            "Modern | small pinching hand mesh (visual only)").transform;
         _modernRightHand.SetParent(_visuals, false);
-        // Only the thumb, index, a little palm and sleeve edge are visible.
-        // All objects are collider-free and created just once at startup.
-        JemparinganArt.Part("Right small palm", PrimitiveType.Sphere,
-            _modernRightHand, new Vector3(.046f, -.024f, .021f),
-            new Vector3(.063f, .053f, .044f),
-            JemparinganArt.Tone.TraditionalSkin);
-        JemparinganArt.Beam("Index finger pinches bowstring",
-            _modernRightHand, new Vector3(.029f, .008f, .003f),
-            new Vector3(-.013f, .014f, -.003f),
-            .010f, JemparinganArt.Tone.TraditionalSkin);
-        JemparinganArt.Beam("Thumb pinches bowstring",
-            _modernRightHand, new Vector3(.030f, -.018f, .010f),
-            new Vector3(-.013f, -.009f, -.001f),
-            .011f, JemparinganArt.Tone.TraditionalSkin);
-        JemparinganArt.Part("Pinched fingertips", PrimitiveType.Sphere,
-            _modernRightHand, new Vector3(-.014f, .003f, -.003f),
-            new Vector3(.018f, .022f, .018f),
-            JemparinganArt.Tone.TraditionalSkin);
-        // The narrow sleeve runs out toward the right screen edge rather
-        // than finishing in the middle of the frame as a severed stump.
-        JemparinganArt.Beam("Right sleeve entering from screen edge",
-            _modernRightHand, new Vector3(.077f, -.034f, .034f),
-            new Vector3(.38f, -.20f, .046f),
-            .026f, JemparinganArt.Tone.TraditionalCloth);
+
+        // Earlier prototype combined a floating sphere, cylindrical fingers,
+        // and a 30cm pipe-like sleeve. At close first-person distance those
+        // separate primitives looked disconnected and oversized.
+        // Build one restrained stylized silhouette using tapered organic tubes.
+        // No colliders, imported assets or changes to the actual string.
+        var skinVertices = new List<Vector3>(176);
+        var skinTriangles = new List<int>(768);
+        AddTube(skinVertices, skinTriangles,
+            new[] {
+                new Vector3(.143f, -.063f, .028f),
+                new Vector3(.122f, -.055f, .025f),
+                new Vector3(.087f, -.036f, .018f),
+                new Vector3(.060f, -.020f, .012f) },
+            new[] { .016f, .025f, .032f, .024f }, .68f);
+        // Index and middle fingers wrap toward the actual bowstring nock.
+        AddTube(skinVertices, skinTriangles,
+            new[] {
+                new Vector3(.065f, .002f, .008f),
+                new Vector3(.045f, .013f, .003f),
+                new Vector3(.022f, .014f, -.002f),
+                new Vector3(.008f, .005f, -.007f) },
+            new[] { .012f, .011f, .0085f, .006f }, .84f);
+        AddTube(skinVertices, skinTriangles,
+            new[] {
+                new Vector3(.063f, -.013f, .010f),
+                new Vector3(.040f, -.009f, .004f),
+                new Vector3(.017f, -.004f, -.006f) },
+            new[] { .011f, .0095f, .006f }, .85f);
+        // Thumb comes from below and pinches the underside of the nock.
+        AddTube(skinVertices, skinTriangles,
+            new[] {
+                new Vector3(.099f, -.044f, -.001f),
+                new Vector3(.064f, -.034f, -.004f),
+                new Vector3(.036f, -.021f, -.010f),
+                new Vector3(.015f, -.013f, -.008f) },
+            new[] { .014f, .012f, .009f, .0055f }, .88f);
+
+        Mesh handMesh = MakeMesh("Modern right hand | organic pinch", false);
+        handMesh.SetVertices(skinVertices);
+        handMesh.SetTriangles(skinTriangles, 0);
+        handMesh.RecalculateNormals();
+        handMesh.RecalculateBounds();
+        AddRenderer("Right hand | sculpted grip", _modernRightHand,
+            handMesh, JemparinganArt.Tone.TraditionalSkin);
+
+        // A small cuff, not a long floating rod. The cuff meets the
+        // back of the tapered palm and does not intrude into the sightline.
+        var cuffVertices = new List<Vector3>(Sides * 3 + 2);
+        var cuffTriangles = new List<int>(Sides * 18);
+        AddTube(cuffVertices, cuffTriangles,
+            new[] {
+                new Vector3(.173f, -.086f, .040f),
+                new Vector3(.157f, -.071f, .033f),
+                new Vector3(.139f, -.061f, .028f) },
+            new[] { .013f, .021f, .018f }, .72f);
+        Mesh cuffMesh = MakeMesh("Modern wrist cuff | short", false);
+        cuffMesh.SetVertices(cuffVertices);
+        cuffMesh.SetTriangles(cuffTriangles, 0);
+        cuffMesh.RecalculateNormals();
+        cuffMesh.RecalculateBounds();
+        AddRenderer("Short wrist cuff", _modernRightHand,
+            cuffMesh, JemparinganArt.Tone.TraditionalCloth);
         _modernRightHand.gameObject.SetActive(false);
     }
 
     private void PoseModernRightHand(Camera camera, Transform nock)
     {
-        // Start from the string bead's actual projected position. Keep the
-        // tiny fingertips slightly right/below it and within a lower-right
-        // screen-safe region. At full draw the bead can approach the near
-        // clip plane, so clamp its camera depth to avoid oversized geometry.
+        // Track the REAL visual nock instead of clamping its viewport point.
+        // Previous clamps could separate the fingertips from the string by
+        // dozens of pixels and made the hand appear to float independently.
         Vector3 projected = camera.WorldToViewportPoint(nock.position);
-        float depth = Mathf.Clamp(projected.z,
-            Mathf.Max(.38f, camera.nearClipPlane + .12f), .8f);
-        float x = Mathf.Clamp(projected.x + .045f, .67f, .83f);
-        float y = Mathf.Clamp(projected.y - .04f, .18f, .44f);
-        Vector3 position = camera.ViewportToWorldPoint(new Vector3(x, y, depth));
-        _modernRightHand.SetPositionAndRotation(position,
+        bool safeDepth = projected.z > Mathf.Max(.20f,
+            camera.nearClipPlane + .08f);
+        bool inFrame = projected.x > .03f && projected.x < .95f &&
+            projected.y > .05f && projected.y < .93f;
+        if (!safeDepth || !inFrame)
+        {
+            _modernRightHand.gameObject.SetActive(false);
+            return;
+        }
+        _modernRightHand.SetPositionAndRotation(
+            nock.position - camera.transform.forward * .012f,
             camera.transform.rotation);
     }
 
