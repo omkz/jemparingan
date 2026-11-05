@@ -6,11 +6,13 @@ public sealed class JemparinganModernTarget : MonoBehaviour
 {
     public const float Radius = 0.50f;
     public const float FaceDepth = -0.045f;
+    public int TargetNumber { get; private set; }
     private GameObject _impactMarker;
     private float _impactUntil;
 
     public void Build(int number)
     {
+        TargetNumber = number;
         // Face points back toward the player's camera (local -Z).
         JemparinganArt.Part("Wooden circular backboard", PrimitiveType.Cylinder,
             transform, new Vector3(0f, 0f, .013f),
