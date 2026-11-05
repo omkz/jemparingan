@@ -143,6 +143,21 @@ remain subordinate to the bow, stay attached to the string, and not block
 the target. Check Arrow Cam, Classic, Traditional and Challenge for any
 regressions. This adjustment has not been rendered or tested in Unity yet.
 
+### Right hand alignment to the existing bow
+
+The small Modern draw hand now uses the **current bow's rotation** and the
+actual visual nock's world position, rather than orienting to the camera.
+This lets it follow the bow's 8-degree cant and stay attached while aiming
+up/down/sideways. The grip, arrow origin, physics and the bow's existing
+0.70m camera offset are not changed. Its hand-only perspective scaling
+remains in place.
+
+Play Mode validation: compare aiming left/right, up/down, half draw and
+full draw; fingertips should stay at the string while the hand remains
+small and does not obscure the ring centers. Verify the hand disappears
+on release, the Arrow Cam still works, and Traditional/Challenge hand
+presentation is unchanged. This is not a claim of Unity runtime validation.
+
 ## Validate in Unity
 
 This document records a **test plan**, not a claim that Unity Play Mode
