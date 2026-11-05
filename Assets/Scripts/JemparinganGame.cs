@@ -431,7 +431,11 @@ public class JemparinganGame : MonoBehaviour
         float buttonWidth = (width - 36f) * .5f;
         if (GUI.Button(new Rect(panel.x + 12f, panel.y + 190f,
             buttonWidth, 44f), "RETRY (R)"))
+        {
             ResetRound();
+            // The UI click is not a bow draw or another projectile.
+            _awaitStringRelease = UsesDesktopInput() && Input.GetMouseButton(0);
+        }
         if (GUI.Button(new Rect(panel.x + 24f + buttonWidth, panel.y + 190f,
             buttonWidth, 44f), "MODES (M)"))
             ReturnToModeSelect();
@@ -1268,9 +1272,17 @@ public class JemparinganGame : MonoBehaviour
         {
             if (IsModernMode())
             {
-                // Modern results are shown through the desktop HUD. Avoid
-                // duplicating them with the existing world-space panel.
-                _resultsPanel.SetActive(false);
+                // Desktop uses the interactive results overlay; non-desktop
+                // keeps the existing world-space result presentation.
+                _resultsTitle.text = "MODERN ARCHERY  •  COMPLETE";
+                _resultsDetails.text = "SCORE " + _score +
+                    "  |  BEST " + _best +
+                    "\nHITS " + _hits + "/" + _shots +
+                    "  |  BULLSEYES " + _bullseyes;
+                _resultsHint.text = UsesDesktopInput()
+                    ? "R: RETRY  |  M: MODES"
+                    : "RELEASE AND HOLD STRING TO RETRY";
+                _resultsPanel.SetActive(!UsesDesktopInput());
                 _scoreLabel.text = "MODERN COMPLETE  |  SCORE " + _score;
                 if (_phaseLabel != null) _phaseLabel.text = "ROUND COMPLETE";
             }
