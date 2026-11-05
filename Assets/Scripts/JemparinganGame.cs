@@ -387,11 +387,103 @@ public class JemparinganGame : MonoBehaviour
             ReturnToModeSelect();
     }
 
+    private void DrawModernInGameHUD()
+    {
+        Rect hud = new Rect(16f, 16f, 314f, 116f);
+        GUI.Box(hud, "");
+        GUIStyle title = new GUIStyle(GUI.skin.label);
+        title.fontStyle = FontStyle.Bold;
+        title.fontSize = 15;
+        GUI.Label(new Rect(hud.x + 12f, hud.y + 9f, 285f, 24f),
+            "MODERN ARCHERY  |  3 TARGETS", title);
+        GUI.Label(new Rect(hud.x + 12f, hud.y + 36f, 285f, 21f),
+            "Score: " + _score + "   Best: " + Mathf.Max(_previousBest, _score));
+        GUI.Label(new Rect(hud.x + 12f, hud.y + 59f, 285f, 21f),
+            "Arrows: " + Mathf.Max(0, arrowsPerRound - _shots) +
+            " / " + arrowsPerRound + "   Hits: " + _hits);
+        GUI.Label(new Rect(hud.x + 12f, hud.y + 82f, 285f, 21f),
+            "Rings: 10  /  8  /  6  /  4  /  2");
+        GUI.Label(new Rect(16f, Screen.height - 34f, 295f, 24f),
+            "R: RESTART   |   M: MODES", GUI.skin.box);
+    }
+
+    private void DrawModernResultsGUI()
+    {
+        float width = Mathf.Min(440f, Screen.width - 24f);
+        Rect panel = new Rect((Screen.width - width) * .5f,
+            (Screen.height - 258f) * .5f, width, 258f);
+        GUI.Box(panel, "");
+        GUIStyle header = new GUIStyle(GUI.skin.label);
+        header.fontSize = 21;
+        header.fontStyle = FontStyle.Bold;
+        header.alignment = TextAnchor.MiddleCenter;
+        GUI.Label(new Rect(panel.x + 12f, panel.y + 18f, width - 24f, 32f),
+            "MODERN ARCHERY COMPLETE", header);
+        int accuracy = JemparinganScoreRules.AccuracyPercent(_hits, _shots);
+        GUI.Label(new Rect(panel.x + 12f, panel.y + 70f, width - 24f, 24f),
+            "SCORE  " + _score + "    BEST  " + Mathf.Max(_score, _previousBest),
+            GUI.skin.box);
+        GUI.Label(new Rect(panel.x + 12f, panel.y + 102f, width - 24f, 24f),
+            "HITS  " + _hits + "/" + _shots + "    ACCURACY  " + accuracy + "%",
+            GUI.skin.box);
+        GUI.Label(new Rect(panel.x + 12f, panel.y + 134f, width - 24f, 24f),
+            "BULLSEYES  " + _bullseyes, GUI.skin.box);
+        float buttonWidth = (width - 36f) * .5f;
+        if (GUI.Button(new Rect(panel.x + 12f, panel.y + 190f,
+            buttonWidth, 44f), "RETRY (R)"))
+            ResetRound();
+        if (GUI.Button(new Rect(panel.x + 24f + buttonWidth, panel.y + 190f,
+            buttonWidth, 44f), "MODES (M)"))
+            ReturnToModeSelect();
+    }
+
+    private void SetSeatedBodyVisible(bool visible)
+    {
+        if (_seatedBodyRenderers == null) return;
+        foreach (Renderer renderer in _seatedBodyRenderers)
+            if (renderer != null) renderer.enabled = visible;
+    }
+
+    private void StartModernMode()
+    {
+        _mode = GameMode.Modern;
+        _modeChosen = true;
+        _challengeInMissionSelect = false;
+        arrowsPerRound = modernArrowCount;
+        _desktopTrainingEnabled = false;
+        if (_target != null) _target.gameObject.SetActive(false);
+        if (_bandulanSuspension != null)
+            _bandulanSuspension.gameObject.SetActive(false);
+        if (_modernTargetsRoot != null)
+            _modernTargetsRoot.gameObject.SetActive(true);
+        if (_traditionalPosture != null)
+            _traditionalPosture.gameObject.SetActive(true);
+        SetSeatedBodyVisible(false); // Retain only the lightweight grip/forearm.
+        HideTraditionalArms();
+        HideDesktopPracticeSight();
+        _lastInfo = "";
+        ResetRound();
+        _awaitStringRelease = UsesDesktopInput() && Input.GetMouseButton(0);
+    }
+
     public void ChooseMode(GameMode next)
     {
         if (!useOutdoorEnvironment || !_ready) return;
         _mode = next;
         _modeChosen = true;
+        // Return every shared scene element to its original state before
+        // entering any mode; modern targets are isolated from bandulan modes.
+        if (_modernTargetsRoot != null)
+            _modernTargetsRoot.gameObject.SetActive(false);
+        if (_target != null) _target.gameObject.SetActive(true);
+        if (_bandulanSuspension != null)
+            _bandulanSuspension.gameObject.SetActive(true);
+        SetSeatedBodyVisible(true);
+        if (next == GameMode.Modern)
+        {
+            StartModernMode();
+            return;
+        }
 
         if (_mode == GameMode.Challenge)
         {
@@ -467,6 +559,14 @@ public class JemparinganGame : MonoBehaviour
 
     public void ReturnToModeSelect()
     {
+        if (_modernTargetsRoot != null)
+            _modernTargetsRoot.gameObject.SetActive(false);
+        if (_target != null) _target.gameObject.SetActive(true);
+        if (_bandulanSuspension != null)
+            _bandulanSuspension.gameObject.SetActive(true);
+        SetSeatedBodyVisible(true);
+        if (_traditionalPosture != null)
+            _traditionalPosture.gameObject.SetActive(false);
         _modeChosen = false;
         _challengeInMissionSelect = false;
         HideTraditionalArms();
