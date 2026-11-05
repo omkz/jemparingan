@@ -829,7 +829,7 @@ public class JemparinganGame : MonoBehaviour
 
         // The contact targets must be current before posing hands. The old
         // call ran before the string moved and smoothed the hand away from it.
-        UpdateTraditionalPresentation();
+        UpdateTraditionalPresentation(drawing);
 
         // One uninterrupted draw-to-release transition fires exactly once.
         // Tracking loss / bow-unpinch resets without firing.
@@ -2166,10 +2166,14 @@ public class JemparinganGame : MonoBehaviour
             start, end, width);
     }
 
-    private void UpdateTraditionalPresentation()
+    private void UpdateTraditionalPresentation(bool stringDrawing)
     {
         if (!UsesTraditionalPresentation() || _traditionalArcher == null) return;
-        _traditionalArcher.Present();
+        // The right hand is a small cosmetic visual only while Modern desktop
+        // players pull the string. Other modes retain their left-only view.
+        bool showRightDrawHand = IsModernMode() && UsesDesktopInput() &&
+            stringDrawing && _stringMarker != null;
+        _traditionalArcher.Present(showRightDrawHand, _stringMarker);
     }
 
     private void HideTraditionalArms()
