@@ -214,6 +214,49 @@ public static class JemparinganEditorMenu
             Check("Moving Target 5 hits silver", moving.Evaluate(5) == JemparinganChallengeRules.Medal.Silver, ref total, ref failed);
             Check("Moving Target 6 hits gold", moving.Evaluate(6) == JemparinganChallengeRules.Medal.Gold, ref total, ref failed);
             Check("Moving Target 10 hits gold", moving.Evaluate(10) == JemparinganChallengeRules.Medal.Gold, ref total, ref failed);
+            // Modern Archery v1 rings: same swept projectile, circular board.
+            Check("Modern rings 10 at center",
+                JemparinganModernTarget.PointsForRadius(0f) == 10 &&
+                JemparinganModernTarget.PointsForRadius(.085f) == 10,
+                ref total, ref failed);
+            Check("Modern rings 8/6/4/2",
+                JemparinganModernTarget.PointsForRadius(.10f) == 8 &&
+                JemparinganModernTarget.PointsForRadius(.20f) == 6 &&
+                JemparinganModernTarget.PointsForRadius(.32f) == 4 &&
+                JemparinganModernTarget.PointsForRadius(.46f) == 2,
+                ref total, ref failed);
+            Check("Modern rings miss outside",
+                JemparinganModernTarget.PointsForRadius(.51f) == 0,
+                ref total, ref failed);
+
+            var modernObject = new GameObject("Modern ring QA (temporary)");
+            try
+            {
+                var modern = modernObject.AddComponent<JemparinganModernTarget>();
+                Vector3 impact;
+                int ringScore;
+                Check("Modern center swept hit",
+                    modern.TestShot(new Vector3(0f, 0f, -.2f),
+                        new Vector3(0f, 0f, .2f), out ringScore, out impact) &&
+                    ringScore == 10 && Mathf.Abs(impact.z - JemparinganModernTarget.FaceDepth) < .0001f,
+                    ref total, ref failed);
+                Check("Modern red swept hit",
+                    modern.TestShot(new Vector3(.12f, 0f, -.2f),
+                        new Vector3(.12f, 0f, .2f), out ringScore, out impact) &&
+                    ringScore == 8, ref total, ref failed);
+                Check("Modern off-board swept miss",
+                    !modern.TestShot(new Vector3(.60f, 0f, -.2f),
+                        new Vector3(.60f, 0f, .2f), out ringScore, out impact),
+                    ref total, ref failed);
+                Check("Modern parallel segment misses",
+                    !modern.TestShot(new Vector3(0f, 0f, -.2f),
+                        new Vector3(.2f, 0f, -.2f), out ringScore, out impact),
+                    ref total, ref failed);
+            }
+            finally
+            {
+                Object.DestroyImmediate(modernObject);
+            }
         }
         finally
         {
