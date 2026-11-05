@@ -17,6 +17,12 @@ public sealed class JemparinganTraditionalArcher : MonoBehaviour
     private Transform _handle, _bow, _visuals, _leftHand, _modernRightHand;
     private Mesh _leftSleeve;
 
+    // Cosmetic Modern-only view-model scaling. The draw hand moves closer
+    // to the player's camera as the string is pulled. Compensate perspective
+    // so it never grows disproportionately large compared with the bow.
+    private const float ModernRightHandVisualScale = 0.64f;
+    private const float ModernRightHandReferenceDepth = 0.65f;
+
     // The mesh wrist is behind the fingers, so the sleeve terminates inside
     // the palm instead of leaving a visible gap at the grip.
     private static readonly Vector3 LeftWrist =
@@ -158,6 +164,15 @@ public sealed class JemparinganTraditionalArcher : MonoBehaviour
         _modernRightHand.SetPositionAndRotation(
             nock.position - camera.transform.forward * .012f,
             camera.transform.rotation);
+
+        // Without this, the same ~17cm mesh looks twice as large when the
+        // nock moves from ~0.6m to ~0.3m from the camera during a full draw.
+        // Preserve the fingertip contact at local origin; shrink just the
+        // cosmetic hand, not the bow, string or projectile launch position.
+        float depthFactor = Mathf.Clamp(
+            projected.z / ModernRightHandReferenceDepth, .53f, 1f);
+        _modernRightHand.localScale =
+            Vector3.one * (ModernRightHandVisualScale * depthFactor);
     }
 
     private void PoseForearm(Camera camera)
