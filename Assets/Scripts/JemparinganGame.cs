@@ -40,6 +40,17 @@ public class JemparinganGame : MonoBehaviour
     [SerializeField, Range(45f, 85f)] private float modernViewmodelFov = 65f;
     [SerializeField, Range(.50f, 1.30f)] private float modernRightHandScale = .92f;
 
+    [Header("Modern gameplay screenshot framing (V2 desktop only)")]
+    // Screen-space reference from Archery Master full draw: the grip sits
+    // around the lower-right aiming lane, with the upper limb clipping above
+    // the screen and a left forearm entering from below-left. World targets
+    // and shooting remain on the existing Main Camera/physics coordinates.
+    [SerializeField] private bool modernUseReferenceFraming = true;
+    [SerializeField, Range(.45f, .75f)] private float modernReferenceGripViewportX = .56f;
+    [SerializeField, Range(.15f, .45f)] private float modernReferenceGripViewportY = .29f;
+    [SerializeField, Range(.50f, .95f)] private float modernReferenceGripDepth = .70f;
+    [SerializeField, Range(.90f, 1.40f)] private float modernReferenceBowScaleBoost = 1.16f;
+
     [Header("Modern FPS bow poses (idle / drawing / full draw)")]
     [SerializeField, Range(.08f, .35f)] private float modernIdleRightShift = .22f;
     [SerializeField, Range(.08f, .35f)] private float modernIdleLowering = .22f;
@@ -832,6 +843,8 @@ public class JemparinganGame : MonoBehaviour
             // during aiming. A/B V1 still uses untouched 1x scale.
             float raised = Mathf.SmoothStep(0f, 1f, _modernRaisedPose);
             visualBowScale *= Mathf.Lerp(modernIdleBowScale, 1f, raised);
+            if (modernUseReferenceFraming)
+                visualBowScale *= modernReferenceBowScaleBoost;
         }
         _bow.localScale = Vector3.one * visualBowScale;
         _bow.SetPositionAndRotation(visualBowPosition, bowRotation);
@@ -1064,22 +1077,34 @@ public class JemparinganGame : MonoBehaviour
             wantsAim ? 1f : 0f, modernPoseTransitionSpeed * Time.deltaTime);
         float raised = Mathf.SmoothStep(0f, 1f, _modernRaisedPose);
 
-        Vector3 idle = eye.position +
-            aim * (modernBowForwardDistance + modernIdleForwardShift) +
-            eye.right * (modernBowRightOffset + modernIdleRightShift) -
-            eye.up * (modernBowDownOffset + modernIdleLowering);
         Vector3 aimPose = eye.position + aim * modernBowForwardDistance +
             eye.right * modernBowRightOffset - eye.up * modernBowDownOffset;
+        if (modernUseReferenceFraming)
+        {
+            // A viewport-space grip anchor makes the real gameplay screenshot
+            // reproducible across aspect ratios. No main-camera movement or
+            // change to the bowOrigin that powers actual arrows.
+            Camera mainCamera = Camera.main;
+            aimPose = mainCamera.ViewportToWorldPoint(new Vector3(
+                modernReferenceGripViewportX, modernReferenceGripViewportY,
+                modernReferenceGripDepth));
+        }
+        Vector3 idle = aimPose + aim * modernIdleForwardShift +
+            eye.right * modernIdleRightShift -
+            eye.up * modernIdleLowering;
 
-        // Full draw has a smaller final settle toward the aiming lane; the
-        // actual nock and right hand still follow the real bowstring pull.
+        // Full draw has a small final settle toward the aiming lane. The
+        // screenshot preset already places the grip, so don't over-correct
+        // its screen-space anchor on top of this deliberate composition.
+        // The actual nock and right hand still follow the visual string.
         float fullDraw = drawing
             ? Mathf.SmoothStep(0f, 1f,
                 Mathf.InverseLerp(.35f, .95f, drawPower)) * raised
             : 0f;
-        visualBowPosition = Vector3.Lerp(idle, aimPose, raised) -
-            eye.right * (.035f * fullDraw) +
-            eye.up * (.025f * fullDraw);
+        visualBowPosition = Vector3.Lerp(idle, aimPose, raised);
+        if (!modernUseReferenceFraming)
+            visualBowPosition += -eye.right * (.035f * fullDraw) +
+                eye.up * (.025f * fullDraw);
 
         // Additional idle cant gives a more recognizable lower-ready pose;
         // when aiming, return to the existing -8 degree base cant.
@@ -2272,8 +2297,11 @@ public class JemparinganGame : MonoBehaviour
         // players pull the string. Other modes retain their left-only view.
         bool showRightDrawHand = IsModernMode() && UsesDesktopInput() &&
             stringDrawing && _stringMarker != null;
+        bool referenceFraming = IsModernMode() && UsesDesktopInput() &&
+            modernViewmodelRigV2 && modernUseReferenceFraming;
         _traditionalArcher.Present(showRightDrawHand, _stringMarker,
-            IsModernMode() && modernViewmodelRigV2 ? modernRightHandScale : 1f);
+            IsModernMode() && modernViewmodelRigV2 ? modernRightHandScale : 1f,
+            referenceFraming);
     }
 
     private void HideTraditionalArms()
