@@ -6,6 +6,58 @@ first-person camera/input, procedural environment, arrow pool and
 gravity-based projectile. No external assets, scene regeneration, or
 separate physics system are required.
 
+## CURRENT: Archery Master-inspired optical bow sight, 2-degree cant
+
+This revision **supersedes** the previous 6-degree Modern cant, and the
+older tiny single-pin sight. The user's screenshot shows a sight attached
+to the right-side bow, with a visible transparent lens and a centered **+**
+reticle. It is **not** a large, floating screen-space HUD widget.
+
+- **Modern bow:** `modernBowCantDegrees = -2` by default at full draw
+  (almost vertical). Idle can lean a few extra degrees as the bow lowers.
+  The camera-relative upper-tip height and grip landmark remain fitted.
+  Traditional/Classic/Challenge rotations are unchanged.
+- **Slightly larger optical sight:** aperture radius `0.0156m`,
+  approximately **30%** larger than the prior `0.012m` rim. The
+  smooth 24-segment ring remains attached to the cosmetic bow riser
+  through one slim support rod. It is *not* a full-screen scope.
+- **Lens:** a circular transparent mesh under the reticle, tinted
+  very lightly blue (alpha `0.12`); it uses the scene pipeline's
+  transparent blend setup, with a Standard/Sprites shader fallback.
+  This is a cosmetic glass impression, **not** optical magnification.
+- **Reticle:** a fine dark **plus (+)** visible through the ring, with
+  a tiny contrasting center bead. No large HUD crosshair by default.
+- **One-time calibration:** the bow-local reticle center is solved by
+  intersecting the real camera sight ray with the fixed bow-local
+  sight plane, after the draw and zoom finish settling. The reticle
+  does **not** chase the camera afterward. Use **G** to compare the
+  physical plus with the temporary HUD debug marker.
+- **Unchanged:** LMB hold→draw→mouse aim→release, arrow-tip ballistic
+  zeroing, target hit tests, scoring, Modern Arrow Cam and the other
+  modes. Modern hands remain hidden until sight framing is approved.
+
+### Local Unity Play Mode validation (not yet run)
+
+1. Enter Modern. At full draw, the riser should look nearly upright,
+   around -2°. Compare to the reference screenshot's vertical bow.
+2. The ring must be only moderately bigger, with translucent glass,
+   a clearly visible **+**, and no oversized or opaque blue disc.
+3. Hold LMB to steady full draw and tap G: the physical plus should
+   align with the small debug HUD crosshair. G only toggles debug.
+4. Fire at all three boards, center and off-center. The visually
+   calibrated reticle should continue to match actual arrow impact.
+5. Change aim while holding LMB: optical sight remains rigidly
+   attached to the bow rather than tracking camera pixels separately.
+6. Confirm the lens renders properly in the project's URP/WebGL
+   target; if the blue disc is invisible or opaque, inspect the
+   URP material/render queue before changing gameplay physics.
+7. Check V comparison, M mode menu, R retry, Esc Arrow Cam skip and
+   Classic/Traditional/Challenge for leaked sights/zoom or changed
+   controls. No hands are enabled in Modern during this pass.
+
+**Verification scope:** only source/static checks; Unity Editor build,
+Play Mode rendering, and user screenshot comparison remain pending.
+
 ## CURRENT: modern upright bow and simpler fixed sight
 
 This **supersedes** the earlier large/dynamic sight implementation and
