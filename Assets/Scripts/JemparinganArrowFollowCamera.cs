@@ -28,7 +28,7 @@ public sealed class JemparinganArrowFollowCamera : MonoBehaviour
 
         if (_followCamera == null)
         {
-            var cameraObject = new GameObject("Challenge Arrow Cam (desktop only)");
+            var cameraObject = new GameObject("Arrow Cam | Challenge + Modern (desktop only)");
             cameraObject.transform.SetParent(transform, false);
             _followCamera = cameraObject.AddComponent<Camera>();
             _followCamera.enabled = false;
