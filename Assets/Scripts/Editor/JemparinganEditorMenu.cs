@@ -192,6 +192,28 @@ public static class JemparinganEditorMenu
             Check("Classic target remains intact", target.TestShot(
                 new Vector3(0f, 0f, -.2f), new Vector3(0f, 0f, .2f),
                 out bullseye) && bullseye, ref total, ref failed);
+
+            // Challenge Mode v1 rule & threshold checks
+            var prec = JemparinganChallengeRules.GetConfig(JemparinganChallengeRules.MissionId.Precision);
+            Check("Precision 8 arrows", prec.ArrowCount == 8, ref total, ref failed);
+            Check("Precision stationary sway 0", prec.TargetSway == 0f && prec.TargetSpeed == 0f, ref total, ref failed);
+            Check("Precision 0 molo no medal", prec.Evaluate(0) == JemparinganChallengeRules.Medal.None, ref total, ref failed);
+            Check("Precision 1 molo bronze", prec.Evaluate(1) == JemparinganChallengeRules.Medal.Bronze, ref total, ref failed);
+            Check("Precision 2 molo silver", prec.Evaluate(2) == JemparinganChallengeRules.Medal.Silver, ref total, ref failed);
+            Check("Precision 3 molo gold", prec.Evaluate(3) == JemparinganChallengeRules.Medal.Gold, ref total, ref failed);
+            Check("Precision 8 molo gold cap", prec.Evaluate(8) == JemparinganChallengeRules.Medal.Gold, ref total, ref failed);
+
+            var moving = JemparinganChallengeRules.GetConfig(JemparinganChallengeRules.MissionId.MovingTarget, 0.08f, 0.9f);
+            Check("Moving Target 10 arrows", moving.ArrowCount == 10, ref total, ref failed);
+            Check("Moving Target sway > 0", moving.TargetSway > 0f && moving.TargetSpeed > 0f, ref total, ref failed);
+            Check("Moving Target 0 hits no medal", moving.Evaluate(0) == JemparinganChallengeRules.Medal.None, ref total, ref failed);
+            Check("Moving Target 1 hit no medal", moving.Evaluate(1) == JemparinganChallengeRules.Medal.None, ref total, ref failed);
+            Check("Moving Target 2 hits bronze", moving.Evaluate(2) == JemparinganChallengeRules.Medal.Bronze, ref total, ref failed);
+            Check("Moving Target 3 hits bronze", moving.Evaluate(3) == JemparinganChallengeRules.Medal.Bronze, ref total, ref failed);
+            Check("Moving Target 4 hits silver", moving.Evaluate(4) == JemparinganChallengeRules.Medal.Silver, ref total, ref failed);
+            Check("Moving Target 5 hits silver", moving.Evaluate(5) == JemparinganChallengeRules.Medal.Silver, ref total, ref failed);
+            Check("Moving Target 6 hits gold", moving.Evaluate(6) == JemparinganChallengeRules.Medal.Gold, ref total, ref failed);
+            Check("Moving Target 10 hits gold", moving.Evaluate(10) == JemparinganChallengeRules.Medal.Gold, ref total, ref failed);
         }
         finally
         {
