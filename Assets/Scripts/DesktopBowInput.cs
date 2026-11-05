@@ -10,8 +10,13 @@ public class DesktopBowInput : MonoBehaviour, IJemparinganInput
     [SerializeField] private bool outdoorBowPresentation = false;
     private float _drawStart;
 
+    // The optional Challenge Arrow Cam pauses desktop camera input briefly.
+    // Input pose and the seated camera remain otherwise unchanged.
+    public bool CameraLookSuppressed { get; set; }
+
     private void Update()
     {
+        if (CameraLookSuppressed) return;
         if (Input.GetMouseButtonDown(0)) _drawStart = Time.time;
 
         // Hold RMB and move mouse to aim on desktop.
