@@ -6,6 +6,75 @@ first-person camera/input, procedural environment, arrow pool and
 gravity-based projectile. No external assets, scene regeneration, or
 separate physics system are required.
 
+## Current experiment — Modern full draw → RMB precision aim
+
+**This is the current behavior.** Sections below describe the history of
+earlier visual iterations and may contain obsolete instructions. Unity
+Play Mode has **not yet been run** for the changes in this section.
+
+**Controls (Modern desktop, screenshot-framing v2 enabled):**
+
+1. **Hold LMB:** the bow raises and its string/arrow draw progresses.
+   This does **not** zoom the camera.
+2. **Draw at least 96%** of the playable power span, then **hold RMB**:
+   smoothly transition from a pre-aim bow pose to the calibrated sight
+   pose, and gradually zoom the Main Camera (typically 65° → 60° FOV).
+   Holding RMB earlier is allowed for look input, but zoom/final pose
+   activate only after full draw is reached.
+3. **Move mouse while RMB is held:** refine the existing camera aim
+   (Shift+RMB remains fine aiming). **Release LMB** to shoot exactly
+   once with existing draw power/shot math, then Arrow Cam follows as
+   before. LMB may still fire a lower-power shot before full draw; it
+   just does not unlock precision aiming.
+4. **G:** toggle a small temporary **camera-axis debug crosshair**,
+   visible **only** during full-draw RMB precision aiming. It does
+   **not** compensate arrow drop, and is **not** a physical bow sight.
+5. **V:** toggle old static view (v1) and the calibrated animated v2.
+
+**Hands remain off** by default in Modern via
+`modernShowHands = false`. The procedural hands are retained for
+Traditional and Challenge. No hand meshes/assets were deleted.
+
+**Why no physical sight pin yet?** We first need to verify the
+camera-axis marker against the actual falling projectile and measure
+the sight offset at target distance. Placing a sight pin now could make
+the visual aim appear correct while actual ring hits remain offset.
+
+Inspector settings added in `JemparinganGame`:
+`modernPrecisionDrawThreshold` (0.96),
+`modernPreAimRightShift` (0.09m),
+`modernPreAimLowering` (0.055m),
+`modernPrecisionPoseSpeed` (7 blend units/s),
+`modernDebugCameraCrosshair` (on),
+`modernReferenceAimFov` (60°).
+
+### Play Mode acceptance checklist
+
+1. Select Modern. Hold **RMB only**: the camera may turn, but there
+   must be **no zoom**, final aim pose or debug crosshair.
+2. Hold **LMB only**, draw up to full power: bow raises and string
+   moves; **no zoom** or debug crosshair.
+3. While holding full LMB draw, hold **RMB**: the bow should settle
+   inward/up into the target-calibrated pose, and FOV should smoothly
+   change from 65° (or scene baseline) toward 60°. The debug center
+   crosshair becomes visible when enabled.
+4. Release **RMB** but keep full LMB draw: zoom and debug crosshair
+   disappear; the bow returns smoothly to its pre-aim pose. Re-hold
+   RMB and press **G** twice to test the marker toggle.
+5. Release LMB: exactly **one** projectile launches and Arrow Cam
+   follows it, without leaving the FOV zoom applied. **Esc** skips.
+6. **R** mid-draw and **M** while aiming: FOV and input restore,
+   and no release-after-reset spurious shot.
+7. Compare **V** old/new views. Enter Classic, Traditional and Challenge
+   and verify no camera zoom, no new HUD marker and original hands.
+8. At different target distances, confirm whether the camera-axis
+   marker differs from real impact due to gravity. That offset is
+   intentional pending a separately calibrated physical sight pin.
+9. Test with a narrow custom scene FOV: aim must not zoom out.
+
+**Verification boundary:** GitHub source checks only; Unity compilation,
+runtime controls and visual matching require the user's local editor.
+
 ## What's playable
 
 - Main menu: **4 / Modern Archery** (or click the fourth mode card)
