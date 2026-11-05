@@ -6,6 +6,59 @@ first-person camera/input, procedural environment, arrow pool and
 gravity-based projectile. No external assets, scene regeneration, or
 separate physics system are required.
 
+## CURRENT: modern upright bow and simpler fixed sight
+
+This **supersedes** the earlier large/dynamic sight implementation and
+17° bow cant in the sections below.
+
+- **Modern V2 bow:** the full-draw riser has a small **-6° camera-relative
+  cant** (`modernBowCantDegrees`, Inspector range -12..+12). The idle
+  pose relaxes a little further, but full draw is close to vertical.
+  Traditional, Challenge and Classic rotations stay unchanged.
+- **Same reliable reference framing:** the grip remains at the existing
+  screenshot viewport landmark (`modernReferenceGripViewportX/Y`).
+  The new projected size keeps the *vertical* upper-tip landmark while
+  intentionally allowing upper-tip X to shift left as the bow straightens.
+  This fixes the previous conflict of forcing the bow to reproduce an
+  excessively slanted screenshot at the same time as using a modern sight.
+- **Simpler physical sight:** one small metal bracket, **one thin support
+  rod**, **one smaller ring**, **one little pin**. Removed the redundant
+  jointed extension and frame-by-frame camera-facing ring rotation.
+- **Fixed bow-local pin:** the sight calibrates its local position **once**
+  after the first nearly settled full draw and zoom. It keeps the
+  resulting bow-local transform during mouse movement and subsequent
+  shots; it does **not** repeatedly chase the center of the camera.
+  Calibration resets only on Modern round reset/entry and on V view
+  comparison. Out-of-range calibration is rejected in favor of the
+  small physically plausible resting placement.
+- The **G debug HUD** remains off by default on entering Modern;
+  enable it temporarily to compare the physical pin to screen center.
+  **LMB hold/mouse aim/release**, ballistic zeroing, arrow speed/drop,
+  scoring, and Arrow Cam have **not** been changed.
+- Modern hands remain hidden during the visual calibration pass.
+  The sight never becomes visible in other game modes.
+
+### Unity Play Mode checks still needed
+
+1. **Idle → full draw:** modern bow appears closer to upright; full
+   draw should settle around -6° rather than the former prominent lean.
+2. **Sight geometry:** single slender support touches the riser;
+   small ring and fiber pin are visible, without large multi-rod hardware.
+3. **Press G at stable full draw:** the pin and HUD crosshair should
+   overlap after zoom is fully settled. Move mouse while holding LMB:
+   pin stays in its fixed place on the bow, not sliding to chase the HUD.
+4. **Fire at center and outer rings of all three targets:** the
+   previously verified impact/crosshair relationship must remain intact.
+5. **V old/new view**, M menu, R reset, Esc Arrow Cam skip, and
+   Classic/Traditional/Challenge: no sight leak, no extra shots, no
+   persistent FOV zoom.
+6. Repeat at different aspect ratios. The pin is sighted in again on
+   entering Modern; do not claim stable alignment across mid-round
+   resolution/FOV changes without further testing.
+
+**Verification:** GitHub code and static math checks, not Unity runtime
+compilation or visual inspection.
+
 ## CURRENT: bow-mounted physical sight (no default HUD crosshair)
 
 The successful one-button LMB aiming and ballistic zeroing are kept
