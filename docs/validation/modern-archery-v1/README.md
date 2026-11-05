@@ -17,7 +17,8 @@ separate physics system are required.
   overlay, and persistent best score (`JemparinganModernBestScore`)
 - **R** retry, **M** return to modes (including mid-round)
 - Existing LMB draw/release, RMB aim and Shift fine aiming
-- Challenge Arrow Cam remains Challenge-only
+- Each Modern shot uses Arrow Cam by default (press **Esc** to skip; disable via Inspector for normal first-person shooting)
+- Arrow Cam runs on every Modern shot by default (Inspector toggle: `modernEveryShotArrowCam`), independently from the existing Challenge toggle. `Esc` skips an active follow; hit briefly holds the embedded projectile, miss returns to player view.
 
 The three boards are spawned procedurally near the existing outdoor
 target anchor, while the original bandulan and hanging cord are hidden.
@@ -49,7 +50,7 @@ is reused, but the seated character geometry is hidden.
 - Modern boards now use a small, reusable impact-spark burst, ring-points
   popup and damped face recoil. The stand, projectile trajectory, scoring
   boundaries, collision test and original gameplay modes are unchanged.
-- Arrow Cam remains **Challenge-only**.
+- Arrow Cam is now shared between **Challenge and Modern**, with independent Inspector toggles. Classic and Traditional remain unaffected.
 
 ### Specific regression playtest
 
@@ -58,8 +59,7 @@ is reused, but the seated character geometry is hidden.
 2. Hit rings on each board. Confirm +2/4/6/8/10 score popups, subtle wobble,
    small sparks, and the unchanged accumulated score.
 3. Miss deliberately: no score popup or target recoil.
-4. Fire multiple times rapidly: no duplicate lingering sparks, camera jump,
-   or unintended Arrow Cam.
+4. Fire multiple shots: each Modern shot should trigger the existing Arrow Cam, follow its real projectile, hold briefly on hit and return on miss. Press Esc to skip. No stuck camera or mouse-look suppression.
 5. Press M and enter Classic, Traditional, and Challenge in turn: the
    authored frame is restored exactly, including when Modern is exited mid-round.
 6. Return to Modern, retry, then switch back: no pooled arrow trail leak.
@@ -86,5 +86,6 @@ has already been run for this change.
     scoring feel before adding extra visual polish.
 
 Known scope boundaries: no new dedicated stadium scene, leaderboard,
-multiplayer, wave progression or modern Arrow Cam in v1. Unity runtime,
+multiplayer or wave progression. Modern uses the existing desktop Arrow Cam,
+without slow motion. Unity runtime,
 physical input, graphics and balance **still require Play Mode validation**.
