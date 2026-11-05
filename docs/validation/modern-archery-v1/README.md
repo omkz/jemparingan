@@ -264,6 +264,88 @@ render layer.
 This code was checked statically through GitHub, **not** compiled or
 rendered by the Unity Editor in this change.
 
+## Screenshot calibration v3 — **current Modern desktop experiment**
+
+This supersedes the older fixed-offset / 1.16x screenshot framing
+documented below. The screenshot supplied by the player is a **full-draw
+gameplay view**, 1493 × 893 pixels, not a marketing-only camera angle.
+The estimated **bow grip center** is around (827,652) measured from
+top-left; its Unity viewport target is (0.554,0.270). The visible upper
+limb continues above the frame, so we use an **extrapolated upper-tip
+landmark** of (1082,-67) or viewport (0.725,1.075). These are
+calibration estimates, not certified pixel-perfect measurements.
+
+### Projection-derived rig
+
+For a perspective camera with vertical FOV `f`, aspect ratio `a` and
+chosen grip depth `d`:
+
+- `kY = 2*tan(f/2)`, `kX = a*kY`
+- Model upper-tip local coordinate is `t=(tx,ty,tz)`.
+- For each axis `i` (X/Y), set
+  `Ai = (tipViewport_i - gripViewport_i)*ki*d`, and
+  `Bi = (tipViewport_i - 0.5)*ki*tz`.
+- With `q=1/visualScale`, solve the positive root:
+  `(Ax²+Ay²)q² + 2(AxBx+AyBy)q + (Bx²+By² - tx²-ty²) = 0`.
+- Recover `scale = 1/q`, then
+  `roll = atan2(Ay/scale+By, Ax/scale+Bx) - atan2(ty,tx)`.
+- Place grip with `Camera.ViewportToWorldPoint((gripX,gripY,d))`
+  and rotate the bow relative to the camera by the solved roll.
+
+This **simultaneously fits the projected grip AND upper limb**, unlike
+the previous v2 which only fit the grip while leaving cant/size fixed.
+It is re-solved every frame if FOV or aspect ratio changes. The
+computed scale and roll, not a guessed scale multiplier, are applied
+to the **cosmetic** bow. Default FOV during LMB or RMB aim is **60°**
+(from the scene's original FOV, typically 65°), a modest real camera
+zoom: approximate size magnification at 65→60 is ~1.10x.
+
+For the provided screenshot aspect ratio, the projection calculation
+at 60° yields ~1.19 visual scale and ~-17° roll, with near-zero
+reprojection error for the two chosen reference landmarks.
+
+### Isolating bow-only framing
+
+- **`modernShowHands = false` by default:** all first-person arm,
+  sleeve, grip hand, and right draw-hand meshes are hidden in
+  **Modern only**. Keep this off while calibrating; other game modes'
+  hand presentation is untouched. The physical bow, string and
+  cosmetic nocked arrow remain visible.
+- `modernReferenceGripViewportX` / `Y` (0.554 / 0.270)
+  control the bow grip's fixed screen anchor; `Depth` (0.70m)
+  controls how perspective changes along the shaft.
+- `modernReferenceTipViewportX` / `Y` (0.725 / 1.075)
+  control cant and apparent bow length at full draw.
+- `modernReferenceAimFov` (60°) controls subtle whole-scene
+  zoom during RMB aim or LMB draw. Camera FOV returns to its
+  original value when leaving Modern or releasing aim.
+- V keeps the old v1 framing for A/B comparison, **but** hands are
+  hidden in both versions while `modernShowHands` is false.
+
+### Unity acceptance tests (not yet executed)
+
+1. Select Modern, hold LMB to full draw, compare the **bow only** with
+   the supplied screenshot. The grip should be around 55% width,
+   27% height from bottom, and the upper limb should leave the top
+   of frame near 72–73% width.
+2. Release LMB, hold RMB to test slight zoom (e.g. 65°→60°) and the
+   idle-to-aim pose transition. Release RMB and verify zoom resets.
+3. Switch V on/off while aiming. V1 must preserve gameplay behavior;
+   V2 should have visibly different size, tilt, and screen composition.
+4. Exit to mode select (M) and enter Classic, Traditional, Challenge.
+   Check the scene camera FOV is restored, and arms still appear there.
+5. Test at 16:9 and 4:3 Game View aspect ratios: two projected screen
+   landmark positions should remain stable; inspect for near clipping.
+6. Fire, miss, retry, and wait for/skip Arrow Cam. Confirm real arrow
+   physics, score, launch origin, input and camera recovery are intact.
+7. Enable `modernShowHands` **only later** once the bow-only pose is
+   accepted. It uses the older procedural arms and may need a separate
+   animation pass.
+
+**Validation:** static code inspection and a separate numeric reprojection
+test only. No Unity Editor build, no Unity Play Mode, no screenshot
+pixel comparison of the **new rendered game** was performed.
+
 ## Archery Master gameplay-screenshot composition (Modern desktop v2)
 
 The Modern v2 full-draw frame now uses the user's **actual Archery Master
