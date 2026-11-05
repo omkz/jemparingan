@@ -8,14 +8,22 @@ public sealed class JemparinganModernTarget : MonoBehaviour
     public const float FaceDepth = -0.045f;
     public int TargetNumber { get; private set; }
     private GameObject _impactMarker;
-    private float _impactUntil;
+    private Transform _face, _burstRoot;
+    private Transform[] _sparks;
+    private TextMesh _scorePopup;
+    private float _impactAt = -1f;
+    private const float ImpactDuration = .42f;
+    private const int SparkCount = 8;
 
     public void Build(int number)
     {
         TargetNumber = number;
+        // The face reacts subtly without moving the stand or changing hitboxes.
+        _face = new GameObject("Circular face | reactive visual").transform;
+        _face.SetParent(transform, false);
         // Face points back toward the player's camera (local -Z).
         JemparinganArt.Part("Wooden circular backboard", PrimitiveType.Cylinder,
-            transform, new Vector3(0f, 0f, .013f),
+            _face, new Vector3(0f, 0f, .013f),
             new Vector3(1.10f, .025f, 1.10f),
             JemparinganArt.Tone.DarkWood, Quaternion.Euler(90f, 0f, 0f));
 
@@ -36,15 +44,28 @@ public sealed class JemparinganModernTarget : MonoBehaviour
             new Vector3(0f, .69f, -.06f), "TARGET " + number,
             .022f, Color.white);
 
-        _impactMarker = JemparinganArt.Part("Hit marker (reused)",
+        _impactMarker = JemparinganArt.Part("Impact center | reusable",
             PrimitiveType.Sphere, transform, Vector3.zero,
-            new Vector3(.065f, .065f, .02f), JemparinganArt.Tone.Gold);
+            new Vector3(.04f, .04f, .012f), JemparinganArt.Tone.BowIvory);
         _impactMarker.SetActive(false);
+
+        _burstRoot = new GameObject("Impact sparks | reused").transform;
+        _burstRoot.SetParent(transform, false);
+        _sparks = new Transform[SparkCount];
+        for (int i = 0; i < SparkCount; i++)
+        {
+            _sparks[i] = JemparinganArt.Part("Impact spark " + i,
+                PrimitiveType.Sphere, _burstRoot, Vector3.zero,
+                Vector3.one * .02f, JemparinganArt.Tone.Gold).transform;
+        }
+        _burstRoot.gameObject.SetActive(false);
+        _scorePopup = JemparinganArt.Label("Ring score popup", transform,
+            Vector3.zero, "", .027f, Color.white);
     }
 
     private void AddDisc(string name, float radius, float z, JemparinganArt.Tone tone)
     {
-        JemparinganArt.Part(name, PrimitiveType.Cylinder, transform,
+        JemparinganArt.Part(name, PrimitiveType.Cylinder, _face,
             new Vector3(0f, 0f, z),
             new Vector3(radius * 2f, .004f, radius * 2f),
             tone, Quaternion.Euler(90f, 0f, 0f));
@@ -82,25 +103,79 @@ public sealed class JemparinganModernTarget : MonoBehaviour
         return 2;
     }
 
-    public void ShowImpact(Vector3 worldPosition)
+    public void ShowImpact(Vector3 worldPosition, int ringPoints)
     {
         if (_impactMarker == null) return;
-        _impactMarker.transform.position = worldPosition + transform.TransformDirection(
-            Vector3.back * .007f);
+        Vector3 point = transform.InverseTransformPoint(worldPosition);
+        point.z = FaceDepth - .018f;
+        _impactMarker.transform.localPosition = point;
         _impactMarker.SetActive(true);
-        _impactUntil = Time.time + .22f;
+        _burstRoot.localPosition = point;
+        _burstRoot.gameObject.SetActive(true);
+        _scorePopup.transform.localPosition = point + Vector3.up * .15f;
+        _scorePopup.text = ringPoints == 10 ? "BULLSEYE +10" : "+" + ringPoints;
+        _scorePopup.color = ringPoints == 10 ?
+            new Color(1f, .89f, .4f) : Color.white;
+        _impactAt = Time.time;
+        AnimateImpact(0f);
     }
 
     private void Update()
     {
-        if (_impactMarker != null && _impactMarker.activeSelf &&
-            Time.time >= _impactUntil)
-            _impactMarker.SetActive(false);
+        if (_impactAt < 0f) return;
+        float elapsed = Time.time - _impactAt;
+        if (elapsed >= ImpactDuration)
+        {
+            ResetReaction();
+            return;
+        }
+        float t = Mathf.Clamp01(elapsed / ImpactDuration);
+        // A small damped face vibration, never a full target or stand swing.
+        float recoil = Mathf.Sin(elapsed * 37f) * Mathf.Exp(-elapsed * 13f);
+        if (_face != null)
+        {
+            _face.localRotation = Quaternion.Euler(recoil * 3f, 0f, recoil * 2f);
+            _face.localPosition = Vector3.forward * (recoil * .012f);
+        }
+        AnimateImpact(t);
+        if (_scorePopup != null)
+        {
+            _scorePopup.transform.localPosition =
+                _burstRoot.localPosition + Vector3.up * (.15f + t * .12f);
+            Color color = _scorePopup.color;
+            color.a = Mathf.Clamp01((1f - t) * 2f);
+            _scorePopup.color = color;
+        }
+    }
+
+    private void AnimateImpact(float progress)
+    {
+        if (_burstRoot == null || _sparks == null) return;
+        float radius = Mathf.Lerp(.025f, .17f, progress);
+        float size = Mathf.Lerp(.024f, .002f, progress);
+        for (int i = 0; i < _sparks.Length; i++)
+        {
+            float angle = i * (Mathf.PI * 2f / SparkCount);
+            _sparks[i].localPosition = new Vector3(
+                Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius, 0f);
+            _sparks[i].localScale = Vector3.one * size;
+        }
+        if (_impactMarker != null)
+            _impactMarker.transform.localScale = new Vector3(
+                Mathf.Lerp(.04f, .012f, progress),
+                Mathf.Lerp(.04f, .012f, progress), .012f);
     }
 
     public void ResetReaction()
     {
+        _impactAt = -1f;
         if (_impactMarker != null) _impactMarker.SetActive(false);
-        _impactUntil = 0f;
+        if (_burstRoot != null) _burstRoot.gameObject.SetActive(false);
+        if (_scorePopup != null) _scorePopup.text = "";
+        if (_face != null)
+        {
+            _face.localRotation = Quaternion.identity;
+            _face.localPosition = Vector3.zero;
+        }
     }
 }
