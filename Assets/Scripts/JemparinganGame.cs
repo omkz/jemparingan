@@ -596,6 +596,7 @@ public class JemparinganGame : MonoBehaviour
                 if (Input.GetKeyDown(KeyCode.Alpha1)) ChooseMode(GameMode.Classic);
                 else if (Input.GetKeyDown(KeyCode.Alpha2)) ChooseMode(GameMode.Traditional);
                 else if (Input.GetKeyDown(KeyCode.Alpha3)) ChooseMode(GameMode.Challenge);
+                else if (Input.GetKeyDown(KeyCode.Alpha4)) ChooseMode(GameMode.Modern);
                 return;
             }
 
@@ -646,8 +647,8 @@ public class JemparinganGame : MonoBehaviour
             _awaitStringRelease = UsesDesktopInput() && Input.GetMouseButton(0);
         }
 
-        if (useOutdoorEnvironment && UsesDesktopInput() && !IsChallengeMode() &&
-            Input.GetKeyDown(KeyCode.T))
+        if (useOutdoorEnvironment && UsesDesktopInput() &&
+            !IsChallengeMode() && !IsModernMode() && Input.GetKeyDown(KeyCode.T))
         {
             _desktopTrainingEnabled = !_desktopTrainingEnabled;
             ShowFeedback(_desktopTrainingEnabled
@@ -750,8 +751,10 @@ public class JemparinganGame : MonoBehaviour
         Vector3 launchAim = aim;
         if (UsesTraditionalPresentation() && UsesDesktopInput() && Camera.main != null)
         {
-            float targetDist = _target != null
-                ? Vector3.Distance(Camera.main.transform.position, _target.transform.position)
+            Transform sightTarget = IsModernMode() && _modernTargets != null
+                ? _modernTargets[1].transform : (_target != null ? _target.transform : null);
+            float targetDist = sightTarget != null
+                ? Vector3.Distance(Camera.main.transform.position, sightTarget.position)
                 : 10f;
             Vector3 sightFocus = Camera.main.transform.position + aim * targetDist;
             Vector3 launchOrigin = bowOrigin + aim * 0.25f;
@@ -1621,6 +1624,7 @@ public class JemparinganGame : MonoBehaviour
             BuildBackdrop(root);
         }
         BuildBandulan(root);
+        if (useOutdoorEnvironment) BuildModernTargets(root);
         if (!useOutdoorEnvironment)
             BuildTargetPresentation(root);
         _impactLabel = JemparinganArt.Label("Floating impact points", root,
@@ -1867,6 +1871,30 @@ public class JemparinganGame : MonoBehaviour
     }
 
     // Target remains in front of a simple plaque for contrast.
+    private void BuildModernTargets(Transform root)
+    {
+        _modernTargetsRoot = new GameObject("Modern Range | Three round targets").transform;
+        _modernTargetsRoot.SetParent(root, false);
+        _modernTargets = new JemparinganModernTarget[3];
+        // A shallow arc gives the three targets distinct positions and distances
+        // without introducing a new scene, arena, dependencies, or prefabs.
+        Vector3[] positions =
+        {
+            new Vector3(-1.70f, .10f, -.80f),
+            new Vector3(0f, .22f, .70f),
+            new Vector3(1.70f, .10f, -.80f)
+        };
+        for (int i = 0; i < _modernTargets.Length; i++)
+        {
+            var go = new GameObject("Modern circular target " + (i + 1));
+            go.transform.SetParent(_modernTargetsRoot, false);
+            go.transform.localPosition = positions[i];
+            _modernTargets[i] = go.AddComponent<JemparinganModernTarget>();
+            _modernTargets[i].Build(i + 1);
+        }
+        _modernTargetsRoot.gameObject.SetActive(false);
+    }
+
     private void BuildTargetPresentation(Transform root)
     {
         JemparinganArt.Beam("Left support", root,
@@ -1886,6 +1914,7 @@ public class JemparinganGame : MonoBehaviour
     private void BuildBandulan(Transform root)
     {
         JemparinganArt.Beam("Suspension cord", root, new Vector3(0, .69f, 0), new Vector3(0, .12f, 0), .005f, JemparinganArt.Tone.Paper);
+        _bandulanSuspension = root.Find("Suspension cord");
         var targetGO = new GameObject("Bandulan | Target");
         targetGO.transform.SetParent(root, false);
         targetGO.transform.localPosition = new Vector3(0f, -.13f, 0f);
@@ -1989,6 +2018,9 @@ public class JemparinganGame : MonoBehaviour
             _traditionalPosture, rightFoot,
             new Vector3(.13f, .055f, .20f), JemparinganArt.Tone.TraditionalSkin);
         _traditionalPosture.gameObject.SetActive(false);
+        // Cache only the seated body renderers. The first-person grip hand
+        // added below stays visible in Modern Range with the body hidden.
+        _seatedBodyRenderers = _traditionalPosture.GetComponentsInChildren<Renderer>(true);
 
         _traditionalArcher = _traditionalPosture.gameObject.AddComponent<JemparinganTraditionalArcher>();
         _traditionalArcher.Build(_bow.Find("Leather-wrapped main grip"), _bow);
