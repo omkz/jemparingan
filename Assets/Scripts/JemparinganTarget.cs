@@ -213,7 +213,7 @@ public class JemparinganTarget : MonoBehaviour
             _flashRenderer.sharedMaterial = JemparinganArt.Material(JemparinganArt.Tone.Gold);
             _flashUntil = Time.time + 0.14f;
         }
-        if (_sparks == null) CreateBurst();
+        if (_sparks == null || _fxRoot == null) CreateBurst();
         Material sparkMaterial = JemparinganArt.Material(bullseye ? JemparinganArt.Tone.Gold : JemparinganArt.Tone.Jade);
         for (int i = 0; i < _sparkRenderers.Length; i++)
             _sparkRenderers[i].sharedMaterial = sparkMaterial;

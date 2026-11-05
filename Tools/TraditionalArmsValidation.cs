@@ -51,7 +51,7 @@ public static class TraditionalArmsValidation
             classicTarget=((GameObject)Get("_classicBandulanVisual")).activeSelf,
             traditionalTarget=((GameObject)Get("_traditionalBandulanVisual")).activeSelf };
         if(visible && (leftError>.0001f || arrowNockError>.0001f ||
-            forearmLength<.20f || forearmLength>.40f || rightRenderers!=0))
+            forearmLength<.20f || forearmLength>.45f || rightRenderers!=0))
             throw new Exception("First-person presentation regression: "+result);
         Debug.Log("Traditional arm visual QA: mode="+Get("_mode")+" shots="+Get("_shots")+
             " gripError="+leftError+" arrowNockError="+arrowNockError+
@@ -170,9 +170,8 @@ public static class TraditionalArmsValidation
     public static async Task<object> FireAtZone(float zoneY)
     {
         Time.timeScale=1f;
-        var input=UnityEngine.Object.FindFirstObjectByType<DesktopBowInput>();
-        if(!input.TryReadPose(out var pose)) throw new Exception("No desktop pose");
-        Vector3 origin=pose.BowPosition+pose.AimDirection*.25f;
+        var bow=(Transform)Get("_bow");
+        Vector3 origin=bow.position+Camera.main.transform.forward*.25f;
         Vector3 target=((JemparinganTarget)Get("_target")).transform.TransformPoint(
             new Vector3(0f,zoneY,0f));
         float speed=(float)Get("maximumArrowSpeed"),gravity=(float)Get("simulatedGravity");

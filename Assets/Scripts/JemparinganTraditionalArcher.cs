@@ -56,13 +56,12 @@ public sealed class JemparinganTraditionalArcher : MonoBehaviour
     private void PosePartialForearm(Transform eye)
     {
         Vector3 wristWorld = _leftHand.TransformPoint(LeftWrist);
-        // Start the visible sleeve close to the lower-left edge of the view.
-        // This is intentionally a short first-person forearm, not an IK chain:
-        // the seated torso remains implied and no hidden elbow is evaluated.
-        Vector3 startWorld = wristWorld - eye.right * .20f
-            - eye.up * .17f - eye.forward * .18f;
-        Vector3 controlWorld = Vector3.Lerp(startWorld, wristWorld, .52f)
-            + eye.up * .018f - eye.right * .010f;
+        // Start the visible sleeve at the lower-left boundary of the first-person
+        // view, entering naturally toward the grip hand positioned slightly right of center.
+        Vector3 startWorld = eye.position + eye.forward * .46f
+            - eye.right * .16f - eye.up * .23f;
+        Vector3 controlWorld = Vector3.Lerp(startWorld, wristWorld, .50f)
+            + eye.up * .020f - eye.right * .012f;
 
         Vector3 start = transform.InverseTransformPoint(startWorld);
         Vector3 control = transform.InverseTransformPoint(controlWorld);

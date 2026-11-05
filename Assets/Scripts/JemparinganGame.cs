@@ -292,41 +292,52 @@ public class JemparinganGame : MonoBehaviour
         {
             // Keep the gandewa recognizably canted without laying it across
             // the sightline. Arrow flight still follows pose.AimDirection.
-            bowRotation *= Quaternion.Euler(0f, 0f, -15f);
+            bowRotation *= Quaternion.Euler(0f, 0f, -8f);
         }
         Vector3 visualBowPosition = pose.BowPosition;
         if (IsTraditionalMode() && UsesDesktopInput() && Camera.main != null)
         {
-            // The desktop input remains the gameplay source, but its 0.92 m
-            // mock hand is beyond a seated arm's reach. Give all Traditional
-            // render contacts one explicit eye-relative anchor: left of the
-            // sightline, below eye level and reachable from the torso.
+            // Position the gandewa slightly right of center, held naturally at
+            // seated chest height, leaving the central target sightline open.
             Transform eye = Camera.main.transform;
-            visualBowPosition = eye.position + aim * .74f
-                - eye.right * .36f - eye.up * .17f;
+            visualBowPosition = eye.position + aim * .70f
+                + eye.right * .15f - eye.up * .16f;
         }
         _bow.SetPositionAndRotation(visualBowPosition, bowRotation);
+        Vector3 bowOrigin = (IsTraditionalMode() && UsesDesktopInput())
+            ? visualBowPosition
+            : pose.BowPosition;
+        Vector3 launchAim = aim;
+        if (IsTraditionalMode() && UsesDesktopInput() && Camera.main != null)
+        {
+            float targetDist = _target != null
+                ? Vector3.Distance(Camera.main.transform.position, _target.transform.position)
+                : 10f;
+            Vector3 sightFocus = Camera.main.transform.position + aim * targetDist;
+            Vector3 launchOrigin = bowOrigin + aim * 0.25f;
+            launchAim = (sightFocus - launchOrigin).normalized;
+        }
         bool drawing = pose.StringPinched;
         float distance = Mathf.Clamp(Vector3.Dot(pose.BowPosition - pose.StringPosition, aim), 0f, maximumDraw);
         float power = Mathf.InverseLerp(minimumDraw, maximumDraw, distance);
-        UpdateDesktopPracticeSight(pose.BowPosition + aim * .25f,
-            aim, Mathf.Lerp(minimumArrowSpeed, maximumArrowSpeed, power), drawing);
+        UpdateDesktopPracticeSight(bowOrigin + aim * .25f,
+            launchAim, Mathf.Lerp(minimumArrowSpeed, maximumArrowSpeed, power), drawing);
 
         if (drawing)
         {
             if (!_wasDrawing)
             {
                 _drawStartedAt = Time.time;
-                BeginFocus(aim, pose.BowPosition);
+                BeginFocus(aim, bowOrigin);
             }
             _lastDraw = distance;
-            UpdateFocus(aim, pose.BowPosition, power);
+            UpdateFocus(aim, bowOrigin, power);
             float pull = Mathf.Clamp(distance, 0f, maximumDraw);
             _stringMarker.localPosition = TraditionalNockLocalPosition(pull);
             UpdateBowStrings(pull);
             UpdateNockedArrow(pull, true);
-            ShowPreview(pose.BowPosition + aim * 0.25f, aim, power);
-            UpdateLeadMarker(pose.BowPosition + aim * .25f, power);
+            ShowPreview(bowOrigin + aim * 0.25f, launchAim, power);
+            UpdateLeadMarker(bowOrigin + aim * .25f, power);
             int step = Mathf.RoundToInt(power * 10f);
             bool calm = Time.time <= _focusReadyUntil;
             // RASA must update even at constant draw power.
@@ -361,7 +372,7 @@ public class JemparinganGame : MonoBehaviour
                 // Hide the attached arrow for this release frame; the pooled
                 // projectile is the only arrow visible in flight.
                 UpdateNockedArrow(0f, false);
-                Shoot(pose.BowPosition + aim * 0.25f, aim, _lastDraw, Time.time <= _focusReadyUntil);
+                Shoot(bowOrigin + aim * 0.25f, launchAim, _lastDraw, Time.time <= _focusReadyUntil);
             }
             else
                 ShowFeedback("DRAW FURTHER");

@@ -29,6 +29,9 @@ public class DesktopBowInput : MonoBehaviour, IJemparinganInput
                 lookSensitivity * multiplier, Space.World);
             cam.Rotate(Vector3.right, -Input.GetAxis("Mouse Y") *
                 lookSensitivity * multiplier, Space.Self);
+            Vector3 angles = cam.eulerAngles;
+            if (Mathf.Abs(angles.z) > 0.001f)
+                cam.eulerAngles = new Vector3(angles.x, angles.y, 0f);
         }
     }
 
