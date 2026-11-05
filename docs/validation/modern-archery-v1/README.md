@@ -36,6 +36,36 @@ is reused, but the seated character geometry is hidden.
 - `JemparinganEditorMenu.cs`: additional deterministic QA checks for
   ring boundaries, swept hit, miss and near-parallel segment
 
+## Modern visuals: gawang removal and hit polish
+
+- The authored v05 gawang lives under `Preview Bandulan | movable target`,
+  alongside the `Gameplay bandulan anchor | 1.79m above ground` object.
+  Merely hiding the generated bandulan leaves the authored two uprights and
+  crossbar visible. Modern now temporarily deactivates this **entire preview
+  frame root**; Classic, Traditional, Challenge and the mode menu restore its
+  original active state. The generated gameplay bandulan is a separate root.
+- Only Modern flight trails are slightly wider/longer. Original trail
+  settings are cached and restored on subsequent non-Modern launches.
+- Modern boards now use a small, reusable impact-spark burst, ring-points
+  popup and damped face recoil. The stand, projectile trajectory, scoring
+  boundaries, collision test and original gameplay modes are unchanged.
+- Arrow Cam remains **Challenge-only**.
+
+### Specific regression playtest
+
+1. Start Modern and inspect all three targets. No authored bandulan crossbar,
+   uprights, hanging cord or target should be in the sightline.
+2. Hit rings on each board. Confirm +2/4/6/8/10 score popups, subtle wobble,
+   small sparks, and the unchanged accumulated score.
+3. Miss deliberately: no score popup or target recoil.
+4. Fire multiple times rapidly: no duplicate lingering sparks, camera jump,
+   or unintended Arrow Cam.
+5. Press M and enter Classic, Traditional, and Challenge in turn: the
+   authored frame is restored exactly, including when Modern is exited mid-round.
+6. Return to Modern, retry, then switch back: no pooled arrow trail leak.
+7. Run Unity Play Mode and gameplay QA; verify Console. These checks
+   have **not** been executed by this GitHub-only code change.
+
 ## Validate in Unity
 
 This document records a **test plan**, not a claim that Unity Play Mode
