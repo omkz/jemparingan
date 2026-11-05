@@ -264,6 +264,67 @@ render layer.
 This code was checked statically through GitHub, **not** compiled or
 rendered by the Unity Editor in this change.
 
+## Archery Master gameplay-screenshot composition (Modern desktop v2)
+
+The Modern v2 full-draw frame now uses the user's **actual Archery Master
+gameplay screenshot** as its composition reference, not a speculative
+marketing pose. It deliberately differs from the earlier small +5cm horizontal
+offset:
+
+- **Full-draw bow grip** targets normalized camera-viewport position
+  **(0.56, 0.29)** at **0.70m depth** (bottom-left origin) to keep the
+  target visible while the bow occupies the right foreground.
+- **Bow size** has a **1.16x screenshot boost** on top of the previous v2
+  visual scale/FOV setting; the upper limb can be cropped by the top edge.
+- **Left forearm** enters diagonally from the bottom-left, becomes fuller
+  near the screen edge, and tapers into the actual leather-grip hand.
+- **Idle / RMB aim / LMB full draw** animations still operate. At full draw,
+  the viewport grip anchor is honored without the extra offset applied by
+  the older v2 full-draw settle.
+- **Modern only:** Traditional/Challenge keep the existing small,
+  screen-edge forearm, and Classic remains untouched.
+- **V** compares the screenshot-framed, animated v2 against the old static
+  v1. Use Inspector toggle **modernUseReferenceFraming** to return to the
+  previous v2 preset independently.
+
+Inspector tuning:
+`modernReferenceGripViewportX` (0.56),
+`modernReferenceGripViewportY` (0.29),
+`modernReferenceGripDepth` (0.70m),
+`modernReferenceBowScaleBoost` (1.16).
+The ViewportPoint method uses the real Main Camera's vertical FOV/aspect
+ratio. It does **not** instantiate another camera.
+
+### Screenshot-specific QA before accepting the change
+
+1. In Modern, hold LMB until draw is at 100%. Compare screenshot-to-game:
+   large bow on the right, upper limb near/crossing top, open target area,
+   visible diagonal left sleeve connected to grip.
+2. Release, hold RMB and compare aiming. The busur should rise smoothly
+   from low-ready; release RMB and confirm it lowers.
+3. Toggle V while idle and while LMB is held. V1 and reference V2 should
+   have a clearly different silhouette, not just a slight right shift.
+4. Check right-hand visibility/proportion at half and full draw, clipping
+   at all screen edges, and whether the sightline feels natural.
+5. Repeat at 16:9 and another Game View aspect ratio. Screenshot reference
+   uses normalized viewport positions, but arm and bow clipping can differ.
+6. Verify one shot per LMB release, original launch origin and velocity,
+   unchanged target hits, score, physics, Arrow Cam and reset behavior.
+7. Switch to Classic, Traditional and Challenge. Their forearm silhouette,
+   projectile behavior, camera and bow scale must be unchanged.
+8. If this framing is uncomfortable, toggle **V** (old static baseline) or
+   uncheck **modernUseReferenceFraming** (previous v2). Tune the viewport
+   anchor in Inspector without modifying physics.
+
+**Limitation:** the visible bow and shaft are cosmetic and already differ
+from the original gameplay launch origin. The screenshot pass intentionally
+leaves projectile mechanics intact; inspect release-frame alignment in
+Unity before further tightening the cosmetic-to-physical transition.
+
+**Validation state:** GitHub source inspection and static checks only.
+Unity compilation, Play Mode screenshots and gameplay tests must be
+performed in the editor.
+
 ## Validate in Unity
 
 This document records a **test plan**, not a claim that Unity Play Mode
