@@ -6,6 +6,79 @@ first-person camera/input, procedural environment, arrow pool and
 gravity-based projectile. No external assets, scene regeneration, or
 separate physics system are required.
 
+## CURRENT FIX: sight reticle vs real arrow impact
+
+The full-draw one-button LMB control is unchanged. The earlier HUD
+debug crosshair marked the camera axis, but the actual launch started
+from a different position and fell under gravity; misses below the
+crosshair were therefore expected. This fix **zeros** the crosshair to
+the actual target face instead of pretending a camera-axis marker is
+already an accurate bow sight.
+
+### Modern desktop only
+
+1. Cast a ray along the center of the actual player camera.
+2. Intersect it with the real front plane of each of the three Modern
+   boards (`JemparinganModernTarget.FaceDepth`). Choose the nearest
+   board directly under the reticle, or use a nearby plane for range
+   estimation if the player deliberately aims off the board. Never
+   snap toward a bullseye or an automatically chosen score ring.
+3. Compute the **fixed-speed low-arc ballistic initial velocity** to
+   the exact ray/plane intersection point, including launch-origin
+   parallax, `simulatedGravity`, and the **0.36m arrow-tip offset**
+   that the current swept-tip collision algorithm actually tests.
+4. Use the same calculation for held-draw trajectory preview and for
+   **release-frame** launch. The latter must use `_lastDraw` (stored
+   draw power), not `distance` (which immediately resets to zero
+   when LMB is released). The existing shot speed and gravity still
+   determine reachability and the arc.
+5. The debug crosshair says **ZEROED TO TARGET FACE** when the
+   reticle is on a target and the ballistic solution is reachable.
+   Otherwise it says **AXIS ONLY - NO TARGET LOCK**. Toggling it with
+   **G** never changes the shot. This is range zeroing, **not homing**.
+6. If a target is physically unreachable at the current draw speed,
+   keep the legacy unassisted launch and do not show a misleading
+   'zeroed' status. All non-Modern modes keep their existing
+   trajectory/assistance and control scheme.
+
+The ballistic method solves for a flight time `t` at fixed speed
+`s` by using `u=t²`:
+
+`(g²/4)u² + (g*deltaY - s²)u + dot(delta,delta) = 0`
+
+The shorter positive root yields the lower trajectory. Iteratively
+subtract the **actual velocity-direction arrow-tip offset** at impact
+to align the collision point, not merely the arrow root.
+
+### Test results and remaining QA
+
+A stand-alone numeric parity test of this equation against the
+discrete 60 FPS swept-tip update covered **18 reachable combinations**
+of 8m/12m/16m target ranges, 7.5/11m/s speeds, and center/off-center
+aim points. All landed within approximately **0.01cm** in the
+idealized no-camera-rotation test. This is a math test, **not proof of
+Unity-game alignment**, especially with authored scene transforms,
+real camera position, different display frame rates or an occluding
+foreground object.
+
+**Local Unity Play Mode verification required:**
+
+- Full draw on target 1/2/3 center and fire: ring impact should
+  coincide with the HUD crosshair's intended plane point.
+- Aim deliberately at the red/blue/outer ring: impact must remain
+  near that off-center point, **not snap to center**.
+- Release early at reduced power, and draw fully: solver must
+  use the release-frame stored power and preserve shot count.
+- Swing mouse quickly while holding LMB: trajectory preview and
+  release frame should use current aim without stale aim values.
+- Test with the camera off any board: release should miss naturally.
+- Verify Arrow Cam, Esc skip, G toggle, V comparison, R retry,
+  M modes, Classic/Traditional/Challenge, and no new console errors.
+- If target is unreachable, the reticle must not falsely claim
+  ballistic accuracy.
+
+**Unity compilation and Play Mode testing have not been executed.**
+
 ## CURRENT: Archery Master-style one-button controls (Modern desktop)
 
 This update **supersedes the earlier RMB full-draw aim experiment below**.
