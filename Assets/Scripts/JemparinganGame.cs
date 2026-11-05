@@ -59,7 +59,11 @@ public class JemparinganGame : MonoBehaviour
     [SerializeField, Range(0f, .20f)] private float modernPreAimRightShift = .09f;
     [SerializeField, Range(0f, .15f)] private float modernPreAimLowering = .055f;
     [SerializeField, Range(2f, 14f)] private float modernPrecisionPoseSpeed = 7f;
-    [SerializeField] private bool modernDebugCameraCrosshair = true;
+    [SerializeField] private bool modernDebugCameraCrosshair = false;
+    // 3D sight is attached to the cosmetic bow and follows its framing.
+    // Keep HUD G-marker optional for alignment comparisons only.
+    [SerializeField] private bool modernUsePhysicalSight = true;
+    private JemparinganModernBowSight _modernPhysicalSight;
     private float _modernDrawPower;
     private float _modernPrecisionPose;
     private bool _modernSightZeroed;
@@ -236,6 +240,7 @@ public class JemparinganGame : MonoBehaviour
     private void OnDisable()
     {
         RestoreModernCameraFov();
+        HideModernPhysicalSight();
         SetModernDesktopMouseControl(false);
     }
 
@@ -595,6 +600,9 @@ public class JemparinganGame : MonoBehaviour
     {
         _mode = GameMode.Modern;
         _modeChosen = true;
+        // The 3D sight is now the default; HUD crosshair is opt-in
+        // per Modern entry for test/compare via G.
+        modernDebugCameraCrosshair = false;
         SetModernDesktopMouseControl(true);
         _challengeInMissionSelect = false;
         arrowsPerRound = modernArrowCount;
@@ -619,6 +627,7 @@ public class JemparinganGame : MonoBehaviour
     {
         if (!useOutdoorEnvironment || !_ready) return;
         RestoreModernCameraFov();
+        HideModernPhysicalSight();
         SetModernDesktopMouseControl(false);
         _mode = next;
         _modeChosen = true;
@@ -713,6 +722,7 @@ public class JemparinganGame : MonoBehaviour
     public void ReturnToModeSelect()
     {
         RestoreModernCameraFov();
+        HideModernPhysicalSight();
         SetModernDesktopMouseControl(false);
         if (_modernTargetsRoot != null)
             _modernTargetsRoot.gameObject.SetActive(false);
@@ -969,6 +979,7 @@ public class JemparinganGame : MonoBehaviour
         }
         _bow.localScale = Vector3.one * visualBowScale;
         _bow.SetPositionAndRotation(visualBowPosition, bowRotation);
+        PresentModernPhysicalSight();
         Vector3 bowOrigin = (UsesTraditionalPresentation() && UsesDesktopInput())
             ? gameplayBowPosition
             : pose.BowPosition;
@@ -2556,6 +2567,27 @@ public class JemparinganGame : MonoBehaviour
         if (_traditionalArcher != null) _traditionalArcher.HideArms();
     }
 
+    private void HideModernPhysicalSight()
+    {
+        if (_modernPhysicalSight != null)
+            _modernPhysicalSight.Present(null, false, false);
+    }
+
+    private void PresentModernPhysicalSight()
+    {
+        if (_modernPhysicalSight == null) return;
+        bool visible = _modeChosen && IsModernMode() &&
+            UsesDesktopInput() && modernViewmodelRigV2 &&
+            modernUseReferenceFraming && modernUsePhysicalSight &&
+            !_finished && !_roundOver &&
+            (_arrowCam == null || !_arrowCam.IsActive);
+        // Adjust a bow-mounted pin only when the full-draw sight pose has
+        // practically settled. The mount/limbs themselves move with the bow.
+        bool calibrate = visible && ModernPrecisionAimRequested() &&
+            _modernPrecisionPose >= .95f;
+        _modernPhysicalSight.Present(_playerCamera, visible, calibrate);
+    }
+
     private void BuildBow()
     {
         _bow = new GameObject("Busur Jemparingan Stylized").transform;
@@ -2565,6 +2597,9 @@ public class JemparinganGame : MonoBehaviour
             // New 1.30m tapered curved mesh plus wrapped grip and subdued
             // metallic details. All visuals only; no changes to shoot origin.
             JemparinganBowVisual.Build(_bow);
+            _modernPhysicalSight =
+                _bow.gameObject.AddComponent<JemparinganModernBowSight>();
+            _modernPhysicalSight.Build();
         }
         else
         {
