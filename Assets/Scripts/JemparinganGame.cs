@@ -39,6 +39,14 @@ public class JemparinganGame : MonoBehaviour
     // It does not change the main camera's FOV or the world projection.
     [SerializeField, Range(45f, 85f)] private float modernViewmodelFov = 65f;
     [SerializeField, Range(.50f, 1.30f)] private float modernRightHandScale = .92f;
+
+    [Header("Modern FPS bow poses (idle / drawing / full draw)")]
+    [SerializeField, Range(.08f, .35f)] private float modernIdleRightShift = .22f;
+    [SerializeField, Range(.08f, .35f)] private float modernIdleLowering = .22f;
+    [SerializeField, Range(.0f, .20f)] private float modernIdleForwardShift = .08f;
+    [SerializeField, Range(.70f, 1f)] private float modernIdleBowScale = .90f;
+    [SerializeField, Range(2f, 10f)] private float modernPoseTransitionSpeed = 4.8f;
+    private float _modernRaisedPose;
     private TextMesh _introGoalLabel, _introTitleLabel;
 
     [Header("Challenge Mode tuning")]
@@ -425,7 +433,7 @@ public class JemparinganGame : MonoBehaviour
             Mathf.Min(620f, Screen.width - 32f), 24f),
             _arrowCam != null && _arrowCam.IsActive
                 ? "ARROW CAM  |  ESC SKIP  |  R RETRY  |  M MODES"
-                : "LMB DRAW  |  RMB AIM  |  SHIFT FINE  |  V VIEW  |  R RETRY  |  M MODES",
+                : "LMB DRAW  |  RMB AIM  |  SHIFT FINE  |  V COMPARE  |  R RETRY  |  M MODES",
             GUI.skin.box);
     }
 
@@ -654,8 +662,9 @@ public class JemparinganGame : MonoBehaviour
             if (IsModernMode() && Input.GetKeyDown(KeyCode.V))
             {
                 modernViewmodelRigV2 = !modernViewmodelRigV2;
+                _modernRaisedPose = 0f;
                 ShowFeedback(modernViewmodelRigV2
-                    ? "VIEWMODEL V2  |  VISUAL ONLY"
+                    ? "MODERN FPS POSES  |  IDLE / DRAW / AIM"
                     : "VIEWMODEL V1  |  ORIGINAL FRAMING");
             }
 
@@ -773,6 +782,13 @@ public class JemparinganGame : MonoBehaviour
             _introPanel.SetActive(false);
         Vector3 aim = pose.AimDirection.sqrMagnitude > 0.01f ? pose.AimDirection.normalized : _lastAim;
         _lastAim = aim;
+        // Resolve input once before positioning the cosmetic Modern bow:
+        // the visual pose depends on draw progression, the real shot does not.
+        bool drawing = pose.StringPinched;
+        float distance = Mathf.Clamp(
+            Vector3.Dot(pose.BowPosition - pose.StringPosition, aim),
+            0f, maximumDraw);
+        float power = Mathf.InverseLerp(minimumDraw, maximumDraw, distance);
         Quaternion bowRotation = Quaternion.LookRotation(aim, Vector3.up);
         if (UsesTraditionalPresentation())
         {
@@ -793,8 +809,11 @@ public class JemparinganGame : MonoBehaviour
             visualBowPosition = gameplayBowPosition;
             if (IsModernMode() && modernViewmodelRigV2)
             {
-                visualBowPosition = eye.position + aim * modernBowForwardDistance
-                    + eye.right * modernBowRightOffset - eye.up * modernBowDownOffset;
+                // A game-first three-state pose, not a small static offset.
+                // Idle rests down/right. Aiming or starting the draw raises
+                // the bow; full draw settles into the final stable sightline.
+                ApplyModernFpsBowPose(eye, aim, drawing, power,
+                    ref visualBowPosition, ref bowRotation);
             }
         }
         float visualBowScale = 1f;
@@ -809,6 +828,10 @@ public class JemparinganGame : MonoBehaviour
                 Mathf.Tan(modernViewmodelFov * Mathf.Deg2Rad * .5f);
             visualBowScale = modernBowVisualScale *
                 Mathf.Clamp(lensFactor, .76f, 1.25f);
+            // Lowered idle pose is slightly smaller; raise to full size
+            // during aiming. A/B V1 still uses untouched 1x scale.
+            float raised = Mathf.SmoothStep(0f, 1f, _modernRaisedPose);
+            visualBowScale *= Mathf.Lerp(modernIdleBowScale, 1f, raised);
         }
         _bow.localScale = Vector3.one * visualBowScale;
         _bow.SetPositionAndRotation(visualBowPosition, bowRotation);
@@ -827,9 +850,6 @@ public class JemparinganGame : MonoBehaviour
             Vector3 launchOrigin = bowOrigin + aim * 0.25f;
             launchAim = (sightFocus - launchOrigin).normalized;
         }
-        bool drawing = pose.StringPinched;
-        float distance = Mathf.Clamp(Vector3.Dot(pose.BowPosition - pose.StringPosition, aim), 0f, maximumDraw);
-        float power = Mathf.InverseLerp(minimumDraw, maximumDraw, distance);
         UpdateDesktopPracticeSight(bowOrigin + aim * .25f,
             launchAim, Mathf.Lerp(minimumArrowSpeed, maximumArrowSpeed, power), drawing);
 
@@ -1029,6 +1049,42 @@ public class JemparinganGame : MonoBehaviour
                 : JemparinganArt.Tone.Paper;
             _focusRenderers[i].sharedMaterial = JemparinganArt.Material(tone);
         }
+    }
+
+    // Only the Modern desktop viewmodel uses this pose animation. No camera,
+    // gameplay bow anchor, draw physics, hit tests or target movement changes.
+    // Inspiration: readable three-stage first-person bow framing found in FPS
+    // archery games, using Jemparingan's own original procedural geometry.
+    private void ApplyModernFpsBowPose(Transform eye, Vector3 aim,
+        bool drawing, float drawPower, ref Vector3 visualBowPosition,
+        ref Quaternion bowRotation)
+    {
+        bool wantsAim = drawing || Input.GetMouseButton(1);
+        _modernRaisedPose = Mathf.MoveTowards(_modernRaisedPose,
+            wantsAim ? 1f : 0f, modernPoseTransitionSpeed * Time.deltaTime);
+        float raised = Mathf.SmoothStep(0f, 1f, _modernRaisedPose);
+
+        Vector3 idle = eye.position +
+            aim * (modernBowForwardDistance + modernIdleForwardShift) +
+            eye.right * (modernBowRightOffset + modernIdleRightShift) -
+            eye.up * (modernBowDownOffset + modernIdleLowering);
+        Vector3 aimPose = eye.position + aim * modernBowForwardDistance +
+            eye.right * modernBowRightOffset - eye.up * modernBowDownOffset;
+
+        // Full draw has a smaller final settle toward the aiming lane; the
+        // actual nock and right hand still follow the real bowstring pull.
+        float fullDraw = drawing
+            ? Mathf.SmoothStep(0f, 1f,
+                Mathf.InverseLerp(.35f, .95f, drawPower)) * raised
+            : 0f;
+        visualBowPosition = Vector3.Lerp(idle, aimPose, raised) -
+            eye.right * (.035f * fullDraw) +
+            eye.up * (.025f * fullDraw);
+
+        // Additional idle cant gives a more recognizable lower-ready pose;
+        // when aiming, return to the existing -8 degree base cant.
+        bowRotation *= Quaternion.Euler(0f, 0f,
+            Mathf.Lerp(-11f, 0f, raised) + 2f * fullDraw);
     }
 
     private void Shoot(Vector3 origin, Vector3 rawAim, float draw, bool stable)
@@ -1461,6 +1517,7 @@ public class JemparinganGame : MonoBehaviour
         // camera on top of the main view or mouse-look locked.
         if (_arrowCam != null) _arrowCam.Stop();
         _restoreAfterArrowCam = false;
+        _modernRaisedPose = 0f;
         for (int i = 0; i < _arrows.Length; i++) _arrows[i].Cancel();
         _shots = _hits = _score = _combo = _poolCursor = 0;
         _bullseyes = _bestCombo = _rasaHits = _rasaBonus = 0;
