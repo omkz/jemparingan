@@ -41,7 +41,9 @@ public class JemparinganGame : MonoBehaviour
     // Keep Inspector values from the first-shot prototype after renaming.
     [SerializeField, UnityEngine.Serialization.FormerlySerializedAs("challengeFirstShotArrowCam")]
     private bool challengeEveryShotArrowCam = true;
-    private JemparinganArrowFollowCamera _challengeArrowCam;
+    [Header("Experimental Modern Arrow Cam (desktop only)")]
+    [SerializeField] private bool modernEveryShotArrowCam = true;
+    private JemparinganArrowFollowCamera _arrowCam;
     private bool _restoreAfterArrowCam;
 
     private JemparinganChallengeRules.MissionId _activeChallengeMission = JemparinganChallengeRules.MissionId.Precision;
@@ -328,7 +330,7 @@ public class JemparinganGame : MonoBehaviour
 
         // Bottom hint bar
         GUI.Label(new Rect(16f, Screen.height - 34f, 360f, 24f),
-            _challengeArrowCam != null && _challengeArrowCam.IsActive
+            _arrowCam != null && _arrowCam.IsActive
                 ? "ARROW CAM   |   ESC: SKIP"
                 : "R: Retry   |   C: Missions   |   M: Main Modes", GUI.skin.box);
     }
@@ -410,7 +412,9 @@ public class JemparinganGame : MonoBehaviour
             "Rings: 10  /  8  /  6  /  4  /  2");
         GUI.Label(new Rect(16f, Screen.height - 34f,
             Mathf.Min(620f, Screen.width - 32f), 24f),
-            "LMB DRAW  |  RMB AIM  |  SHIFT FINE  |  R RETRY  |  M MODES",
+            _arrowCam != null && _arrowCam.IsActive
+                ? "ARROW CAM  |  ESC SKIP  |  R RETRY  |  M MODES"
+                : "LMB DRAW  |  RMB AIM  |  SHIFT FINE  |  R RETRY  |  M MODES",
             GUI.skin.box);
     }
 
@@ -652,12 +656,12 @@ public class JemparinganGame : MonoBehaviour
             ResetRound();
             _awaitStringRelease = stringWasHeld;
         }
-        // During a Challenge Arrow Cam shot, the real projectile continues
+        // During Challenge or Modern Arrow Cam, the real projectile continues
         // its normal lifecycle. Pause only the player's draw/aim update.
-        if (_challengeArrowCam != null && _challengeArrowCam.IsActive)
+        if (_arrowCam != null && _arrowCam.IsActive)
         {
             if (UsesDesktopInput() && Input.GetKeyDown(KeyCode.Escape))
-                _challengeArrowCam.Stop();
+                _arrowCam.Stop();
             else
                 return;
         }
@@ -1006,16 +1010,20 @@ public class JemparinganGame : MonoBehaviour
                 OnArrowImpact, OnArrowMiss,
                 useOutdoorEnvironment ? outdoorArrowLifetime : 1.6f);
         }
-        // Experimental desktop-only Arrow Cam on every Challenge shot.
-        // Never activate for Classic, Traditional or VR, and never replace an
-        // existing active follow (e.g. an automated test fires twice quickly).
-        if (IsChallengeMode() && UsesDesktopInput() && challengeEveryShotArrowCam &&
-            !_challengeInMissionSelect && desktopInput != null && Camera.main != null)
+        // Follow every real projectile in Challenge and Modern on desktop.
+        // Separate Inspector toggles allow testing each mode independently.
+        // Classic, Traditional and VR never switch cameras.
+        bool useArrowCam = (IsChallengeMode() && challengeEveryShotArrowCam &&
+            !_challengeInMissionSelect) ||
+            (IsModernMode() && modernEveryShotArrowCam);
+        if (useArrowCam && UsesDesktopInput() &&
+            desktopInput != null && Camera.main != null)
         {
-            if (_challengeArrowCam == null)
-                _challengeArrowCam = gameObject.AddComponent<JemparinganArrowFollowCamera>();
-            if (!_challengeArrowCam.IsActive &&
-                _challengeArrowCam.Begin(arrow, Camera.main, desktopInput))
+            if (_arrowCam == null)
+                _arrowCam = gameObject.AddComponent<JemparinganArrowFollowCamera>();
+            // Do not steal an existing follow during an automated rapid-fire test.
+            if (!_arrowCam.IsActive &&
+                _arrowCam.Begin(arrow, Camera.main, desktopInput))
                 _restoreAfterArrowCam = true;
         }
         _shots++;
@@ -1409,7 +1417,7 @@ public class JemparinganGame : MonoBehaviour
     {
         // A retry, mode switch or mission switch must never leave a cinematic
         // camera on top of the main view or mouse-look locked.
-        if (_challengeArrowCam != null) _challengeArrowCam.Stop();
+        if (_arrowCam != null) _arrowCam.Stop();
         _restoreAfterArrowCam = false;
         for (int i = 0; i < _arrows.Length; i++) _arrows[i].Cancel();
         _shots = _hits = _score = _combo = _poolCursor = 0;
