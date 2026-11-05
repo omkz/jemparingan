@@ -194,20 +194,27 @@ public class JemparinganGame : MonoBehaviour
 #endif
     }
 
-    // RMB is for precise aiming AFTER full draw, not a second draw button.
-    // The camera's axis marker is a calibration tool, not a ballistic sight.
+    // LMB alone holds the string and aims with the mouse. Once the fast
+    // draw animation reaches full power, settle into the calibrated sight.
+    // The axis marker is a temporary debug reference, not a ballistic sight.
+    private void SetModernDesktopMouseControl(bool enabled)
+    {
+        if (desktopInput != null)
+            desktopInput.ModernSingleButtonAim = enabled && UsesDesktopInput();
+    }
+
     private bool ModernPrecisionAimRequested()
     {
         return _modeChosen && IsModernMode() && UsesDesktopInput() &&
             modernViewmodelRigV2 && modernUseReferenceFraming &&
             !_finished && !_roundOver && !_awaitStringRelease &&
             (_arrowCam == null || !_arrowCam.IsActive) &&
-            Input.GetMouseButton(0) && Input.GetMouseButton(1) &&
+            Input.GetMouseButton(0) &&
             _modernDrawPower >= modernPrecisionDrawThreshold;
     }
 
-    // Zoom only after full draw + RMB. This changes projection, but never
-    // the underlying mouse aim direction or the real projectile path.
+    // Zoom after held LMB reaches full draw. No RMB modifier is required.
+    // Changes projection, not the real projectile path or camera aim direction.
     private void UpdateModernCameraFov()
     {
         if (!UsesDesktopInput() || _playerCamera == null) return;
@@ -228,6 +235,7 @@ public class JemparinganGame : MonoBehaviour
     private void OnDisable()
     {
         RestoreModernCameraFov();
+        SetModernDesktopMouseControl(false);
     }
 
     private IEnumerator Start()
@@ -492,14 +500,12 @@ public class JemparinganGame : MonoBehaviour
         GUI.Label(new Rect(hud.x + 12f, hud.y + 82f, 285f, 21f),
             "Rings: 10  /  8  /  6  /  4  /  2");
         bool precision = ModernPrecisionAimRequested();
-        string aimState = precision ? "AIM READY - RMB + FULL DRAW" :
+        string aimState = precision ? "FULL DRAW - MOVE MOUSE TO AIM" :
             (!modernViewmodelRigV2 || !modernUseReferenceFraming)
-                ? "V1 VIEW - PRESS V FOR PRECISION AIM"
+                ? "V1 VIEW - LMB AIM AND RELEASE TO SHOOT"
                 : Input.GetMouseButton(0)
-                ? (_modernDrawPower >= modernPrecisionDrawThreshold
-                    ? "FULL DRAW - HOLD RMB TO AIM"
-                    : "DRAW TO FULL POWER BEFORE AIMING")
-                : "READY - HOLD LMB TO DRAW";
+                    ? "DRAWING - KEEP LMB HELD TO AIM"
+                    : "READY - HOLD LMB TO DRAW AND AIM";
         GUI.Label(new Rect(hud.x + 12f, hud.y + 103f, 300f, 21f), aimState);
         if (precision && modernDebugCameraCrosshair)
             DrawModernDebugCrosshair();
@@ -507,7 +513,7 @@ public class JemparinganGame : MonoBehaviour
             Mathf.Min(720f, Screen.width - 32f), 24f),
             _arrowCam != null && _arrowCam.IsActive
                 ? "ARROW CAM  |  ESC SKIP  |  R RETRY  |  M MODES"
-                : "LMB DRAW  |  RMB FULL-DRAW AIM  |  G SIGHT DEBUG  |  V VIEW  |  R RETRY  |  M MODES",
+                : "HOLD LMB + MOVE MOUSE TO AIM  |  RELEASE TO SHOOT  |  SHIFT FINE  |  G DEBUG  |  V VIEW",
             GUI.skin.box);
     }
 
@@ -583,6 +589,7 @@ public class JemparinganGame : MonoBehaviour
     {
         _mode = GameMode.Modern;
         _modeChosen = true;
+        SetModernDesktopMouseControl(true);
         _challengeInMissionSelect = false;
         arrowsPerRound = modernArrowCount;
         _desktopTrainingEnabled = false;
@@ -606,6 +613,7 @@ public class JemparinganGame : MonoBehaviour
     {
         if (!useOutdoorEnvironment || !_ready) return;
         RestoreModernCameraFov();
+        SetModernDesktopMouseControl(false);
         _mode = next;
         _modeChosen = true;
         // Return every shared scene element to its original state before
@@ -672,6 +680,7 @@ public class JemparinganGame : MonoBehaviour
 
     public void StartChallengeMission(JemparinganChallengeRules.MissionId missionId)
     {
+        SetModernDesktopMouseControl(false);
         _mode = GameMode.Challenge;
         _modeChosen = true;
         _challengeInMissionSelect = false;
@@ -698,6 +707,7 @@ public class JemparinganGame : MonoBehaviour
     public void ReturnToModeSelect()
     {
         RestoreModernCameraFov();
+        SetModernDesktopMouseControl(false);
         if (_modernTargetsRoot != null)
             _modernTargetsRoot.gameObject.SetActive(false);
         if (_target != null) _target.gameObject.SetActive(true);
@@ -717,6 +727,7 @@ public class JemparinganGame : MonoBehaviour
 
     public void ReturnToChallengeSelect()
     {
+        SetModernDesktopMouseControl(false);
         _mode = GameMode.Challenge;
         _modeChosen = true;
         _challengeInMissionSelect = true;
@@ -1177,8 +1188,9 @@ public class JemparinganGame : MonoBehaviour
         bool drawing, float drawPower, ref Vector3 visualBowPosition,
         ref Quaternion bowRotation)
     {
-        // Draw raises the bow. RMB alone cannot enter the final aim pose;
-        // holding RMB at full draw settles the bow onto the sight axis.
+        // LMB raises the bow. As its quick draw animation completes, settle
+        // automatically onto the calibrated sight axis; mouse look works
+        // throughout the hold without RMB.
         _modernRaisedPose = Mathf.MoveTowards(_modernRaisedPose,
             drawing ? 1f : 0f, modernPoseTransitionSpeed * Time.deltaTime);
         float raised = Mathf.SmoothStep(0f, 1f, _modernRaisedPose);
@@ -1195,9 +1207,9 @@ public class JemparinganGame : MonoBehaviour
             SolveModernScreenshotBowPose(_playerCamera, out aimPose,
                 out referenceAimRotation, out _modernReferenceCalculatedScale);
         }
-        // Full-draw without RMB is a pre-aim hold: still slightly outside
-        // the calibrated sightline. Precision RMB moves it to the exact
-        // screenshot-framed aimPose, so the final reference stays stable.
+        // While drawing, hold the grip just outside the calibrated sightline.
+        // Completing the pull moves it into the exact screenshot-framed aim
+        // pose automatically, without a separate aiming button.
         Vector3 preAimPose = modernUseReferenceFraming
             ? aimPose + eye.right * modernPreAimRightShift -
                 eye.up * modernPreAimLowering
