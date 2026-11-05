@@ -29,7 +29,9 @@ public class JemparinganGame : MonoBehaviour
         JemparinganChallengeRules.MissionId.Precision;
 
     [Header("Experimental Challenge Arrow Cam (desktop only)")]
-    [SerializeField] private bool challengeFirstShotArrowCam = true;
+    // Keep Inspector values from the first-shot prototype after renaming.
+    [SerializeField, UnityEngine.Serialization.FormerlySerializedAs("challengeFirstShotArrowCam")]
+    private bool challengeEveryShotArrowCam = true;
     private JemparinganArrowFollowCamera _challengeArrowCam;
     private bool _restoreAfterArrowCam;
 
@@ -508,10 +510,8 @@ public class JemparinganGame : MonoBehaviour
             ResetRound();
             _awaitStringRelease = stringWasHeld;
         }
-        // Challenge medals must not be earned with toggleable desktop
-        // training aid; Classic and Traditional retain their existing T key.
-        // During the first-shot cinematic, the real projectile continues its
-        // normal lifecycle. Pause only the player's draw/aim update.
+        // During a Challenge Arrow Cam shot, the real projectile continues
+        // its normal lifecycle. Pause only the player's draw/aim update.
         if (_challengeArrowCam != null && _challengeArrowCam.IsActive)
         {
             if (UsesDesktopInput() && Input.GetKeyDown(KeyCode.Escape))
@@ -853,15 +853,17 @@ public class JemparinganGame : MonoBehaviour
         arrow.StableRelease = stable;
         arrow.Launch(origin, aim * speed, simulatedGravity, _target, OnArrowImpact, OnArrowMiss,
             useOutdoorEnvironment ? outdoorArrowLifetime : 1.6f);
-        // One experimental cinematic per Challenge attempt: the very first
-        // projectile only. Never activate for Classic, Traditional or VR.
-        if (IsChallengeMode() && UsesDesktopInput() && challengeFirstShotArrowCam &&
-            _shots == 0 && !_challengeInMissionSelect && desktopInput != null &&
-            Camera.main != null)
+        // Experimental desktop-only Arrow Cam on every Challenge shot.
+        // Never activate for Classic, Traditional or VR, and never replace an
+        // existing active follow (e.g. an automated test fires twice quickly).
+        if (IsChallengeMode() && UsesDesktopInput() && challengeEveryShotArrowCam &&
+            !_challengeInMissionSelect && desktopInput != null && Camera.main != null)
         {
             if (_challengeArrowCam == null)
                 _challengeArrowCam = gameObject.AddComponent<JemparinganArrowFollowCamera>();
-            _restoreAfterArrowCam = _challengeArrowCam.Begin(arrow, Camera.main, desktopInput);
+            if (!_challengeArrowCam.IsActive &&
+                _challengeArrowCam.Begin(arrow, Camera.main, desktopInput))
+                _restoreAfterArrowCam = true;
         }
         _shots++;
         _audio.PlayOneShot(_shotSound, 0.48f);
