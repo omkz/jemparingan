@@ -200,7 +200,7 @@ public class JemparinganGame : MonoBehaviour
     {
         return _modeChosen && IsModernMode() && UsesDesktopInput() &&
             modernViewmodelRigV2 && modernUseReferenceFraming &&
-            !_finished && !_roundOver &&
+            !_finished && !_roundOver && !_awaitStringRelease &&
             (_arrowCam == null || !_arrowCam.IsActive) &&
             Input.GetMouseButton(0) && Input.GetMouseButton(1) &&
             _modernDrawPower >= modernPrecisionDrawThreshold;
@@ -212,7 +212,10 @@ public class JemparinganGame : MonoBehaviour
     {
         if (!UsesDesktopInput() || _playerCamera == null) return;
         bool zoom = ModernPrecisionAimRequested();
-        float targetFov = zoom ? modernReferenceAimFov : _playerBaseFov;
+        // A customized scene with a narrower base FOV must never zoom out.
+        float targetFov = zoom
+            ? Mathf.Min(modernReferenceAimFov, _playerBaseFov)
+            : _playerBaseFov;
         _playerCamera.fieldOfView = Mathf.MoveTowards(
             _playerCamera.fieldOfView, targetFov, 48f * Time.deltaTime);
     }
@@ -490,7 +493,9 @@ public class JemparinganGame : MonoBehaviour
             "Rings: 10  /  8  /  6  /  4  /  2");
         bool precision = ModernPrecisionAimRequested();
         string aimState = precision ? "AIM READY - RMB + FULL DRAW" :
-            Input.GetMouseButton(0)
+            (!modernViewmodelRigV2 || !modernUseReferenceFraming)
+                ? "V1 VIEW - PRESS V FOR PRECISION AIM"
+                : Input.GetMouseButton(0)
                 ? (_modernDrawPower >= modernPrecisionDrawThreshold
                     ? "FULL DRAW - HOLD RMB TO AIM"
                     : "DRAW TO FULL POWER BEFORE AIMING")
@@ -1064,6 +1069,7 @@ public class JemparinganGame : MonoBehaviour
     {
         _wasDrawing = _wasBowHeld = false;
         _lastDraw = 0f;
+        _modernDrawPower = 0f;
         ClearFocus();
         _drawStartedAt = 0f;
         _lastPowerStep = -1;
