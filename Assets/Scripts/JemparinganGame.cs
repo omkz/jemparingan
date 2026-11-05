@@ -974,8 +974,17 @@ public class JemparinganGame : MonoBehaviour
         _poolCursor = (_poolCursor + 1) % _arrows.Length;
         // Stability is captured on the arrow so it survives subsequent shots.
         arrow.StableRelease = stable;
-        arrow.Launch(origin, aim * speed, simulatedGravity, _target, OnArrowImpact, OnArrowMiss,
-            useOutdoorEnvironment ? outdoorArrowLifetime : 1.6f);
+        if (IsModernMode())
+        {
+            arrow.Launch(origin, aim * speed, simulatedGravity, null, null, OnArrowMiss,
+                outdoorArrowLifetime, _modernTargets, OnModernArrowImpact);
+        }
+        else
+        {
+            arrow.Launch(origin, aim * speed, simulatedGravity, _target,
+                OnArrowImpact, OnArrowMiss,
+                useOutdoorEnvironment ? outdoorArrowLifetime : 1.6f);
+        }
         // Experimental desktop-only Arrow Cam on every Challenge shot.
         // Never activate for Classic, Traditional or VR, and never replace an
         // existing active follow (e.g. an automated test fires twice quickly).
@@ -1010,6 +1019,9 @@ public class JemparinganGame : MonoBehaviour
     // visible bandulan (not above it); the training guide compensates drop.
     private Vector3 GetAssistedAim(Vector3 origin, Vector3 aim, float speed)
     {
+        // Ring scoring is based on where the actual flight intersects each
+        // circle; the hidden bandulan must never magnetize Modern shots.
+        if (IsModernMode()) return aim;
         if (_target == null || aimAssist <= 0f) return aim;
 
         if (IsDesktopTrainingAimActive())
@@ -1079,6 +1091,24 @@ public class JemparinganGame : MonoBehaviour
         return true;
     }
 
+
+    private void OnModernArrowImpact(JemparinganArrow arrow,
+        JemparinganModernTarget target, int points)
+    {
+        if (!IsModernMode()) return;
+        _hits++;
+        _score += points;
+        if (points == 10) _bullseyes++;
+        _best = Mathf.Max(_best, _score);
+        if (_audio != null)
+            _audio.PlayOneShot(points == 10 ? _bullseyeSound : _hitSound,
+                points == 10 ? .54f : .45f);
+        ShowFeedback("TARGET " + target.TargetNumber + "  |  +" + points +
+            (points == 10 ? "  BULLSEYE!" : "  POINTS"),
+            points == 10 ? new Color(.98f, .81f, .40f) :
+            new Color(.40f, .94f, .75f));
+        UpdateHUD();
+    }
 
     private void OnArrowImpact(JemparinganArrow arrow, bool bullseye)
     {
@@ -1236,7 +1266,15 @@ public class JemparinganGame : MonoBehaviour
 
         if (_resultsPanel != null)
         {
-            if (IsChallengeMode())
+            if (IsModernMode())
+            {
+                // Modern results are shown through the desktop HUD. Avoid
+                // duplicating them with the existing world-space panel.
+                _resultsPanel.SetActive(false);
+                _scoreLabel.text = "MODERN COMPLETE  |  SCORE " + _score;
+                if (_phaseLabel != null) _phaseLabel.text = "ROUND COMPLETE";
+            }
+            else if (IsChallengeMode())
             {
                 var config = ActiveChallengeConfig();
                 var medal = config.Evaluate(_challengeObjectiveHits);
@@ -1366,6 +1404,13 @@ public class JemparinganGame : MonoBehaviour
             var config = ActiveChallengeConfig();
             _target.SetSway(config.TargetSway, config.TargetSpeed, true);
         }
+        else if (IsModernMode())
+        {
+            _target.SetSway(0f, 0f, true);
+            if (_modernTargets != null)
+                foreach (JemparinganModernTarget target in _modernTargets)
+                    if (target != null) target.ResetReaction();
+        }
         else
         {
             _target.SetSway(IsTraditionalMode() ? 0f :
@@ -1378,9 +1423,9 @@ public class JemparinganGame : MonoBehaviour
         HidePreview();
         if (_impactLabel != null) _impactLabel.text = "";
         _impactLabelUntil = 0f;
-        ShowFeedback(IsChallengeMode() ?
-            ActiveChallengeConfig().Name.ToUpper() + "  •  FOCUS" :
-            (IsTraditionalMode() ? "TRADITIONAL  •  FOCUS" : "ROUND I  •  CALM"));
+        ShowFeedback(IsModernMode() ? "MODERN ARCHERY  •  RING TARGETS" :
+            (IsChallengeMode() ? ActiveChallengeConfig().Name.ToUpper() + "  •  FOCUS" :
+            (IsTraditionalMode() ? "TRADITIONAL  •  FOCUS" : "ROUND I  •  CALM")));
         UpdateIntroMode();
         UpdateHUD();
     }
@@ -1388,6 +1433,13 @@ public class JemparinganGame : MonoBehaviour
     private void UpdateIntroMode()
     {
         if (_introGoalLabel == null || _introTitleLabel == null) return;
+        if (IsModernMode())
+        {
+            _introTitleLabel.text = "MODERN ARCHERY  /  THREE TARGET RANGE";
+            _introGoalLabel.text = arrowsPerRound +
+                " ARROWS  |  RINGS: 10 / 8 / 6 / 4 / 2";
+            return;
+        }
         if (IsChallengeMode())
         {
             var config = ActiveChallengeConfig();
@@ -1405,7 +1457,16 @@ public class JemparinganGame : MonoBehaviour
 
     private void UpdateHUD()
     {
-        if (IsChallengeMode())
+        if (IsModernMode())
+        {
+            if (_scoreLabel != null)
+                _scoreLabel.text = "MODERN  |  SCORE " + _score +
+                    "  |  HITS " + _hits + "  |  ARROWS " +
+                    _shots + "/" + arrowsPerRound;
+            if (_phaseLabel != null && !_finished)
+                _phaseLabel.text = "3 TARGETS  •  RINGS 10 / 8 / 6 / 4 / 2";
+        }
+        else if (IsChallengeMode())
         {
             var config = ActiveChallengeConfig();
             var medal = config.Evaluate(_challengeObjectiveHits);
@@ -1457,7 +1518,7 @@ public class JemparinganGame : MonoBehaviour
                 JemparinganArt.Tone.Gold : JemparinganArt.Tone.Paper;
             int activeStage = Mathf.Min(_shots / JemparinganScoreRules.ArrowsPerStage,
                 (arrowsPerRound - 1) / JemparinganScoreRules.ArrowsPerStage);
-            bool inStage = IsTraditionalMode() || IsChallengeMode() ||
+            bool inStage = IsTraditionalMode() || IsChallengeMode() || IsModernMode() ||
                 i / JemparinganScoreRules.ArrowsPerStage == activeStage;
             if (!_finished && i >= _shots && inStage) tone = JemparinganArt.Tone.Jade;
             pip.sharedMaterial = JemparinganArt.Material(tone);
@@ -1469,7 +1530,9 @@ public class JemparinganGame : MonoBehaviour
         {
             // Keep first-person VR hints short enough to fit the readable lower panel.
             if (value.StartsWith("READY") || value.StartsWith("Hold left mouse"))
-                value = IsChallengeMode()
+                value = IsModernMode()
+                    ? "RINGS: GOLD 10  RED 8  BLUE 6  BLACK 4  WHITE 2"
+                    : IsChallengeMode()
                     ? ActiveChallengeConfig().GetThresholdsText().ToUpper()
                     : (IsTraditionalMode()
                         ? "RED 3  |  YELLOW 2  |  WHITE 1"
@@ -1576,8 +1639,10 @@ public class JemparinganGame : MonoBehaviour
         Vector3 velocity = GetAssistedAim(origin, rawAim, speed) * speed;
         for (int i = 0; i < _previewDots.Length; i++)
         {
-            float previewDuration = useOutdoorEnvironment && _target != null
-                ? Mathf.Clamp(Vector3.Distance(origin, _target.transform.position) /
+            Transform previewTarget = IsModernMode() && _modernTargets != null
+                ? _modernTargets[1].transform : (_target != null ? _target.transform : null);
+            float previewDuration = useOutdoorEnvironment && previewTarget != null
+                ? Mathf.Clamp(Vector3.Distance(origin, previewTarget.position) /
                     Mathf.Max(1f, speed), 0.52f, 2.5f)
                 : 0.52f;
             float t = (i + 1) * (previewDuration / _previewDots.Length);
