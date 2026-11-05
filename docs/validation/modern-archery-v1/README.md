@@ -210,6 +210,60 @@ not equivalent to a full dual-camera viewmodel setup.
    Inspector tuning. Unity compilation and Play Mode are **not yet run**
    for this GitHub-only code change.
 
+## FPS bow pose pass — idle → drawing → full draw
+
+Modern now uses a **three-state first-person presentation** when the
+existing v2 viewmodel toggle is enabled. This is informed by readable FPS
+archery framing (such as Far Cry 4) without copying art or animation from a
+commercial game. It uses the existing Jemparingan procedural bow and hands.
+
+- **Idle / lowered ready:** without LMB or RMB, the visual bow is an extra
+  0.22m right, 0.22m down, and 0.08m forward from its v2 aiming offset.
+  It is held at 90% of the tuned visual scale and canted slightly more.
+- **Drawing / raising:** on LMB draw or RMB aim, the cosmetic bow eases
+  upward and inward toward the aiming lane. The transition is driven by
+  `modernPoseTransitionSpeed` (default 4.8 blend units per second).
+  The existing bowstring and right-hand mesh continue to follow actual
+  input draw progress.
+- **Full draw / settle:** above roughly mid-draw, the bow moves another
+  0.035m inward and 0.025m up and slightly straightens. The transition
+  peaks near full draw; this only affects visual composition.
+- **Release / return:** with LMB and RMB released, the visual bow eases
+  back to the lower-ready pose. Arrow Cam retains its original behavior.
+
+**Controls:** V still compares the original static v1 framing with the
+new animated v2 framing. Inspector values
+`modernIdleRightShift`, `modernIdleLowering`,
+`modernIdleForwardShift`, `modernIdleBowScale`, and
+`modernPoseTransitionSpeed` tune the idle-to-aim transition.
+
+Crucially, the player's Main Camera/FOV, original gameplay bow anchor,
+aim trajectory, shot timing, draw strength, projectile spawn/velocity,
+scoring, targets and other game modes are unchanged. This is an
+**animated viewmodel**, not a skeletal anatomical rig or dual-camera
+render layer.
+
+### Visual QA (Unity Play Mode required)
+
+1. Enter Modern with v2 on, do not press LMB/RMB. Confirm bow is lowered
+   and partially to the right, leaving all three target centers clear.
+2. Hold RMB without LMB: bow should raise smoothly to the sightline and
+   return to low-ready when released; **no shot** should fire.
+3. Hold LMB: bow raises, right-hand fingers follow the string. At half and
+   full draw, the bow settles slightly into the final aiming position.
+4. Release LMB: one projectile per release, Arrow Cam still starts, and
+   camera/look returns normally; bow lowers afterward.
+5. While idle and at full draw, toggle V: old static view vs new animated
+   view should be noticeably different without target/world camera movement.
+6. Aim left/right/up/down, resize the Game View, and fire at each target:
+   no obstruction, floating wrist, near-clip blowup, or altered hit results.
+7. Retry (R), return to modes (M), switch Traditional/Challenge/Classic,
+   and switch back. Their existing bows and hands must be unchanged.
+8. Run Tools > Jemparingan > Run Gameplay QA v0.9 and inspect Console.
+
+This code was checked statically through GitHub, **not** compiled or
+rendered by the Unity Editor in this change.
+
 ## Validate in Unity
 
 This document records a **test plan**, not a claim that Unity Play Mode
