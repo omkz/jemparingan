@@ -255,7 +255,11 @@ public class JemparinganGame : MonoBehaviour
                 ChooseMode(GameMode.Challenge);
             else if (initialOutdoorMode == GameMode.Modern)
                 ChooseMode(GameMode.Modern);
-            if (UsesDesktopInput()) _modeChosen = false;
+            if (UsesDesktopInput())
+            {
+                _modeChosen = false;
+                SetModernDesktopMouseControl(false);
+            }
         }
     }
 
@@ -1734,6 +1738,9 @@ public class JemparinganGame : MonoBehaviour
         _modernPrecisionPose = 0f;
         _modernDrawPower = 0f;
         RestoreModernCameraFov();
+        // Retry restores current mode's mouse scheme. Mode changes
+        // already clear Modern input before switching gameplay.
+        SetModernDesktopMouseControl(_modeChosen && IsModernMode());
         for (int i = 0; i < _arrows.Length; i++) _arrows[i].Cancel();
         _shots = _hits = _score = _combo = _poolCursor = 0;
         _bullseyes = _bestCombo = _rasaHits = _rasaBonus = 0;
