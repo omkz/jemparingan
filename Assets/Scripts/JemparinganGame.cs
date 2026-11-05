@@ -24,6 +24,9 @@ public class JemparinganGame : MonoBehaviour
     [Header("Challenge Mode tuning")]
     [SerializeField, Range(0.02f, 0.20f)] private float movingChallengeSway = 0.08f;
     [SerializeField, Range(0.3f, 2.5f)] private float movingChallengeSpeed = 0.9f;
+    // Quest/non-desktop has no IMGUI mission picker; start this mission directly.
+    [SerializeField] private JemparinganChallengeRules.MissionId nonDesktopChallengeMission =
+        JemparinganChallengeRules.MissionId.Precision;
 
     private JemparinganChallengeRules.MissionId _activeChallengeMission = JemparinganChallengeRules.MissionId.Precision;
     private bool _challengeInMissionSelect;
@@ -238,7 +241,9 @@ public class JemparinganGame : MonoBehaviour
             StartChallengeMission(JemparinganChallengeRules.MissionId.Precision);
 
         // Column 2: Moving Target
-        var movConfig = ActiveChallengeConfig();
+        var movConfig = JemparinganChallengeRules.GetConfig(
+            JemparinganChallengeRules.MissionId.MovingTarget,
+            movingChallengeSway, movingChallengeSpeed);
         var movBest = JemparinganChallengeRules.LoadBestMedal(JemparinganChallengeRules.MissionId.MovingTarget);
         Rect col2 = new Rect(panel.x + 30f + colWidth, panel.y + 82f, colWidth, 220f);
         GUI.Box(col2, "");
@@ -361,6 +366,14 @@ public class JemparinganGame : MonoBehaviour
 
         if (_mode == GameMode.Challenge)
         {
+            // Only desktop has an IMGUI mission picker. On Quest/non-desktop,
+            // launch the Inspector-selected mission rather than getting stuck
+            // in a selection state with no interaction path.
+            if (!UsesDesktopInput())
+            {
+                StartChallengeMission(nonDesktopChallengeMission);
+                return;
+            }
             _challengeInMissionSelect = true;
             if (_classicBandulanVisual != null) _classicBandulanVisual.SetActive(false);
             if (_traditionalBandulanVisual != null) _traditionalBandulanVisual.SetActive(true);
@@ -488,7 +501,9 @@ public class JemparinganGame : MonoBehaviour
             ResetRound();
             _awaitStringRelease = stringWasHeld;
         }
-        if (useOutdoorEnvironment && UsesDesktopInput() &&
+        // Challenge medals must not be earned with toggleable desktop
+        // training aid; Classic and Traditional retain their existing T key.
+        if (useOutdoorEnvironment && UsesDesktopInput() && !IsChallengeMode() &&
             Input.GetKeyDown(KeyCode.T))
         {
             _desktopTrainingEnabled = !_desktopTrainingEnabled;
