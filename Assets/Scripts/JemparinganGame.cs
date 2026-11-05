@@ -22,7 +22,8 @@ public class JemparinganGame : MonoBehaviour
     private Renderer[] _seatedBodyRenderers;
     private Transform _modernTargetsRoot, _bandulanSuspension;
     private JemparinganModernTarget[] _modernTargets;
-    [SerializeField, Range(6, 30)] private int modernArrowCount = 12;
+    // Reuse the outdoor scene's 16-shot arrow and HUD pool.
+    [SerializeField, Range(6, 16)] private int modernArrowCount = 12;
     private TextMesh _introGoalLabel, _introTitleLabel;
 
     [Header("Challenge Mode tuning")]
