@@ -42,17 +42,16 @@ public class JemparinganGame : MonoBehaviour
     [SerializeField, Range(.50f, 1.30f)] private float modernRightHandScale = .92f;
 
     [Header("Modern screenshot calibration (desktop only)")]
-    // Measured approximate points from the provided 1493x893 screenshot:
-    // grip (827,652) -> viewport (.554,.270); projected upper tip
-    // (1082,-67) -> viewport (.725,1.075) (above top edge).
-    // Solve model scale AND cant from these landmarks and camera FOV/aspect.
+    // Preserve the screenshot's grip placement and projected bow height,
+    // but use a modest, fixed roll for modern target archery. The old
+    // landmark-derived ~17-degree lean looked excessive with a real sight.
     [SerializeField] private bool modernUseReferenceFraming = true;
     [SerializeField] private bool modernShowHands = false;
     [SerializeField, Range(.45f, .75f)] private float modernReferenceGripViewportX = .554f;
     [SerializeField, Range(.15f, .45f)] private float modernReferenceGripViewportY = .270f;
     [SerializeField, Range(.50f, .95f)] private float modernReferenceGripDepth = .70f;
-    [SerializeField, Range(.55f, .90f)] private float modernReferenceTipViewportX = .725f;
     [SerializeField, Range(.90f, 1.30f)] private float modernReferenceTipViewportY = 1.075f;
+    [SerializeField, Range(-12f, 12f)] private float modernBowCantDegrees = -6f;
     [SerializeField, Range(48f, 75f)] private float modernReferenceAimFov = 60f;
     [Header("Modern full-draw then precision aim (desktop only)")]
     [SerializeField, Range(.80f, 1f)] private float modernPrecisionDrawThreshold = .96f;
@@ -798,6 +797,8 @@ public class JemparinganGame : MonoBehaviour
                 modernViewmodelRigV2 = !modernViewmodelRigV2;
                 _modernRaisedPose = Input.GetMouseButton(0) ? 1f : 0f;
                 _modernPrecisionPose = 0f;
+                if (_modernPhysicalSight != null)
+                    _modernPhysicalSight.ResetCalibration();
                 RestoreModernCameraFov();
                 ShowFeedback(modernViewmodelRigV2
                     ? "MODERN FPS POSES  |  IDLE / DRAW / AIM"
@@ -1288,64 +1289,49 @@ public class JemparinganGame : MonoBehaviour
             visualBowPosition += -eye.right * (.035f * fullDraw) +
                 eye.up * (.025f * fullDraw);
 
-        // The full-aim screenshot reference has a measured -16° to -17°
-        // cant, not the previous fixed -8°. Its exact value follows from
-        // the viewport tip landmark and changes with the camera aspect.
+        // Modern target archery keeps the riser nearly upright at full
+        // draw (~6 degrees), with only a little extra relaxed cant at idle.
+        // The camera/aim and actual launch direction are still independent.
         if (modernUseReferenceFraming)
             bowRotation = referenceAimRotation *
                 Quaternion.Euler(0f, 0f,
-                    Mathf.Lerp(-10f, 0f, raised) +
-                    Mathf.Lerp(-3f, 0f, precision));
+                    Mathf.Lerp(-4f, 0f, raised) +
+                    Mathf.Lerp(-2f, 0f, precision));
         else
             bowRotation *= Quaternion.Euler(0f, 0f,
                 Mathf.Lerp(-11f, 0f, raised) + 2f * fullDraw);
     }
 
-    // Given camera projection and the bow's actual local upper tip, solve
-    // the scale s and roll alpha that put BOTH the grip and upper tip at
-    // screenshot landmarks. Orthographic/approximate offsets aren't enough.
-    //
-    // Let kY=2*tan(verticalFOV/2), kX=kY*aspect and depth=d. For each
-    // projected axis the tip displacement after scaling is:
-    //   s * rotatedTipAxis = A + s*B
-    //   A = (tipViewport-gripViewport)*k*d
-    //   B = (tipViewport-.5)*k*localTipZ
-    // A rotation preserves |tipXY|, so with q=1/s:
-    //   |A|^2*q^2 + 2(A·B)*q + |B|^2-|tipXY|^2 = 0.
-    // Solve the positive root for q, then recover the roll from atan2.
+    // A realistic target-archery cant is a design choice, not something
+    // inferred from an older highly-canted screenshot. Keep the screenshot's
+    // grip and upper-tip HEIGHT, then solve scale at a fixed subtle roll.
+    // With dy = tipViewportY - gripViewportY, k=2*tan(FOV/2),
+    // scaledTipY/(depth + scaledTipZ) = dy*k.
+    // Thus scale = dy*k*depth/(rotatedTipY - dy*k*tipZ).
+    // The horizontal upper-tip landmark is intentionally released so that
+    // the top limb can straighten rather than being forced to lean right.
     private void SolveModernScreenshotBowPose(Camera camera,
         out Vector3 position, out Quaternion rotation, out float scale)
     {
         float depth = Mathf.Max(.40f, modernReferenceGripDepth);
-        float gripX = modernReferenceGripViewportX;
-        float gripY = modernReferenceGripViewportY;
-        float tipX = modernReferenceTipViewportX;
-        float tipY = modernReferenceTipViewportY;
         float kY = 2f * Mathf.Tan(camera.fieldOfView *
             Mathf.Deg2Rad * .5f);
-        float kX = kY * camera.aspect;
+        float deltaViewportY = modernReferenceTipViewportY -
+            modernReferenceGripViewportY;
         Vector3 localTip = JemparinganBowVisual.UpperTip;
-        float ax = (tipX - gripX) * kX * depth;
-        float ay = (tipY - gripY) * kY * depth;
-        float bx = (tipX - .5f) * kX * localTip.z;
-        float by = (tipY - .5f) * kY * localTip.z;
-        float a2 = Mathf.Max(.00001f, ax * ax + ay * ay);
-        float ab = ax * bx + ay * by;
-        float tipXY2 = localTip.x * localTip.x +
-            localTip.y * localTip.y;
-        float b2 = bx * bx + by * by;
-        float discriminant = Mathf.Max(0f,
-            ab * ab + a2 * (tipXY2 - b2));
-        float inverseScale = (-ab + Mathf.Sqrt(discriminant)) / a2;
-        scale = Mathf.Clamp(1f / Mathf.Max(.001f, inverseScale),
+        float roll = Mathf.Clamp(modernBowCantDegrees, -12f, 12f);
+        float radians = roll * Mathf.Deg2Rad;
+        float rotatedTipY = Mathf.Sin(radians) * localTip.x +
+            Mathf.Cos(radians) * localTip.y;
+        float numerator = deltaViewportY * kY * depth;
+        float denominator = rotatedTipY -
+            deltaViewportY * kY * localTip.z;
+        scale = Mathf.Clamp(numerator / Mathf.Max(.05f, denominator),
             .70f, 2f);
-        float projectedLocalX = ax / scale + bx;
-        float projectedLocalY = ay / scale + by;
-        float roll = (Mathf.Atan2(projectedLocalY, projectedLocalX) -
-            Mathf.Atan2(localTip.y, localTip.x)) * Mathf.Rad2Deg;
 
-        position = camera.ViewportToWorldPoint(
-            new Vector3(gripX, gripY, depth));
+        position = camera.ViewportToWorldPoint(new Vector3(
+            modernReferenceGripViewportX,
+            modernReferenceGripViewportY, depth));
         rotation = camera.transform.rotation *
             Quaternion.Euler(0f, 0f, roll);
     }
@@ -1788,6 +1774,8 @@ public class JemparinganGame : MonoBehaviour
         _modernPrecisionPose = 0f;
         _modernDrawPower = 0f;
         _modernSightZeroed = false;
+        if (_modernPhysicalSight != null)
+            _modernPhysicalSight.ResetCalibration();
         RestoreModernCameraFov();
         // Retry restores current mode's mouse scheme. Mode changes
         // already clear Modern input before switching gameplay.
@@ -2581,10 +2569,13 @@ public class JemparinganGame : MonoBehaviour
             modernUseReferenceFraming && modernUsePhysicalSight &&
             !_finished && !_roundOver &&
             (_arrowCam == null || !_arrowCam.IsActive);
-        // Adjust a bow-mounted pin only when the full-draw sight pose has
-        // practically settled. The mount/limbs themselves move with the bow.
-        bool calibrate = visible && ModernPrecisionAimRequested() &&
-            _modernPrecisionPose >= .95f;
+        // Sight-in ONCE at fully settled pose/FOV. The ring then has a
+        // constant bow-local transform; it never chases the camera frame.
+        bool lensSettled = _playerCamera != null &&
+            Mathf.Abs(_playerCamera.fieldOfView -
+                Mathf.Min(modernReferenceAimFov, _playerBaseFov)) < .15f;
+        bool calibrate = visible && lensSettled &&
+            ModernPrecisionAimRequested() && _modernPrecisionPose >= .98f;
         _modernPhysicalSight.Present(_playerCamera, visible, calibrate);
     }
 
