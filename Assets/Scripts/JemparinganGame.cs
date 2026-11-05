@@ -54,6 +54,14 @@ public class JemparinganGame : MonoBehaviour
     [SerializeField, Range(.55f, .90f)] private float modernReferenceTipViewportX = .725f;
     [SerializeField, Range(.90f, 1.30f)] private float modernReferenceTipViewportY = 1.075f;
     [SerializeField, Range(48f, 75f)] private float modernReferenceAimFov = 60f;
+    [Header("Modern full-draw then precision aim (desktop only)")]
+    [SerializeField, Range(.80f, 1f)] private float modernPrecisionDrawThreshold = .96f;
+    [SerializeField, Range(0f, .20f)] private float modernPreAimRightShift = .09f;
+    [SerializeField, Range(0f, .15f)] private float modernPreAimLowering = .055f;
+    [SerializeField, Range(2f, 14f)] private float modernPrecisionPoseSpeed = 7f;
+    [SerializeField] private bool modernDebugCameraCrosshair = true;
+    private float _modernDrawPower;
+    private float _modernPrecisionPose;
     private Camera _playerCamera;
     private float _playerBaseFov = 65f;
     private float _modernReferenceCalculatedScale = 1f;
@@ -186,15 +194,24 @@ public class JemparinganGame : MonoBehaviour
 #endif
     }
 
-    // Slight aiming zoom affects projection only, never camera rotation,
-    // physics, aim compensation or the real projectile trajectory.
+    // RMB is for precise aiming AFTER full draw, not a second draw button.
+    // The camera's axis marker is a calibration tool, not a ballistic sight.
+    private bool ModernPrecisionAimRequested()
+    {
+        return _modeChosen && IsModernMode() && UsesDesktopInput() &&
+            modernViewmodelRigV2 && modernUseReferenceFraming &&
+            !_finished && !_roundOver &&
+            (_arrowCam == null || !_arrowCam.IsActive) &&
+            Input.GetMouseButton(0) && Input.GetMouseButton(1) &&
+            _modernDrawPower >= modernPrecisionDrawThreshold;
+    }
+
+    // Zoom only after full draw + RMB. This changes projection, but never
+    // the underlying mouse aim direction or the real projectile path.
     private void UpdateModernCameraFov()
     {
         if (!UsesDesktopInput() || _playerCamera == null) return;
-        bool zoom = _modeChosen && IsModernMode() &&
-            modernViewmodelRigV2 && modernUseReferenceFraming &&
-            !_finished && (_arrowCam == null || !_arrowCam.IsActive) &&
-            (Input.GetMouseButton(0) || Input.GetMouseButton(1));
+        bool zoom = ModernPrecisionAimRequested();
         float targetFov = zoom ? modernReferenceAimFov : _playerBaseFov;
         _playerCamera.fieldOfView = Mathf.MoveTowards(
             _playerCamera.fieldOfView, targetFov, 48f * Time.deltaTime);
@@ -457,7 +474,7 @@ public class JemparinganGame : MonoBehaviour
 
     private void DrawModernInGameHUD()
     {
-        Rect hud = new Rect(16f, 16f, 314f, 116f);
+        Rect hud = new Rect(16f, 16f, 314f, 140f);
         GUI.Box(hud, "");
         GUIStyle title = new GUIStyle(GUI.skin.label);
         title.fontStyle = FontStyle.Bold;
@@ -471,12 +488,43 @@ public class JemparinganGame : MonoBehaviour
             " / " + arrowsPerRound + "   Hits: " + _hits);
         GUI.Label(new Rect(hud.x + 12f, hud.y + 82f, 285f, 21f),
             "Rings: 10  /  8  /  6  /  4  /  2");
+        bool precision = ModernPrecisionAimRequested();
+        string aimState = precision ? "AIM READY - RMB + FULL DRAW" :
+            Input.GetMouseButton(0)
+                ? (_modernDrawPower >= modernPrecisionDrawThreshold
+                    ? "FULL DRAW - HOLD RMB TO AIM"
+                    : "DRAW TO FULL POWER BEFORE AIMING")
+                : "READY - HOLD LMB TO DRAW";
+        GUI.Label(new Rect(hud.x + 12f, hud.y + 103f, 300f, 21f), aimState);
+        if (precision && modernDebugCameraCrosshair)
+            DrawModernDebugCrosshair();
         GUI.Label(new Rect(16f, Screen.height - 34f,
-            Mathf.Min(620f, Screen.width - 32f), 24f),
+            Mathf.Min(720f, Screen.width - 32f), 24f),
             _arrowCam != null && _arrowCam.IsActive
                 ? "ARROW CAM  |  ESC SKIP  |  R RETRY  |  M MODES"
-                : "LMB DRAW  |  RMB AIM  |  SHIFT FINE  |  V COMPARE  |  R RETRY  |  M MODES",
+                : "LMB DRAW  |  RMB FULL-DRAW AIM  |  G SIGHT DEBUG  |  V VIEW  |  R RETRY  |  M MODES",
             GUI.skin.box);
+    }
+
+    private void DrawModernDebugCrosshair()
+    {
+        // Camera forward is NOT the same as the gravity-affected impact.
+        // Used to calibrate physical sight placement later.
+        float x = Screen.width * .5f, y = Screen.height * .5f;
+        Color saved = GUI.color;
+        GUI.color = new Color(0f, .10f, .14f, .84f);
+        GUI.DrawTexture(new Rect(x - 10f, y - 1.5f, 20f, 3f), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(x - 1.5f, y - 10f, 3f, 20f), Texture2D.whiteTexture);
+        GUI.color = new Color(.32f, 1f, .87f, .96f);
+        GUI.DrawTexture(new Rect(x - 8f, y - 1f, 16f, 2f), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(x - 1f, y - 8f, 2f, 16f), Texture2D.whiteTexture);
+        GUIStyle hint = new GUIStyle(GUI.skin.label);
+        hint.fontSize = 10;
+        hint.alignment = TextAnchor.MiddleCenter;
+        hint.normal.textColor = new Color(.70f, 1f, .91f);
+        GUI.Label(new Rect(x - 96f, y + 12f, 192f, 20f),
+            "CAMERA AXIS (DEBUG)", hint);
+        GUI.color = saved;
     }
 
     private void DrawModernResultsGUI()
@@ -703,12 +751,22 @@ public class JemparinganGame : MonoBehaviour
                 return;
             }
 
+            // Toggle the temporary camera-axis marker independently of zoom.
+            if (IsModernMode() && Input.GetKeyDown(KeyCode.G))
+            {
+                modernDebugCameraCrosshair = !modernDebugCameraCrosshair;
+                ShowFeedback(modernDebugCameraCrosshair
+                    ? "CAMERA SIGHT DEBUG ON"
+                    : "CAMERA SIGHT DEBUG OFF");
+            }
+
             // In-Play A/B comparison without changing any projectile state.
             if (IsModernMode() && Input.GetKeyDown(KeyCode.V))
             {
                 modernViewmodelRigV2 = !modernViewmodelRigV2;
-                _modernRaisedPose = (Input.GetMouseButton(0) ||
-                    Input.GetMouseButton(1)) ? 1f : 0f;
+                _modernRaisedPose = Input.GetMouseButton(0) ? 1f : 0f;
+                _modernPrecisionPose = 0f;
+                RestoreModernCameraFov();
                 ShowFeedback(modernViewmodelRigV2
                     ? "MODERN FPS POSES  |  IDLE / DRAW / AIM"
                     : "VIEWMODEL V1  |  ORIGINAL FRAMING");
@@ -835,6 +893,7 @@ public class JemparinganGame : MonoBehaviour
             Vector3.Dot(pose.BowPosition - pose.StringPosition, aim),
             0f, maximumDraw);
         float power = Mathf.InverseLerp(minimumDraw, maximumDraw, distance);
+        _modernDrawPower = IsModernMode() ? power : 0f;
         Quaternion bowRotation = Quaternion.LookRotation(aim, Vector3.up);
         if (UsesTraditionalPresentation())
         {
@@ -1112,10 +1171,15 @@ public class JemparinganGame : MonoBehaviour
         bool drawing, float drawPower, ref Vector3 visualBowPosition,
         ref Quaternion bowRotation)
     {
-        bool wantsAim = drawing || Input.GetMouseButton(1);
+        // Draw raises the bow. RMB alone cannot enter the final aim pose;
+        // holding RMB at full draw settles the bow onto the sight axis.
         _modernRaisedPose = Mathf.MoveTowards(_modernRaisedPose,
-            wantsAim ? 1f : 0f, modernPoseTransitionSpeed * Time.deltaTime);
+            drawing ? 1f : 0f, modernPoseTransitionSpeed * Time.deltaTime);
         float raised = Mathf.SmoothStep(0f, 1f, _modernRaisedPose);
+        _modernPrecisionPose = Mathf.MoveTowards(_modernPrecisionPose,
+            ModernPrecisionAimRequested() ? 1f : 0f,
+            modernPrecisionPoseSpeed * Time.deltaTime);
+        float precision = Mathf.SmoothStep(0f, 1f, _modernPrecisionPose);
 
         Vector3 aimPose = eye.position + aim * modernBowForwardDistance +
             eye.right * modernBowRightOffset - eye.up * modernBowDownOffset;
@@ -1125,7 +1189,14 @@ public class JemparinganGame : MonoBehaviour
             SolveModernScreenshotBowPose(_playerCamera, out aimPose,
                 out referenceAimRotation, out _modernReferenceCalculatedScale);
         }
-        Vector3 idle = aimPose + aim * modernIdleForwardShift +
+        // Full-draw without RMB is a pre-aim hold: still slightly outside
+        // the calibrated sightline. Precision RMB moves it to the exact
+        // screenshot-framed aimPose, so the final reference stays stable.
+        Vector3 preAimPose = modernUseReferenceFraming
+            ? aimPose + eye.right * modernPreAimRightShift -
+                eye.up * modernPreAimLowering
+            : aimPose;
+        Vector3 idle = preAimPose + aim * modernIdleForwardShift +
             eye.right * modernIdleRightShift -
             eye.up * modernIdleLowering;
 
@@ -1137,7 +1208,10 @@ public class JemparinganGame : MonoBehaviour
             ? Mathf.SmoothStep(0f, 1f,
                 Mathf.InverseLerp(.35f, .95f, drawPower)) * raised
             : 0f;
-        visualBowPosition = Vector3.Lerp(idle, aimPose, raised);
+        visualBowPosition = Vector3.Lerp(idle, preAimPose, raised);
+        if (modernUseReferenceFraming)
+            visualBowPosition = Vector3.Lerp(
+                visualBowPosition, aimPose, precision);
         if (!modernUseReferenceFraming)
             visualBowPosition += -eye.right * (.035f * fullDraw) +
                 eye.up * (.025f * fullDraw);
@@ -1147,7 +1221,9 @@ public class JemparinganGame : MonoBehaviour
         // the viewport tip landmark and changes with the camera aspect.
         if (modernUseReferenceFraming)
             bowRotation = referenceAimRotation *
-                Quaternion.Euler(0f, 0f, Mathf.Lerp(-10f, 0f, raised));
+                Quaternion.Euler(0f, 0f,
+                    Mathf.Lerp(-10f, 0f, raised) +
+                    Mathf.Lerp(-3f, 0f, precision));
         else
             bowRotation *= Quaternion.Euler(0f, 0f,
                 Mathf.Lerp(-11f, 0f, raised) + 2f * fullDraw);
@@ -1637,6 +1713,9 @@ public class JemparinganGame : MonoBehaviour
         if (_arrowCam != null) _arrowCam.Stop();
         _restoreAfterArrowCam = false;
         _modernRaisedPose = 0f;
+        _modernPrecisionPose = 0f;
+        _modernDrawPower = 0f;
+        RestoreModernCameraFov();
         for (int i = 0; i < _arrows.Length; i++) _arrows[i].Cancel();
         _shots = _hits = _score = _combo = _poolCursor = 0;
         _bullseyes = _bestCombo = _rasaHits = _rasaBonus = 0;
