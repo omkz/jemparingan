@@ -16,6 +16,7 @@ public class JemparinganArrow : MonoBehaviour
     private Action<JemparinganArrow> _onMiss;
     private Transform _poolParent;
     private TrailRenderer _trail;
+    private float _defaultTrailTime, _defaultTrailStartWidth, _defaultTrailEndWidth;
     public bool StableRelease { get; set; }
     private float _lifetime;
     private float _gravity;
@@ -29,6 +30,12 @@ public class JemparinganArrow : MonoBehaviour
     {
         _poolParent = transform.parent;
         _trail = GetComponent<TrailRenderer>();
+        if (_trail != null)
+        {
+            _defaultTrailTime = _trail.time;
+            _defaultTrailStartWidth = _trail.startWidth;
+            _defaultTrailEndWidth = _trail.endWidth;
+        }
     }
 
     public void Launch(Vector3 origin, Vector3 velocity, float gravity,
@@ -54,6 +61,12 @@ public class JemparinganArrow : MonoBehaviour
         gameObject.SetActive(true);
         if (_trail != null)
         {
+            // Modern Range gets a slightly clearer flight streak while the
+            // old modes keep their exact original trail settings.
+            bool modernFlight = modernTargets != null;
+            _trail.time = modernFlight ? .34f : _defaultTrailTime;
+            _trail.startWidth = modernFlight ? .021f : _defaultTrailStartWidth;
+            _trail.endWidth = modernFlight ? .003f : _defaultTrailEndWidth;
             _trail.Clear(); // Reused pooled arrows never inherit old shot trails.
             _trail.emitting = true;
         }
@@ -113,7 +126,7 @@ public class JemparinganArrow : MonoBehaviour
                 transform.SetParent(modern.transform, true);
                 _embedded = true;
                 _embeddedUntil = Time.time + EmbedSeconds;
-                modern.ShowImpact(impactPoint);
+                modern.ShowImpact(impactPoint, ringPoints);
                 _onModernImpact?.Invoke(this, modern, ringPoints);
                 return;
             }
