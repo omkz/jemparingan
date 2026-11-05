@@ -62,6 +62,7 @@ public class JemparinganGame : MonoBehaviour
     [SerializeField] private bool modernDebugCameraCrosshair = true;
     private float _modernDrawPower;
     private float _modernPrecisionPose;
+    private bool _modernSightZeroed;
     private Camera _playerCamera;
     private float _playerBaseFov = 65f;
     private float _modernReferenceCalculatedScale = 1f;
@@ -537,8 +538,9 @@ public class JemparinganGame : MonoBehaviour
         hint.fontSize = 10;
         hint.alignment = TextAnchor.MiddleCenter;
         hint.normal.textColor = new Color(.70f, 1f, .91f);
-        GUI.Label(new Rect(x - 96f, y + 12f, 192f, 20f),
-            "CAMERA AXIS (DEBUG)", hint);
+        GUI.Label(new Rect(x - 118f, y + 12f, 236f, 20f),
+            _modernSightZeroed ? "ZEROED TO TARGET FACE" :
+                "AXIS ONLY - NO TARGET LOCK", hint);
         GUI.color = saved;
     }
 
@@ -971,16 +973,53 @@ public class JemparinganGame : MonoBehaviour
             ? gameplayBowPosition
             : pose.BowPosition;
         Vector3 launchAim = aim;
+        _modernSightZeroed = false;
         if (UsesTraditionalPresentation() && UsesDesktopInput() && Camera.main != null)
         {
-            Transform sightTarget = IsModernMode() && _modernTargets != null
-                ? _modernTargets[1].transform : (_target != null ? _target.transform : null);
-            float targetDist = sightTarget != null
-                ? Vector3.Distance(Camera.main.transform.position, sightTarget.position)
-                : 10f;
-            Vector3 sightFocus = Camera.main.transform.position + aim * targetDist;
-            Vector3 launchOrigin = bowOrigin + aim * 0.25f;
-            launchAim = (sightFocus - launchOrigin).normalized;
+            if (IsModernMode())
+            {
+                // Use the shot's ACTUAL speed, including on the release frame
+                // when DesktopBowInput has already reset its live draw pose.
+                // The existing gameplay origin is separate from the large
+                // cosmetic bow; correct camera parallax AND gravitational
+                // arrow-tip drop at the crosshair's target-plane intersection.
+                float releasePower = drawing ? power :
+                    Mathf.InverseLerp(minimumDraw, maximumDraw, _lastDraw);
+                float speed = Mathf.Lerp(minimumArrowSpeed, maximumArrowSpeed,
+                    releasePower);
+                Vector3 correctedDirection;
+                bool crosshairOnBoard;
+                if (JemparinganModernAim.TryZeroToCameraRay(Camera.main,
+                    gameplayBowPosition + aim * .25f, speed, simulatedGravity,
+                    outdoorArrowLifetime, _modernTargets,
+                    out correctedDirection, out crosshairOnBoard))
+                {
+                    launchAim = correctedDirection;
+                    _modernSightZeroed = crosshairOnBoard;
+                }
+                else
+                {
+                    // For unreachable targets, preserve the old unassisted
+                    // shot (the reticle won't incorrectly claim zeroing).
+                    Vector3 oldFocus = Camera.main.transform.position +
+                        aim * 10f;
+                    launchAim = (oldFocus -
+                        (gameplayBowPosition + aim * .25f)).normalized;
+                }
+            }
+            else
+            {
+                // Original Traditional/Challenge aim is unchanged.
+                Transform sightTarget = _target != null
+                    ? _target.transform : null;
+                float targetDist = sightTarget != null
+                    ? Vector3.Distance(Camera.main.transform.position,
+                        sightTarget.position) : 10f;
+                Vector3 sightFocus = Camera.main.transform.position +
+                    aim * targetDist;
+                Vector3 launchOrigin = bowOrigin + aim * .25f;
+                launchAim = (sightFocus - launchOrigin).normalized;
+            }
         }
         UpdateDesktopPracticeSight(bowOrigin + aim * .25f,
             launchAim, Mathf.Lerp(minimumArrowSpeed, maximumArrowSpeed, power), drawing);
@@ -1737,6 +1776,7 @@ public class JemparinganGame : MonoBehaviour
         _modernRaisedPose = 0f;
         _modernPrecisionPose = 0f;
         _modernDrawPower = 0f;
+        _modernSightZeroed = false;
         RestoreModernCameraFov();
         // Retry restores current mode's mouse scheme. Mode changes
         // already clear Modern input before switching gameplay.
