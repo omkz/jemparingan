@@ -158,6 +158,58 @@ small and does not obscure the ring centers. Verify the hand disappears
 on release, the Arrow Cam still works, and Traditional/Challenge hand
 presentation is unchanged. This is not a claim of Unity runtime validation.
 
+## Modern first-person viewmodel rig v2 (desktop A/B experiment)
+
+The new **Modern first-person rig v2** separates the original gameplay
+launch anchor from the cosmetic bow. Physics, target scoring, ring hit tests,
+arrow speed, draw power, aiming and Arrow Cam still use the old gameplay
+trajectory: camera eye + aim × 0.70m + right × 0.15m - up × 0.16m,
+then launch from that point + aim × 0.25m. Toggling visual rig settings
+must not alter this origin.
+
+In the **JemparinganGame Inspector**, under
+**Modern first-person rig v2 (desktop visual only)**:
+
+| Control | Default | Purpose |
+| --- | ---: | --- |
+| modernViewmodelRigV2 | on | Opt-in per play session; V toggles v1/v2 in Modern |
+| modernBowForwardDistance | 0.78 m | Eye-to-bow distance for visual geometry only |
+| modernBowRightOffset | 0.20 m | Shift visual bow to the screen right |
+| modernBowDownOffset | 0.18 m | Lower visual bow to keep the target visible |
+| modernBowVisualScale | 0.94 | Relative size of cosmetic bow/string/preview arrow |
+| modernViewmodelFov | 65° | Simulated viewmodel FOV through model scale only |
+| modernRightHandScale | 0.92 | Right-hand size relative to the cosmetic bow |
+
+**Important:** this is a lightweight *virtual viewmodel FOV*, achieved by
+rescaling the bow with the tangent-of-half-FOV ratio. There is **no second
+camera** and no new overlay rendering layer. The real scene camera FOV,
+player eye transform and target/world projection remain unchanged. The
+visual model still shares the main camera's near clip plane, so this is
+not equivalent to a full dual-camera viewmodel setup.
+
+### Required Play Mode checks
+
+1. Enter **Modern**. Compare **V** (v2/v1) while looking at each target.
+   Only the cosmetic bow and hands should move/resize; environment and
+   target projections must not jump.
+2. Draw at half and full power. Right-hand pinch stays near the actual
+   visual nock and is smaller relative to the bow. The left grip stays
+   attached to the leather wrap and the center of the target stays clear.
+3. Fire from unchanged aim/power in v1 and v2. The preview dots,
+   flight path, scores and impact locations should be unchanged (allow
+   normal input variability); check shot origin on an instrumented test
+   if numerical equality is required.
+4. Test **V** mid-draw and after Arrow Cam returns. No stuck hands,
+   camera lock, double projectile or visual carry-over.
+5. Enter **Classic**, **Traditional** and **Challenge** after v2 Modern;
+   the bow's transform scale must restore to 1.0, and their original
+   positioning and Arrow Cam behavior must be unchanged.
+6. Press **M**, **R**, **Esc**, and perform a Modern miss as additional
+   camera and draw-state regression checks.
+7. Check Game View at different resolutions/aspect ratios and test
+   Inspector tuning. Unity compilation and Play Mode are **not yet run**
+   for this GitHub-only code change.
+
 ## Validate in Unity
 
 This document records a **test plan**, not a claim that Unity Play Mode
