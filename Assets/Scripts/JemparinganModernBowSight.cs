@@ -1,81 +1,79 @@
 using UnityEngine;
 
-// Modern desktop only: small bow-mounted aiming aperture and fiber-style pin.
-// The geometry is parented to the REAL cosmetic bow transform, not drawn on HUD.
-// Zeroing moves the adjustable bracket/pin on the riser, never the arrow,
-// camera rotation, projectile origin, scoring or ballistic equation.
+// Modern desktop only: compact, fixed bow-mounted sight. Its pin is calibrated
+// ONCE at settled full draw; it never chases the camera during gameplay.
+// The visual sight never modifies projectile origin/direction or hit scoring.
 public sealed class JemparinganModernBowSight : MonoBehaviour
 {
-    private const int RimSegments = 20;
-    private const float RimRadius = .015f;
+    private const int RimSegments = 16;
+    private const float RimRadius = .012f;
+    private const float SightForwardOffset = .055f;
+    private static readonly Vector3 RestingPin = new Vector3(
+        -.085f, .185f, SightForwardOffset);
 
     private Transform _sightRoot;
     private Transform _aperture;
-    private Transform _mountRod;
-    private Transform _outerRod;
-    private Transform _mountPlate;
+    private Transform _supportRod;
+    private Transform _mount;
     private bool _hasCalibration;
 
     public void Build()
     {
         if (_sightRoot != null) return;
+
         _sightRoot = new GameObject(
-            "Modern | bow-mounted adjustable physical sight").transform;
+            "Modern | compact recurve sight fixed to riser").transform;
         _sightRoot.SetParent(transform, false);
 
-        _mountPlate = JemparinganArt.Part(
-            "Sight riser mount (attached near upper grip)",
+        _mount = JemparinganArt.Part("Sight bracket on bow riser",
             PrimitiveType.Cube, _sightRoot,
-            new Vector3(0f, .11f, -.012f),
-            new Vector3(.022f, .043f, .025f),
+            new Vector3(0f, .115f, .007f),
+            new Vector3(.013f, .026f, .014f),
             JemparinganArt.Tone.BowBrass).transform;
 
-        _mountRod = JemparinganArt.Part(
-            "Sight extension arm | bow-fixed",
+        _supportRod = JemparinganArt.Part("Single slim sight support",
             PrimitiveType.Cylinder, _sightRoot,
             Vector3.zero, Vector3.one * .01f,
             JemparinganArt.Tone.BowEdge).transform;
 
-        _outerRod = JemparinganArt.Part(
-            "Sight pin adjustment stem",
-            PrimitiveType.Cylinder, _sightRoot,
-            Vector3.zero, Vector3.one * .01f,
-            JemparinganArt.Tone.BowBrass).transform;
-
         _aperture = new GameObject(
-            "Sight aperture | ring and centered fiber pin").transform;
+            "Fixed aperture | slim ring and small centered pin").transform;
         _aperture.SetParent(_sightRoot, false);
-        _aperture.localPosition = new Vector3(-.055f, .20f, -.014f);
         _aperture.localRotation = Quaternion.identity;
+        _aperture.localPosition = RestingPin;
 
-        // Slender full ring, not a wide fake HUD crosshair. Mesh objects are
-        // created once; no per-frame primitives, render textures or colliders.
+        // The aperture and pin are small physical 3D objects (not an overlay).
         for (int i = 0; i < RimSegments; i++)
         {
-            float a = 2f * Mathf.PI * i / RimSegments;
-            float b = 2f * Mathf.PI * (i + 1) / RimSegments;
+            float a = Mathf.PI * 2f * i / RimSegments;
+            float b = Mathf.PI * 2f * (i + 1) / RimSegments;
             Vector3 from = new Vector3(
                 Mathf.Cos(a) * RimRadius, Mathf.Sin(a) * RimRadius, 0f);
             Vector3 to = new Vector3(
                 Mathf.Cos(b) * RimRadius, Mathf.Sin(b) * RimRadius, 0f);
-            JemparinganArt.Beam("Aperture rim " + i, _aperture,
-                from, to, .00145f, JemparinganArt.Tone.BowBrass);
+            JemparinganArt.Beam("Sight ring edge " + i, _aperture,
+                from, to, .0011f, JemparinganArt.Tone.BowBrass);
         }
 
-        // The actual aiming point is a small physical colored pin fixed to
-        // the aperture center. A short stem rises from the lower ring.
-        JemparinganArt.Beam("Pin stem", _aperture,
+        JemparinganArt.Beam("Short pin post", _aperture,
             new Vector3(0f, -RimRadius, -.001f),
-            new Vector3(0f, -.004f, -.001f),
-            .0013f, JemparinganArt.Tone.BowEdge);
-        JemparinganArt.Part("Fiber-style sight pin", PrimitiveType.Sphere,
+            new Vector3(0f, -.0032f, -.001f),
+            .0011f, JemparinganArt.Tone.BowEdge);
+        JemparinganArt.Part("Single fiber sight tip", PrimitiveType.Sphere,
             _aperture, new Vector3(0f, 0f, -.002f),
-            Vector3.one * .0042f, JemparinganArt.Tone.Jade);
+            Vector3.one * .0027f, JemparinganArt.Tone.Jade);
 
-        // Start at a plausible resting mount before the player first draws.
-        // Actual camera zeroing updates the adjustment bracket at full draw.
-        PlaceMount();
+        PlaceSupport();
         _sightRoot.gameObject.SetActive(false);
+    }
+
+    public void ResetCalibration()
+    {
+        _hasCalibration = false;
+        if (_aperture == null) return;
+        _aperture.localPosition = RestingPin;
+        _aperture.localRotation = Quaternion.identity;
+        PlaceSupport();
     }
 
     public void Present(Camera camera, bool visible, bool calibrate)
@@ -83,51 +81,44 @@ public sealed class JemparinganModernBowSight : MonoBehaviour
         if (_sightRoot == null) return;
         if (_sightRoot.gameObject.activeSelf != visible)
             _sightRoot.gameObject.SetActive(visible);
-        if (!visible || camera == null) return;
+        if (!visible || !calibrate || _hasCalibration || camera == null)
+            return;
 
-        if (calibrate)
-        {
-            // The screenshot-based bow viewmodel changes depth/scale as FOV
-            // settles. Place the pin where the camera ray passes through the
-            // bow's own depth, then convert into this bow's LOCAL coordinates.
-            // Thus the pin stays a child of the bow and all riser hardware
-            // follows its idle / draw / aim pose instead of floating on HUD.
-            float depth = Vector3.Dot(transform.position -
-                camera.transform.position, camera.transform.forward);
-            depth = Mathf.Max(camera.nearClipPlane + .12f, depth + .015f);
-            Vector3 cameraAxisAtBowDepth =
-                camera.ViewportToWorldPoint(new Vector3(.5f, .5f, depth));
-            _aperture.localPosition =
-                transform.InverseTransformPoint(cameraAxisAtBowDepth);
-            _hasCalibration = true;
-        }
+        // One-time "sight-in" at stable full draw and zoom. The camera ray
+        // is sampled at the fixed physical pin depth; this is then stored
+        // in BOW-LOCAL space. Subsequent movement is purely inherited from
+        // the bow, never recomputed from the camera.
+        float depth = Vector3.Dot(transform.position -
+            camera.transform.position, camera.transform.forward);
+        depth += transform.lossyScale.z * SightForwardOffset;
+        if (depth <= camera.nearClipPlane + .02f) return;
 
-        // The aperture faces the eye, but stays under the bow hierarchy;
-        // unlike a Canvas reticle it does not render when the bow is hidden.
-        _aperture.localRotation =
-            Quaternion.Inverse(transform.rotation) * camera.transform.rotation;
-        // The mount has a continuously connected extension from the bow grip
-        // to the rim. Only its adjustable length changes with calibration.
-        PlaceMount();
+        Vector3 worldPoint = camera.ViewportToWorldPoint(
+            new Vector3(.5f, .5f, depth));
+        Vector3 localPoint = transform.InverseTransformPoint(worldPoint);
+        // Guard against extreme settings producing a comically long mount.
+        // If out of physical range, keep the compact fixed resting sight.
+        if (localPoint.x < -.20f || localPoint.x > .04f ||
+            localPoint.y < .10f || localPoint.y > .34f)
+            return;
+
+        localPoint.z = SightForwardOffset;
+        _aperture.localPosition = localPoint;
+        _hasCalibration = true;
+        PlaceSupport();
     }
 
-    private void PlaceMount()
+    private void PlaceSupport()
     {
-        Vector3 pivot = _mountPlate.localPosition;
-        Vector3 ringRight = _aperture.localRotation * Vector3.right;
-        Vector3 outerEdge = _aperture.localPosition + ringRight * RimRadius;
-        Vector3 elbow = outerEdge + ringRight * .033f;
-        PlaceRod(_mountRod, pivot, elbow, .0034f);
-        PlaceRod(_outerRod, elbow, outerEdge, .0022f);
-    }
-
-    private static void PlaceRod(Transform rod, Vector3 from, Vector3 to,
-        float diameter)
-    {
-        Vector3 diff = to - from;
-        if (diff.sqrMagnitude < .000001f) return;
-        rod.localPosition = (from + to) * .5f;
-        rod.localRotation = Quaternion.FromToRotation(Vector3.up, diff.normalized);
-        rod.localScale = new Vector3(diameter, diff.magnitude * .5f, diameter);
+        if (_supportRod == null || _mount == null || _aperture == null) return;
+        Vector3 from = _mount.localPosition + new Vector3(0f, .012f, .006f);
+        Vector3 to = _aperture.localPosition +
+            Vector3.right * RimRadius;
+        Vector3 delta = to - from;
+        _supportRod.localPosition = (from + to) * .5f;
+        _supportRod.localRotation =
+            Quaternion.FromToRotation(Vector3.up, delta.normalized);
+        _supportRod.localScale = new Vector3(
+            .0028f, delta.magnitude * .5f, .0028f);
     }
 }
