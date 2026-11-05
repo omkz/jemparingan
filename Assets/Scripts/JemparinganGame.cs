@@ -612,7 +612,8 @@ public class JemparinganGame : MonoBehaviour
                 return;
             }
 
-            if (Input.GetKeyDown(KeyCode.M) && (_shots == 0 || _finished))
+            if (Input.GetKeyDown(KeyCode.M) &&
+                (_shots == 0 || _finished || IsModernMode()))
             {
                 ReturnToModeSelect();
                 return;
