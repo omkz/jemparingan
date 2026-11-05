@@ -64,14 +64,16 @@ public sealed class JemparinganTraditionalArcher : MonoBehaviour
         _leftHand.SetPositionAndRotation(contact, _handle.rotation);
         PoseForearm(Camera.main);
 
-        // Modern-only cosmetic draw hand. It is deliberately not parented
-        // to the actual string, so its camera-safe framing cannot affect aim.
+        // Modern-only cosmetic draw hand: its fingertips follow the real
+        // visual nock and its rotation follows the bow itself. Framing checks
+        // happen before toggling visibility, avoiding repeated activation at
+        // the edge of the near clip plane.
         if (_modernRightHand != null)
         {
-            bool show = modernRightHandDrawing && nock != null;
+            bool show = modernRightHandDrawing && nock != null &&
+                PoseModernRightHand(Camera.main, nock);
             if (_modernRightHand.gameObject.activeSelf != show)
                 _modernRightHand.gameObject.SetActive(show);
-            if (show) PoseModernRightHand(Camera.main, nock);
         }
     }
 
@@ -146,33 +148,33 @@ public sealed class JemparinganTraditionalArcher : MonoBehaviour
         _modernRightHand.gameObject.SetActive(false);
     }
 
-    private void PoseModernRightHand(Camera camera, Transform nock)
+    private bool PoseModernRightHand(Camera camera, Transform nock)
     {
-        // Track the REAL visual nock instead of clamping its viewport point.
-        // Previous clamps could separate the fingertips from the string by
-        // dozens of pixels and made the hand appear to float independently.
-        Vector3 projected = camera.WorldToViewportPoint(nock.position);
+        // The established bow pose is the source of truth. The right hand
+        // aligns to the *same* bow rotation as the leather grip, arrow and
+        // string; using camera.rotation used to make it look disconnected
+        // whenever the player aimed up/down or the bow was canted.
+        Vector3 drawAnchor = nock.position - _bow.forward * .012f;
+        Vector3 projected = camera.WorldToViewportPoint(drawAnchor);
         bool safeDepth = projected.z > Mathf.Max(.20f,
             camera.nearClipPlane + .08f);
         bool inFrame = projected.x > .03f && projected.x < .95f &&
             projected.y > .05f && projected.y < .93f;
-        if (!safeDepth || !inFrame)
-        {
-            _modernRightHand.gameObject.SetActive(false);
-            return;
-        }
-        _modernRightHand.SetPositionAndRotation(
-            nock.position - camera.transform.forward * .012f,
-            camera.transform.rotation);
+        if (!safeDepth || !inFrame) return false;
 
-        // Without this, the same ~17cm mesh looks twice as large when the
-        // nock moves from ~0.6m to ~0.3m from the camera during a full draw.
-        // Preserve the fingertip contact at local origin; shrink just the
-        // cosmetic hand, not the bow, string or projectile launch position.
+        // Keep the fingertips near the nock, with the palm extending toward
+        // bow-right. Follow the bow's cant instead of a screen-space offset.
+        // This is purely cosmetic and never moves the bow or projectile.
+        _modernRightHand.SetPositionAndRotation(drawAnchor, _bow.rotation);
+
+        // Perspective compensation: the physical draw moves the nock toward
+        // the eye, so proportionally shrink only the *view-model* hand. The
+        // fixed local origin keeps its pinch anchored to the same string.
         float depthFactor = Mathf.Clamp(
             projected.z / ModernRightHandReferenceDepth, .53f, 1f);
         _modernRightHand.localScale =
             Vector3.one * (ModernRightHandVisualScale * depthFactor);
+        return true;
     }
 
     private void PoseForearm(Camera camera)
