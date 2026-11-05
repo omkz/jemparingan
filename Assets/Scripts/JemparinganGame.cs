@@ -21,6 +21,10 @@ public class JemparinganGame : MonoBehaviour
     private JemparinganTraditionalArcher _traditionalArcher;
     private Renderer[] _seatedBodyRenderers;
     private Transform _modernTargetsRoot, _bandulanSuspension;
+    // The scene has an authored preview frame (two uprights and a crossbar).
+    // Hiding only the runtime bandulan leaves this gawang in Modern Mode.
+    private GameObject _sceneBandulanFrame;
+    private bool _sceneBandulanFrameInitiallyActive;
     private JemparinganModernTarget[] _modernTargets;
     // Reuse the outdoor scene's 16-shot arrow and HUD pool.
     [SerializeField, Range(6, 16)] private int modernArrowCount = 12;
@@ -444,6 +448,12 @@ public class JemparinganGame : MonoBehaviour
             ReturnToModeSelect();
     }
 
+    private void SetSceneBandulanFrameVisible(bool visible)
+    {
+        if (_sceneBandulanFrame == null) return;
+        _sceneBandulanFrame.SetActive(visible && _sceneBandulanFrameInitiallyActive);
+    }
+
     private void SetSeatedBodyVisible(bool visible)
     {
         if (_seatedBodyRenderers == null) return;
@@ -461,6 +471,7 @@ public class JemparinganGame : MonoBehaviour
         if (_target != null) _target.gameObject.SetActive(false);
         if (_bandulanSuspension != null)
             _bandulanSuspension.gameObject.SetActive(false);
+        SetSceneBandulanFrameVisible(false);
         if (_modernTargetsRoot != null)
             _modernTargetsRoot.gameObject.SetActive(true);
         if (_traditionalPosture != null)
@@ -485,6 +496,7 @@ public class JemparinganGame : MonoBehaviour
         if (_target != null) _target.gameObject.SetActive(true);
         if (_bandulanSuspension != null)
             _bandulanSuspension.gameObject.SetActive(true);
+        SetSceneBandulanFrameVisible(true);
         SetSeatedBodyVisible(true);
         if (next == GameMode.Modern)
         {
@@ -571,6 +583,7 @@ public class JemparinganGame : MonoBehaviour
         if (_target != null) _target.gameObject.SetActive(true);
         if (_bandulanSuspension != null)
             _bandulanSuspension.gameObject.SetActive(true);
+        SetSceneBandulanFrameVisible(true);
         SetSeatedBodyVisible(true);
         if (_traditionalPosture != null)
             _traditionalPosture.gameObject.SetActive(false);
@@ -1693,6 +1706,15 @@ public class JemparinganGame : MonoBehaviour
         {
             Debug.LogError("Jemparingan outdoor preview: target anchor is missing.");
             return false;
+        }
+        // In Playable v05, the authored gawang and gameplay anchor are siblings
+        // under "Preview Bandulan | movable target". The generated targets
+        // live elsewhere, so hiding this group is safe for Modern gameplay.
+        if (useOutdoorEnvironment && outdoorTargetAnchor.parent != null &&
+            outdoorTargetAnchor.parent.name == "Preview Bandulan | movable target")
+        {
+            _sceneBandulanFrame = outdoorTargetAnchor.parent.gameObject;
+            _sceneBandulanFrameInitiallyActive = _sceneBandulanFrame.activeSelf;
         }
 
         Vector3 stagePosition = camera.transform.position + forward * 2.65f - Vector3.up * 0.05f;
