@@ -90,6 +90,29 @@ Play Mode visual checks:
 
 This is a code-only change; Unity compile and rendering tests are pending.
 
+## Modern right-hand draw visual (experimental)
+
+Modern desktop now shows **only a small right-hand pinch and narrow sleeve edge**
+while LMB is held. It follows the existing cosmetic string/nock position in
+screen space, with conservative lower-right framing and near-clip protection.
+On release the right-hand visual hides immediately. It has no collider and does
+not change string pull, the left grip hand, shot direction, projectile, scoring,
+or Arrow Cam. Traditional and Challenge remain left-hand-only.
+
+Play Mode visual checks:
+
+1. Enter Modern, keep LMB released: no floating right hand.
+2. Hold LMB: a little right palm/index/thumb appears to the lower right of
+   the sightline and moves with draw progress. Target center stays visible.
+3. Release: right hand disappears and the existing Arrow Cam follows the
+   projectile; on return the left grip is still correctly positioned.
+4. Aim up/down/right/left at all three modern boards and hold a full draw:
+   no giant near-camera hand, floating fingers, cut-off sleeve cap or collision.
+5. Switch to Traditional and Challenge and draw: the right hand is not
+   rendered, and previous gameplay and arrow camera behavior remain intact.
+6. Check game Console for errors and inspect framing at the chosen Game View
+   resolution. GitHub code inspection is not Unity runtime validation.
+
 ## Validate in Unity
 
 This document records a **test plan**, not a claim that Unity Play Mode
