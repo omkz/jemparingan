@@ -14,7 +14,7 @@ public sealed class JemparinganTraditionalArcher : MonoBehaviour
     private readonly Vector3[] _forearmVertices =
         new Vector3[ForearmRings * Sides + 2];
 
-    private Transform _handle, _bow, _visuals, _leftHand;
+    private Transform _handle, _bow, _visuals, _leftHand, _modernRightHand;
     private Mesh _leftSleeve;
 
     // The mesh wrist is behind the fingers, so the sleeve terminates inside
@@ -38,6 +38,7 @@ public sealed class JemparinganTraditionalArcher : MonoBehaviour
         _leftSleeve.triangles = TubeIndices(ForearmRings);
         AddRenderer("Left sleeve entering from below view", _visuals,
             _leftSleeve, JemparinganArt.Tone.TraditionalCloth);
+        BuildModernRightHand();
         _visuals.gameObject.SetActive(false);
     }
 
@@ -46,7 +47,7 @@ public sealed class JemparinganTraditionalArcher : MonoBehaviour
         if (_visuals != null) _visuals.gameObject.SetActive(false);
     }
 
-    public void Present()
+    public void Present(bool modernRightHandDrawing = false, Transform nock = null)
     {
         if (_handle == null || _bow == null || Camera.main == null) return;
         if (!_visuals.gameObject.activeSelf) _visuals.gameObject.SetActive(true);
@@ -56,6 +57,64 @@ public sealed class JemparinganTraditionalArcher : MonoBehaviour
         Vector3 contact = _handle.TransformPoint(Vector3.down * .55f);
         _leftHand.SetPositionAndRotation(contact, _handle.rotation);
         PoseForearm(Camera.main);
+
+        // Modern-only cosmetic draw hand. It is deliberately not parented
+        // to the actual string, so its camera-safe framing cannot affect aim.
+        if (_modernRightHand != null)
+        {
+            bool show = modernRightHandDrawing && nock != null;
+            if (_modernRightHand.gameObject.activeSelf != show)
+                _modernRightHand.gameObject.SetActive(show);
+            if (show) PoseModernRightHand(Camera.main, nock);
+        }
+    }
+
+    private void BuildModernRightHand()
+    {
+        _modernRightHand = new GameObject(
+            "Modern | small right draw hand (visual only)").transform;
+        _modernRightHand.SetParent(_visuals, false);
+        // Only the thumb, index, a little palm and sleeve edge are visible.
+        // All objects are collider-free and created just once at startup.
+        JemparinganArt.Part("Right small palm", PrimitiveType.Sphere,
+            _modernRightHand, new Vector3(.046f, -.024f, .021f),
+            new Vector3(.063f, .053f, .044f),
+            JemparinganArt.Tone.TraditionalSkin);
+        JemparinganArt.Beam("Index finger pinches bowstring",
+            _modernRightHand, new Vector3(.029f, .008f, .003f),
+            new Vector3(-.013f, .014f, -.003f),
+            .010f, JemparinganArt.Tone.TraditionalSkin);
+        JemparinganArt.Beam("Thumb pinches bowstring",
+            _modernRightHand, new Vector3(.030f, -.018f, .010f),
+            new Vector3(-.013f, -.009f, -.001f),
+            .011f, JemparinganArt.Tone.TraditionalSkin);
+        JemparinganArt.Part("Pinched fingertips", PrimitiveType.Sphere,
+            _modernRightHand, new Vector3(-.014f, .003f, -.003f),
+            new Vector3(.018f, .022f, .018f),
+            JemparinganArt.Tone.TraditionalSkin);
+        // The narrow sleeve runs out toward the right screen edge rather
+        // than finishing in the middle of the frame as a severed stump.
+        JemparinganArt.Beam("Right sleeve entering from screen edge",
+            _modernRightHand, new Vector3(.077f, -.034f, .034f),
+            new Vector3(.38f, -.20f, .046f),
+            .026f, JemparinganArt.Tone.TraditionalCloth);
+        _modernRightHand.gameObject.SetActive(false);
+    }
+
+    private void PoseModernRightHand(Camera camera, Transform nock)
+    {
+        // Start from the string bead's actual projected position. Keep the
+        // tiny fingertips slightly right/below it and within a lower-right
+        // screen-safe region. At full draw the bead can approach the near
+        // clip plane, so clamp its camera depth to avoid oversized geometry.
+        Vector3 projected = camera.WorldToViewportPoint(nock.position);
+        float depth = Mathf.Clamp(projected.z,
+            Mathf.Max(.38f, camera.nearClipPlane + .12f), .8f);
+        float x = Mathf.Clamp(projected.x + .045f, .67f, .83f);
+        float y = Mathf.Clamp(projected.y - .04f, .18f, .44f);
+        Vector3 position = camera.ViewportToWorldPoint(new Vector3(x, y, depth));
+        _modernRightHand.SetPositionAndRotation(position,
+            camera.transform.rotation);
     }
 
     private void PoseForearm(Camera camera)
