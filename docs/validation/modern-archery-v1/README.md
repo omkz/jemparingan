@@ -113,6 +113,21 @@ Play Mode visual checks:
 6. Check game Console for errors and inspect framing at the chosen Game View
    resolution. GitHub code inspection is not Unity runtime validation.
 
+### Right-hand visual refinement
+
+The first right-hand prototype used a sphere palm, cylinder fingers and
+long cylinder sleeve; it looked disconnected at first-person scale and
+could float beside the string because the pose clamped to fixed viewport
+coordinates. The refinement uses a small tapered mesh for a pinching
+thumb/index/middle-finger silhouette and a short cuff. Its contact point
+follows the visual nock in world space rather than moving away from it.
+
+Verify in **Modern** only: hold LMB with the string near and far from full
+draw, check that the fingertips touch the string, the small hand is not
+obtrusive, and it hides on release or near-camera clipping. Check the
+original left grip hand and aim remain unchanged. This is still a low-poly
+procedural placeholder, not a rigged 3D hand asset.
+
 ## Validate in Unity
 
 This document records a **test plan**, not a claim that Unity Play Mode
