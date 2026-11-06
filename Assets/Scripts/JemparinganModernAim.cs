@@ -18,6 +18,25 @@ public static class JemparinganModernAim
         JemparinganModernTarget[] targets, out Vector3 direction,
         out bool crosshairOnBoard)
     {
+        // Original zeroing path is preserved verbatim for shots without
+        // physical-sight wobble, including older tests and legacy Modern V1.
+        return TryZeroToSightRay(camera,
+            camera != null ? camera.transform.forward : Vector3.forward,
+            origin, speed, gravity, maxFlightSeconds,
+            targets, out direction, out crosshairOnBoard);
+    }
+
+    // During Modern optical aim wobble, use the exact ray from the player's
+    // eye THROUGH the visible calibrated +. This avoids a hidden mismatch
+    // where the reticle moves but arrows still fly to camera screen center.
+    // The SAME ballistic solver still compensates gravity and parallax,
+    // without any target-center attraction.
+    public static bool TryZeroToSightRay(Camera camera,
+        Vector3 sightRayDirection, Vector3 origin,
+        float speed, float gravity, float maxFlightSeconds,
+        JemparinganModernTarget[] targets, out Vector3 direction,
+        out bool crosshairOnBoard)
+    {
         direction = camera != null ? camera.transform.forward : Vector3.forward;
         crosshairOnBoard = false;
         if (camera == null || targets == null || targets.Length == 0 ||
@@ -25,7 +44,9 @@ public static class JemparinganModernAim
             return false;
 
         Vector3 rayOrigin = camera.transform.position;
-        Vector3 rayDirection = camera.transform.forward.normalized;
+        Vector3 rayDirection = sightRayDirection.sqrMagnitude > .000001f
+            ? sightRayDirection.normalized
+            : camera.transform.forward.normalized;
         bool found = false;
         bool foundBoard = false;
         float bestScore = float.PositiveInfinity;
