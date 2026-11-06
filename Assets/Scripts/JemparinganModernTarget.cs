@@ -17,10 +17,19 @@ public sealed class JemparinganModernTarget : MonoBehaviour
     private bool _isBullseye;
     private const float ImpactDuration = .42f;
     private const int SparkCount = 8;
+    // Moving stage translates the entire face AND its collision plane.
+    // The stand follows as a lightweight moving assembly; there is no
+    // separate physics collider or target-specific aim correction.
+    private Vector3 _homeLocalPosition;
+    private bool _lateralMotionEnabled;
+    private float _lateralMotionStartedAt;
+    private float _lateralMotionAmplitude;
+    private float _lateralMotionRadiansPerSecond;
 
     public void Build(int number)
     {
         TargetNumber = number;
+        _homeLocalPosition = transform.localPosition;
         // The face reacts subtly without moving the stand or changing hitboxes.
         _face = new GameObject("Circular face | reactive visual").transform;
         _face.SetParent(transform, false);
@@ -134,8 +143,31 @@ public sealed class JemparinganModernTarget : MonoBehaviour
         AnimateImpact(0f);
     }
 
+    // Stage 3 only: the middle board travels gently side to side.
+    // Reset/retry restores its original local position exactly.
+    public void SetLateralMotion(bool enabled, float amplitude = .26f,
+        float radiansPerSecond = .85f)
+    {
+        _lateralMotionEnabled = enabled;
+        _lateralMotionAmplitude = Mathf.Clamp(amplitude, 0f, .45f);
+        _lateralMotionRadiansPerSecond =
+            Mathf.Clamp(radiansPerSecond, .3f, 1.8f);
+        _lateralMotionStartedAt = Time.time;
+        if (!enabled) transform.localPosition = _homeLocalPosition;
+    }
+
     private void Update()
     {
+        if (_lateralMotionEnabled)
+        {
+            float elapsed = Mathf.Max(0f, Time.time - _lateralMotionStartedAt);
+            float onset = Mathf.SmoothStep(0f, 1f,
+                Mathf.Clamp01(elapsed * 1.2f));
+            float offset = _lateralMotionAmplitude * onset *
+                Mathf.Sin(elapsed * _lateralMotionRadiansPerSecond);
+            transform.localPosition = _homeLocalPosition +
+                Vector3.right * offset;
+        }
         if (_impactAt < 0f) return;
         float elapsed = Time.time - _impactAt;
         if (elapsed >= ImpactDuration)
