@@ -10,11 +10,9 @@ public class JemparinganTarget : MonoBehaviour
     private const int SparkCount = 8;
     private Vector3 _rest;
     private Quaternion _restRotation;
-    private Renderer _body;
     private Transform _fxRoot;
     private Transform[] _sparks;
     private Renderer[] _sparkRenderers;
-    private float _flashUntil;
     private float _hitAt = -1f;
     private bool _bullseye;
 
@@ -23,8 +21,6 @@ public class JemparinganTarget : MonoBehaviour
         _rest = transform.localPosition;
         _restRotation = transform.localRotation;
     }
-
-    public void SetBody(Renderer body) { _body = body; }
 
     private void Update()
     {
@@ -46,11 +42,6 @@ public class JemparinganTarget : MonoBehaviour
             }
         }
 
-        if (_body != null && _flashUntil > 0f && Time.time >= _flashUntil)
-        {
-            _body.sharedMaterial = JemparinganArt.Material(JemparinganArt.Tone.Red);
-            _flashUntil = 0f;
-        }
     }
 
     // Predicted target center for a small, optional lead cue on later stages.
@@ -87,11 +78,6 @@ public class JemparinganTarget : MonoBehaviour
     {
         _bullseye = bullseye;
         _hitAt = Time.time;
-        if (_body != null)
-        {
-            _body.sharedMaterial = JemparinganArt.Material(JemparinganArt.Tone.Gold);
-            _flashUntil = Time.time + 0.14f;
-        }
         if (_sparks == null) CreateBurst();
         Material sparkMaterial = JemparinganArt.Material(bullseye ? JemparinganArt.Tone.Gold : JemparinganArt.Tone.Jade);
         for (int i = 0; i < _sparkRenderers.Length; i++)
@@ -103,9 +89,7 @@ public class JemparinganTarget : MonoBehaviour
     public void ResetReaction()
     {
         _hitAt = -1f;
-        _flashUntil = 0f;
         transform.localRotation = _restRotation;
-        if (_body != null) _body.sharedMaterial = JemparinganArt.Material(JemparinganArt.Tone.Red);
         if (_fxRoot != null) _fxRoot.gameObject.SetActive(false);
     }
 
