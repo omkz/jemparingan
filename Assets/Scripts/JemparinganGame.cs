@@ -964,6 +964,8 @@ public class JemparinganGame : MonoBehaviour
             0f, maximumDraw);
         float power = Mathf.InverseLerp(minimumDraw, maximumDraw, distance);
         _modernDrawPower = IsModernMode() ? power : 0f;
+        // A new draw takes priority over the previous arrow's recoil.
+        if (IsModernMode() && drawing) _modernReleaseFeedbackAt = -1f;
         // One short low-level creak per pull, not a continuously playing
         // sound or a per-frame AudioClip allocation.
         if (IsModernMode() && modernLightweightGameFeel && UsesDesktopInput()
