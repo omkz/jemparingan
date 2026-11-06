@@ -49,7 +49,7 @@ public class JemparinganGame : MonoBehaviour
     // Legacy shared Traditional rig flag remains serialized only for migration.
     // NEW Modern hands never use that rig, or any of its meshes.
     [SerializeField] private bool modernShowHands = false;
-    [Header("Modern-only first-person hands (new independent rig)")]
+    [Header("Modern-only first-person left hand (no right-hand rendering)")]
     [SerializeField] private bool modernUseNewHands = true;
     private JemparinganModernHands _modernHands;
     [SerializeField, Range(.45f, .75f)] private float modernReferenceGripViewportX = .554f;
@@ -1096,7 +1096,7 @@ public class JemparinganGame : MonoBehaviour
 
         // The contact targets must be current before posing hands. The old
         // call ran before the string moved and smoothed the hand away from it.
-        UpdateTraditionalPresentation(drawing);
+        UpdateTraditionalPresentation();
 
         // One uninterrupted draw-to-release transition fires exactly once.
         // Tracking loss / bow-unpinch resets without firing.
@@ -2556,7 +2556,7 @@ public class JemparinganGame : MonoBehaviour
             start, end, width);
     }
 
-    private void UpdateTraditionalPresentation(bool stringDrawing)
+    private void UpdateTraditionalPresentation()
     {
         if (!UsesTraditionalPresentation())
         {
@@ -2572,9 +2572,8 @@ public class JemparinganGame : MonoBehaviour
                 modernViewmodelRigV2 && modernUseReferenceFraming &&
                 _modeChosen && !_roundOver && !_finished &&
                 (_arrowCam == null || !_arrowCam.IsActive);
-            if (show && _modernHands != null && _stringMarker != null)
-                _modernHands.Present(_playerCamera, _stringMarker,
-                    stringDrawing, _modernDrawPower);
+            if (show && _modernHands != null)
+                _modernHands.Present(_playerCamera);
             else
                 HideModernHands();
             return;
