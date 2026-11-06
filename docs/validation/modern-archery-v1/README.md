@@ -6,6 +6,56 @@ first-person camera/input, procedural environment, arrow pool and
 gravity-based projectile. No external assets, scene regeneration, or
 separate physics system are required.
 
+## CURRENT: lightweight Modern release and impact feel
+
+This pass adds subtle shot feedback **without changing controls, camera
+aim, projectile trajectory, the optical sight model or the target hit
+planes**. Existing impact VFX were deliberately *reused*, not duplicated.
+
+- **Draw:** one short, quiet synthesized string-tension creak per LMB
+  draw, after 35% power; no loop or audio clip allocation per frame.
+- **Release:** a short original synthesized twang replaces the generic
+  release sound **only in Modern**. The two new mono 22,050 Hz clips
+  are generated once on scene startup and released on teardown.
+- **Visual recoil:** the Modern cosmetic bow alone gets a subtle,
+  damped roll/pitch (Inspector default max 1.1 degrees) and 8mm
+  backward offset over at most 0.20 seconds. No camera shake is
+  applied; aim and projectile launch remain completely separate.
+  Default Modern Arrow Cam may hide the brief recoil, so disable
+  `modernEveryShotArrowCam` temporarily to inspect the gesture.
+- **Target impact:** `JemparinganModernTarget` already had a reusable
+  hit marker, eight sparks, damped face wobble and score popup.
+  Rather than instantiate extra VFX, the existing sparks now change
+  between gold for bullseyes and jade for other hits, while bullseyes
+  receive a slightly stronger face/pop pulse. The real collision plane
+  and point calculation remain unchanged.
+- **Tuning:** `modernLightweightGameFeel = true` enables the new
+  draw/release sound and bow recoil for Modern. Setting it false
+  restores the previous generic shot sound and suppresses the new
+  draw creak/recoil. The existing Modern impact presentation is
+  maintained, including its modest bullseye polish.
+
+### Unity Play Mode regression checks
+
+1. In Modern idle, no draw or release sounds loop. Hold LMB past 35%
+   draw; hear one quiet creak, not repeated sounds. Release: hear one
+   twang and exactly one shot.
+2. With `modernEveryShotArrowCam = false`, look for a **small**, quick
+   cosmetic bow motion after release. The hand remains attached
+   to the bow and the optical + is not obscured.
+3. Re-enable Arrow Cam: audio and target impact still work, and no
+   camera wobble or second projectile occurs.
+4. Hit an outer ring (jade spark) and bullseye (gold spark with slightly
+   stronger score/face pulse). Check hitboxes and scores are unchanged.
+5. Hit repeatedly and retry: sparks and text are recycled; reaction
+   returns to rest; no per-shot creation of meshes, materials or clips.
+6. Switch to Classic, Traditional and Challenge and check their original
+   shooting audio, controls, and presentation still work. Test WebGL
+   and compare Profiler frame times rather than assuming free effects.
+
+**Status:** implementation pushed, static inspection only. No Unity
+Editor or WebGL runtime performance benchmark has been performed.
+
 ## CURRENT: Modern left-hand grip and subtle animation polish
 
 This **extends** the left-hand-only Modern FPS viewmodel; it does not
