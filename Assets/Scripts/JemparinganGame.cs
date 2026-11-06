@@ -337,10 +337,6 @@ public class JemparinganGame : MonoBehaviour
 
 
 
-
-
-
-
     // Three chapters across the existing arrow budget. Default 12 gives
     // exactly four arrows per stage. Customized Inspector arrow counts are
     // divided as evenly as possible, without changing their total.
@@ -586,9 +582,7 @@ public class JemparinganGame : MonoBehaviour
             if (renderer != null) renderer.enabled = visible;
     }
 
-    // Modern desktop has a separate minimal IMGUI, so hide the
-    // duplicated world-space text, shot pips and session labels.
-    // Other modes (and non-desktop) keep their world-space text HUD.
+    // Modern desktop uses a minimal IMGUI. Traditional and VR keep world-space text.
     // Decorative background boards are no longer constructed anywhere.
     private void SyncWorldSpaceHudVisibility()
     {
@@ -1713,10 +1707,6 @@ public class JemparinganGame : MonoBehaviour
         _resultsPanel.SetActive(true);
     }
 
-    // These titles are original game feedback, not historical Jemparingan ranks.
-    // Evaluate both precision and composure; every player receives a positive result.
-
-
     private void ShowImpactLabel(string message, Color color)
     {
         if (_impactLabel == null) return;
@@ -1743,7 +1733,7 @@ public class JemparinganGame : MonoBehaviour
 
     private void ResetRound()
     {
-        // A retry, mode switch or mission switch must never leave a cinematic
+        // A retry or mode switch must never leave a cinematic
         // camera on top of the main view or mouse-look locked.
         if (_arrowCam != null) _arrowCam.Stop();
         _restoreAfterArrowCam = false;
