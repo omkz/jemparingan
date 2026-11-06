@@ -1075,16 +1075,60 @@ public class JemparinganGame : MonoBehaviour
             }
             else
             {
-                // Original Traditional aim is unchanged.
-                Transform sightTarget = _target != null
-                    ? _target.transform : null;
-                float targetDist = sightTarget != null
-                    ? Vector3.Distance(Camera.main.transform.position,
-                        sightTarget.position) : 10f;
-                Vector3 sightFocus = Camera.main.transform.position +
-                    aim * targetDist;
-                Vector3 launchOrigin = bowOrigin + aim * .25f;
-                launchAim = (sightFocus - launchOrigin).normalized;
+                // Traditional shares the same calibrated physical sight and
+                // ballistic shot origin, but intersects its BANDULAN plane
+                // instead of Modern's circular target planes.
+                float releasePower = drawing ? power :
+                    Mathf.InverseLerp(minimumDraw, maximumDraw, _lastDraw);
+                float speed = Mathf.Lerp(minimumArrowSpeed, maximumArrowSpeed,
+                    releasePower);
+                Vector3 shotOrigin = gameplayBowPosition + aim * .25f;
+                Vector3 sightRay = aim;
+                if (modernAimWobble && modernViewmodelRigV2 &&
+                    modernUseReferenceFraming && modernUsePhysicalSight &&
+                    _modernPhysicalSight != null)
+                {
+                    if (drawing)
+                    {
+                        if (_modernPhysicalSight.TryGetCalibratedRay(
+                            Camera.main, out Vector3 calibratedRay))
+                        {
+                            _modernLastCalibratedAimRay = calibratedRay;
+                            _modernLastCalibratedAimRayValid = true;
+                            sightRay = calibratedRay;
+                        }
+                        else
+                            _modernLastCalibratedAimRayValid = false;
+                    }
+                    else if (_wasDrawing && _modernLastCalibratedAimRayValid)
+                        sightRay = _modernLastCalibratedAimRay;
+                }
+                else
+                    _modernLastCalibratedAimRayValid = false;
+
+                Vector3 correctedDirection;
+                bool sightOnBandulan;
+                if (_target != null &&
+                    JemparinganModernAim.TryZeroToBandulanSightRay(
+                        Camera.main, sightRay, shotOrigin, speed,
+                        simulatedGravity, outdoorArrowLifetime,
+                        _target.transform, out correctedDirection,
+                        out sightOnBandulan))
+                {
+                    launchAim = correctedDirection;
+                    _modernSightZeroed = sightOnBandulan;
+                }
+                else
+                {
+                    // Unreachable shots stay misses; never snap towards a
+                    // scoring zone or auto-correct the player's aim.
+                    float distance = _target != null
+                        ? Vector3.Distance(Camera.main.transform.position,
+                            _target.transform.position) : 10f;
+                    Vector3 sightFocus =
+                        Camera.main.transform.position + sightRay * distance;
+                    launchAim = (sightFocus - shotOrigin).normalized;
+                }
             }
         }
         UpdateDesktopPracticeSight(bowOrigin + aim * .25f,
