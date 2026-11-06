@@ -1123,11 +1123,11 @@ public class JemparinganGame : MonoBehaviour
                 {
                     // Unreachable shots stay misses; never snap towards a
                     // scoring zone or auto-correct the player's aim.
-                    float distance = _target != null
+                    float bandulanDistance = _target != null
                         ? Vector3.Distance(Camera.main.transform.position,
                             _target.transform.position) : 10f;
                     Vector3 sightFocus =
-                        Camera.main.transform.position + sightRay * distance;
+                        Camera.main.transform.position + sightRay * bandulanDistance;
                     launchAim = (sightFocus - shotOrigin).normalized;
                 }
             }
