@@ -6,6 +6,60 @@ first-person camera/input, procedural environment, arrow pool and
 gravity-based projectile. No external assets, scene regeneration, or
 separate physics system are required.
 
+## CURRENT: Modern HUD, stage transition and results polish
+
+This pass changes **presentation only**, preserving the now-playtested
+Modern control/aim wobble, physical reticle, ballistic zeroing, hit
+scoring, stage rules and center-target movement.
+
+- **HUD** is a compact, dark translucent top-left panel with a small
+  stage accent strip, prominent score, best score, arrows remaining
+  and hits. In progressive mode it adds three visual stage chips,
+  a current-stage shot progress bar and current objective count.
+  The bottom help is a smaller strip so the range stays visible.
+- **Stage transition** shows a short (~2s) fade-in/fade-out card,
+  "STAGE N / NAME" and a previous-goal status. It uses the existing
+  stage progression event and **never pauses movement, arrow flight
+  or player input**. To avoid duplicated stage copy, the previous
+  world-space stage banner is kept only for non-desktop mode.
+- **Results** display the total score, best/new personal best,
+  hits/accuracy/bullseyes, and three visually separated objective
+  summaries (CLEAR or BELOW GOAL). Retry and Modes buttons retain
+  the existing behavior.
+- All Modern IMGUI rectangles use `Texture2D.whiteTexture` with
+  temporary tint/restored GUI color. No new textures, materials,
+  assets, cameras, scene objects, controls or packages.
+- When `modernProgressiveStages` is disabled in the Inspector,
+  the simpler Modern HUD/results layouts still work.
+- Reset/retry and mode switching clear the transition timer.
+  Arrow Cam behavior and stage boundaries remain unchanged.
+
+### Unity visual regression checklist (still to be run)
+
+1. Play Modern on desktop at normal resolution. Verify score,
+   arrows, hits, all three stage chips and objective counts fit
+   inside the top-left panel without hiding the target sight.
+2. Fire arrows 1–4 and confirm Stage 2 transition card fades
+   smoothly. Try Stage 2 with an unmet objective and verify
+   the card says "KEEP IMPROVING", not "CLEARED".
+3. On arrow 8, confirm Stage 3 card and real target #2 movement.
+   Check that no banner duplicates over the camera-center sight.
+4. On arrow 12, verify the full results panel shows accurate
+   score, accuracy, bullseyes, all three stage objective statuses
+   and "NEW PERSONAL BEST" only when the current score is higher
+   than the saved best.
+5. Click Retry (R) and Modes (M), test a new round and ensure no
+   old stage transition persists. Retest the keyboard shortcuts.
+6. Repeat in a narrow 16:9 window, optionally with
+   `modernProgressiveStages = false`. Check no text clipping.
+7. Confirm Modern aim wobble and shot impacts are identical to
+   the prior playtest. Traditional, Challenge and Classic UI
+   and scoring must not change.
+
+**Validation status:** 20 source-level regression checks passed
+on the main script. A Unity Editor compile, playtest and actual
+screenshot review are still required.
+
 ## CURRENT: Modern progressive three-stage target challenge
 
 Modern now defaults to `modernProgressiveStages = true`: the same
