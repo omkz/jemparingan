@@ -6,6 +6,29 @@ first-person camera/input, procedural environment, arrow pool and
 gravity-based projectile. No external assets, scene regeneration, or
 separate physics system are required.
 
+## CURRENT: Modern left-hand-only viewmodel
+
+Supersedes the previous two-hand implementation documented below. The
+offscreen right hand, finger meshes, right sleeve, release animation and
+per-frame updates are now removed from `JemparinganModernHands.cs`,
+rather than only being hidden. The remaining viewmodel includes the
+Modern left palm, four curled fingers, thumb, cuff, and bottom-left
+deforming forearm, parented to the cosmetic bow grip.
+
+The unused historic Modern right-hand prototype is also no longer
+instantiated in `JemparinganTraditionalArcher`. Traditional/Challenge
+retain the existing left grip hand and its presentation path. No code
+for bowstring animation, nock, arrow trajectory, optical sight, LMB
+input, scoring or Arrow Cam was changed. Fewer objects and less per-frame
+work may help performance a little; measurable FPS claims require
+profiling in Unity.
+
+Unity QA: verify left hand stays on grip during idle/draw/full aim,
+right hand never appears, optical plus remains clear, shots still hit
+their intended boards, and V/R/M/Arrow Cam plus older modes still work.
+
+**Status:** static source checks, not Unity compilation or Play Mode.
+
 ## CURRENT: completely new Modern FPS hands & release animation
 
 This is **not** the old `JemparinganTraditionalArcher` reused in Modern.
