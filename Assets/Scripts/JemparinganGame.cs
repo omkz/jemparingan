@@ -1235,6 +1235,9 @@ public class JemparinganGame : MonoBehaviour
             else
                 ShowFeedback("DRAW FURTHER");
             _lastDraw = 0f;
+            // One cached reticle ray belongs to exactly one release,
+            // including aborted short pulls. Never carry it to next shot.
+            _modernLastCalibratedAimRayValid = false;
         }
         if (!drawing) ClearFocus();
         _wasDrawing = drawing;
