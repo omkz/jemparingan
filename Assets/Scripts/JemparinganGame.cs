@@ -187,10 +187,8 @@ public class JemparinganGame : MonoBehaviour
     private bool _desktopTrainingEnabled = true;
     // Cached sight state keeps TextMesh updates event-driven, not every frame.
     private bool _practiceSightStateKnown, _practiceSightWasAligned, _practiceSightWasDrawing;
-    private GameObject _outdoorFeedbackPanel;
-    // The original world-space HUD includes opaque dark-wood background
-    // boards at camera-right. Modern desktop has its own minimal IMGUI,
-    // so hide the ENTIRE legacy HUD and help roots, not just their text.
+    // Modern desktop uses a separate minimal IMGUI. Keep the old
+    // world-space text HUD hidden there, but retain it for other modes.
     private GameObject _worldSpaceHudRoot, _worldSpaceHelpRoot;
     private Renderer[] _focusRenderers;
     private Transform _upperString, _lowerString;
@@ -826,9 +824,10 @@ public class JemparinganGame : MonoBehaviour
             if (renderer != null) renderer.enabled = visible;
     }
 
-    // Hide the old camera-right brown HUD boards in Modern desktop.
-    // The separate IMGUI score/level overlay is unaffected. Restores
-    // the original 3D HUD for Classic, Traditional, Challenge and Quest.
+    // Modern desktop has a separate minimal IMGUI, so hide the
+    // duplicated world-space text, shot pips and session labels.
+    // Other modes (and non-desktop) keep their world-space text HUD.
+    // Decorative background boards are no longer constructed anywhere.
     private void SyncWorldSpaceHudVisibility()
     {
         bool visible = !(useOutdoorEnvironment && UsesDesktopInput() &&
@@ -1124,8 +1123,6 @@ public class JemparinganGame : MonoBehaviour
         {
             _feedbackLabel.text = "";
             _feedbackUntil = 0f;
-            if (_outdoorFeedbackPanel != null)
-                _outdoorFeedbackPanel.SetActive(false);
         }
         UpdateImpactLabel();
         // Stage changes wait for the outgoing arrow to resolve, so the
@@ -2104,12 +2101,8 @@ public class JemparinganGame : MonoBehaviour
             : "COMPLETE  •  " + _score + " POINTS  •  " + _hits + "/" + _shots + " HITS";
         if (_phaseLabel != null)
             _phaseLabel.text = "ROUND COMPLETE";
-        if (_outdoorFeedbackPanel != null)
-        {
-            _outdoorFeedbackPanel.SetActive(false);
-            _feedbackLabel.text = "";
-            _feedbackUntil = 0f;
-        }
+        if (_feedbackLabel != null) _feedbackLabel.text = "";
+        _feedbackUntil = 0f;
         SetInfo(UsesDesktopInput() ? "PRESS R OR HOLD LEFT MOUSE TO RESTART" : "RELEASE STRING, THEN HOLD TO RESTART");
         _bow.gameObject.SetActive(false);
         HideTraditionalArms();
@@ -2465,15 +2458,11 @@ public class JemparinganGame : MonoBehaviour
             // Avoid duplicate ARROW RELEASED, HIT, MISS and control notices.
             _feedbackLabel.text = "";
             _feedbackUntil = 0f;
-            if (_outdoorFeedbackPanel != null)
-                _outdoorFeedbackPanel.SetActive(false);
             return;
         }
         _feedbackLabel.color = feedbackColor ?? new Color(.40f, .94f, .75f);
         _feedbackLabel.text = msg;
         _feedbackUntil = Time.time + 1.5f;
-        if (_outdoorFeedbackPanel != null)
-            _outdoorFeedbackPanel.SetActive(true);
     }
 
     private void BuildNockedArrow()
@@ -2638,9 +2627,8 @@ public class JemparinganGame : MonoBehaviour
         _worldSpaceHudRoot = hud.gameObject;
         if (useOutdoorEnvironment)
         {
-            // Place all outdoor HUD copy in the upper RIGHT of the viewpoint.
-            // Bow remains left; the bandulan/aiming lane stays clear in the center.
-            // Keep this world-space board ~2.35m out, without ScreenSpaceOverlay.
+            // Place non-Modern HUD text in the upper-right of the viewpoint.
+            // No opaque boards; Modern desktop uses its small IMGUI instead.
             hud.SetParent(camera.transform, false);
             hud.localPosition = new Vector3(1.25f, 0.10f, 2.35f);
             hud.localRotation = Quaternion.Euler(0f, 25f, 0f);
@@ -2702,9 +2690,8 @@ public class JemparinganGame : MonoBehaviour
         return true;
     }
 
-    // Outdoor-only readability pass. TextMesh is intentionally reused because the
-    // project has no TMP/UGUI package dependency yet. These are 3D objects in front
-    // of the seated camera, not a screen-space overlay.
+    // Outdoor TextMesh sizing is shared by Classic, Traditional, Challenge
+    // and non-desktop. No 3D contrast-background mesh is constructed.
     private void StyleOutdoorHud(Transform hud, Transform help)
     {
         _titleLabel.text = "JEMPARINGAN  |  RASA";
@@ -2725,22 +2712,6 @@ public class JemparinganGame : MonoBehaviour
         _infoLabel.fontSize = 96;
         _infoLabel.fontStyle = FontStyle.Bold;
 
-        // Shared material, very low draw/geometry cost for readable contrast
-        // against the bright rice fields and light sky.
-        JemparinganArt.Part("HUD title + score contrast panel", PrimitiveType.Cube, hud,
-            new Vector3(0f, 1.04f, .085f),
-            new Vector3(1.88f, .49f, .025f), JemparinganArt.Tone.DarkWood);
-        JemparinganArt.Part("HUD title gold top edge", PrimitiveType.Cube, hud,
-            new Vector3(0f, 1.293f, .075f),
-            new Vector3(1.88f, .015f, .022f), JemparinganArt.Tone.Gold);
-        _outdoorFeedbackPanel = JemparinganArt.Part("HUD feedback contrast panel",
-            PrimitiveType.Cube, hud, new Vector3(0f, .67f, .09f),
-            new Vector3(1.75f, .18f, .023f), JemparinganArt.Tone.DarkWood);
-        _outdoorFeedbackPanel.SetActive(false);
-        JemparinganArt.Part("Instruction contrast panel", PrimitiveType.Cube, help,
-            new Vector3(0f, 0f, .08f),
-            new Vector3(1.77f, .18f, .022f), JemparinganArt.Tone.DarkWood);
-
         foreach (TextMesh label in hud.GetComponentsInChildren<TextMesh>(true))
         {
             if (label == _titleLabel || label == _scoreLabel ||
@@ -2757,18 +2728,14 @@ public class JemparinganGame : MonoBehaviour
         }
     }
 
-    // UI stays in world space; no external canvas or Quest-specific SDK required.
-    // It deliberately uses the existing shared primitive materials.
+    // Non-Modern and non-desktop UI stays as world-space TextMesh.
+    // These groups carry labels only, never opaque background boards.
     private void BuildSessionPanels(Transform hud)
     {
         var intro = new GameObject("Session Intro | Auto Hides On Draw");
         intro.transform.SetParent(hud, false);
         intro.transform.localPosition = new Vector3(0f, .09f, -.27f);
         _introPanel = intro;
-        JemparinganArt.Part("Intro card", PrimitiveType.Cube, intro.transform,
-            Vector3.zero, new Vector3(1.46f, .55f, .016f), JemparinganArt.Tone.DarkWood);
-        JemparinganArt.Part("Intro gold edge", PrimitiveType.Cube, intro.transform,
-            new Vector3(0f, .268f, -.013f), new Vector3(1.46f, .012f, .01f), JemparinganArt.Tone.Gold);
         _introTitleLabel = JemparinganArt.Label("Intro title", intro.transform, new Vector3(0f, .16f, -.025f),
             "J E M P A R I N G A N   /   R A S A", .0045f, new Color(.98f, .82f, .51f));
         _introGoalLabel = JemparinganArt.Label("Intro goal", intro.transform, new Vector3(0f, .015f, -.025f),
@@ -2783,10 +2750,6 @@ public class JemparinganGame : MonoBehaviour
         results.transform.SetParent(hud, false);
         results.transform.localPosition = new Vector3(0f, .09f, -.30f);
         _resultsPanel = results;
-        JemparinganArt.Part("Results card", PrimitiveType.Cube, results.transform,
-            Vector3.zero, new Vector3(1.62f, .80f, .018f), JemparinganArt.Tone.DarkWood);
-        JemparinganArt.Part("Results gold edge", PrimitiveType.Cube, results.transform,
-            new Vector3(0f, .39f, -.014f), new Vector3(1.62f, .014f, .01f), JemparinganArt.Tone.Gold);
         _resultsTitle = JemparinganArt.Label("Results heading", results.transform,
             new Vector3(0f, .28f, -.026f), "", .0050f, new Color(.98f, .82f, .51f));
         _resultsDetails = JemparinganArt.Label("Results score and accuracy", results.transform,
