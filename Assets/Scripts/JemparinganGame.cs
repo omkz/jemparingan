@@ -259,6 +259,14 @@ public class JemparinganGame : MonoBehaviour
         _modernReleaseFeedbackAt = -1f;
     }
 
+    private void OnDestroy()
+    {
+        // Only the new Modern one-shot clips are owned here. Existing audio
+        // clip lifetimes remain unchanged for the legacy game modes.
+        if (_modernDrawTensionSound != null) Destroy(_modernDrawTensionSound);
+        if (_modernReleaseSound != null) Destroy(_modernReleaseSound);
+    }
+
     private IEnumerator Start()
     {
         if (desktopInput == null) desktopInput = GetComponent<DesktopBowInput>();
