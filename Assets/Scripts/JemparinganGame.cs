@@ -59,6 +59,12 @@ public class JemparinganGame : MonoBehaviour
     [SerializeField] private bool modernSubtleBreathingSway = true;
     [SerializeField, Range(0f, .50f)] private float modernIdleSwayDegrees = .28f;
     [SerializeField, Range(3f, 7f)] private float modernBreathingCycleSeconds = 4.5f;
+    [Header("Modern full-draw aim wobble (optical sight and projectile linked)")]
+    [SerializeField] private bool modernAimWobble = true;
+    [SerializeField, Range(0f, .35f)] private float modernAimWobbleDegrees = .10f;
+    private float _modernWobbleBlend;
+    private Vector3 _modernLastCalibratedAimRay;
+    private bool _modernLastCalibratedAimRayValid;
     private float _modernBreathingWeight = 1f;
     private float _modernReleaseFeedbackAt = -1f;
     private bool _modernDrawCuePlayed;
@@ -263,6 +269,8 @@ public class JemparinganGame : MonoBehaviour
         SetModernDesktopMouseControl(false);
         _modernReleaseFeedbackAt = -1f;
         _modernBreathingWeight = 1f;
+        _modernWobbleBlend = 0f;
+        _modernLastCalibratedAimRayValid = false;
     }
 
     private void OnDestroy()
@@ -839,6 +847,8 @@ public class JemparinganGame : MonoBehaviour
                 _modernRaisedPose = Input.GetMouseButton(0) ? 1f : 0f;
                 _modernPrecisionPose = 0f;
                 _modernBreathingWeight = 1f;
+                _modernWobbleBlend = 0f;
+                _modernLastCalibratedAimRayValid = false;
                 HideModernHands();
                 if (_modernPhysicalSight != null)
                     _modernPhysicalSight.ResetCalibration();
@@ -1043,6 +1053,17 @@ public class JemparinganGame : MonoBehaviour
             ApplyModernBreathingSway(drawing, power,
                 ref visualBowPosition, ref bowRotation);
 
+        // Unlike idle breathing (cosmetic only), full-draw aim wobble
+        // genuinely shifts the visible +. Below, the projectile solver
+        // receives that SAME eye-to-reticle ray. Never change the camera.
+        if (IsModernMode() && modernViewmodelRigV2 &&
+            modernUseReferenceFraming && UsesDesktopInput() &&
+            modernUsePhysicalSight && modernAimWobble)
+            ApplyModernOpticalAimWobble(drawing, power,
+                ref visualBowPosition, ref bowRotation);
+        else
+            _modernWobbleBlend = 0f;
+
         // Very small, damped cosmetic release recoil. Applied ONLY to the
         // bow viewmodel after aim is resolved; it does not rotate the
         // camera, alter gameplayBowPosition, or modify projectile ballistics.
@@ -1086,20 +1107,59 @@ public class JemparinganGame : MonoBehaviour
                     releasePower);
                 Vector3 correctedDirection;
                 bool crosshairOnBoard;
-                if (JemparinganModernAim.TryZeroToCameraRay(Camera.main,
-                    gameplayBowPosition + aim * .25f, speed, simulatedGravity,
-                    outdoorArrowLifetime, _modernTargets,
-                    out correctedDirection, out crosshairOnBoard))
+                // Save the last *visible* sight ray before release. Desktop
+                // input resets draw power on MouseUp and the cosmetic bow
+                // starts lowering that same frame, but the shot must follow
+                // the plus position the player saw while holding LMB.
+                bool useReticleAim = false;
+                Vector3 reticleRay = Camera.main.transform.forward;
+                if (modernAimWobble && modernViewmodelRigV2 &&
+                    modernUseReferenceFraming && modernUsePhysicalSight &&
+                    _modernPhysicalSight != null)
+                {
+                    if (drawing)
+                    {
+                        if (_modernPhysicalSight.TryGetCalibratedRay(
+                            Camera.main, out reticleRay))
+                        {
+                            _modernLastCalibratedAimRay = reticleRay;
+                            _modernLastCalibratedAimRayValid = true;
+                            useReticleAim = true;
+                        }
+                        else
+                            _modernLastCalibratedAimRayValid = false;
+                    }
+                    else if (_wasDrawing && _modernLastCalibratedAimRayValid)
+                    {
+                        reticleRay = _modernLastCalibratedAimRay;
+                        useReticleAim = true;
+                    }
+                }
+                else
+                    _modernLastCalibratedAimRayValid = false;
+
+                bool zeroed = useReticleAim
+                    ? JemparinganModernAim.TryZeroToSightRay(Camera.main,
+                        reticleRay, gameplayBowPosition + aim * .25f,
+                        speed, simulatedGravity, outdoorArrowLifetime,
+                        _modernTargets, out correctedDirection,
+                        out crosshairOnBoard)
+                    : JemparinganModernAim.TryZeroToCameraRay(Camera.main,
+                        gameplayBowPosition + aim * .25f,
+                        speed, simulatedGravity, outdoorArrowLifetime,
+                        _modernTargets, out correctedDirection,
+                        out crosshairOnBoard);
+                if (zeroed)
                 {
                     launchAim = correctedDirection;
                     _modernSightZeroed = crosshairOnBoard;
                 }
                 else
                 {
-                    // For unreachable targets, preserve the old unassisted
-                    // shot (the reticle won't incorrectly claim zeroing).
+                    // Preserve the visible ray (or original camera ray)
+                    // even when the requested ballistic arc is unreachable.
                     Vector3 oldFocus = Camera.main.transform.position +
-                        aim * 10f;
+                        (useReticleAim ? reticleRay : aim) * 10f;
                     launchAim = (oldFocus -
                         (gameplayBowPosition + aim * .25f)).normalized;
                 }
@@ -1222,6 +1282,8 @@ public class JemparinganGame : MonoBehaviour
         _lastDraw = 0f;
         _modernDrawPower = 0f;
         _modernDrawCuePlayed = false;
+        _modernLastCalibratedAimRayValid = false;
+        _modernWobbleBlend = 0f;
         ClearFocus();
         _drawStartedAt = 0f;
         _lastPowerStep = -1;
@@ -1319,6 +1381,51 @@ public class JemparinganGame : MonoBehaviour
                 : JemparinganArt.Tone.Paper;
             _focusRenderers[i].sharedMaterial = JemparinganArt.Material(tone);
         }
+    }
+
+    // Lightweight full-draw motor wobble. The calibrated optical + moves
+    // with the actual bow and supplies the SAME direction used by the
+    // ballistic zeroing code. This is NOT a camera shake, random miss,
+    // or wind; at 0.10 degrees the projected displacement is ~1-3px.
+    private void ApplyModernOpticalAimWobble(bool drawing, float drawPower,
+        ref Vector3 visualBowPosition, ref Quaternion bowRotation)
+    {
+        if (!drawing || drawPower < modernPrecisionDrawThreshold ||
+            !ModernPrecisionAimRequested() ||
+            _modernPhysicalSight == null || !_modernPhysicalSight.HasCalibration ||
+            _playerCamera == null || modernAimWobbleDegrees <= 0f)
+        {
+            _modernWobbleBlend = 0f;
+            return;
+        }
+
+        // Ease in after the scope first calibrates. No procedural animation
+        // runs before that moment, ensuring the initial + is zeroed to the
+        // existing camera-axis reference without any transient offset.
+        _modernWobbleBlend = Mathf.MoveTowards(
+            _modernWobbleBlend, 1f, 2.6f * Time.deltaTime);
+        float strength = modernAimWobbleDegrees *
+            Mathf.SmoothStep(0f, 1f, _modernWobbleBlend);
+        if (strength <= 0f) return;
+
+        // Two smooth, mismatched breathing/muscle periods. The only aim
+        // displacement comes from the literal physical sight location;
+        // no invisible variation is added to a projectile after zeroing.
+        float phase = Time.time * 1.37f;
+        float horizontalDegrees = Mathf.Sin(phase + .2f) * strength;
+        float verticalDegrees = Mathf.Sin(phase * .73f + 1.2f) *
+            strength * .82f;
+        Transform eye = _playerCamera.transform;
+        float depth = Mathf.Max(.35f, Vector3.Dot(
+            visualBowPosition - eye.position, eye.forward));
+        visualBowPosition += eye.right * (depth * Mathf.Tan(
+            horizontalDegrees * Mathf.Deg2Rad));
+        visualBowPosition += eye.up * (depth * Mathf.Tan(
+            verticalDegrees * Mathf.Deg2Rad));
+        // Small, visible pressure change on the grip; the reticle ray
+        // is read AFTER this transform, so the shot stays honest.
+        bowRotation *= Quaternion.Euler(
+            verticalDegrees * .18f, 0f, horizontalDegrees * .14f);
     }
 
     // Slowly breathing shooter, not wind and not random aim jitter.
@@ -1917,6 +2024,8 @@ public class JemparinganGame : MonoBehaviour
         _modernPrecisionPose = 0f;
         _modernDrawPower = 0f;
         _modernBreathingWeight = 1f;
+        _modernWobbleBlend = 0f;
+        _modernLastCalibratedAimRayValid = false;
         _modernSightZeroed = false;
         _modernReleaseFeedbackAt = -1f;
         _modernDrawCuePlayed = false;
@@ -2724,6 +2833,8 @@ public class JemparinganGame : MonoBehaviour
 
     private void HideModernPhysicalSight()
     {
+        _modernLastCalibratedAimRayValid = false;
+        _modernWobbleBlend = 0f;
         if (_modernPhysicalSight != null)
             _modernPhysicalSight.Present(null, false, false);
     }
