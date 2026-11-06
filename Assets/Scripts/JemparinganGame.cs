@@ -52,6 +52,12 @@ public class JemparinganGame : MonoBehaviour
     [Header("Modern-only first-person left hand (no right-hand rendering)")]
     [SerializeField] private bool modernUseNewHands = true;
     private JemparinganModernHands _modernHands;
+    [Header("Modern lightweight release and impact feel (cosmetic only)")]
+    [SerializeField] private bool modernLightweightGameFeel = true;
+    [SerializeField, Range(.2f, 2f)] private float modernReleaseRecoilDegrees = 1.1f;
+    private float _modernReleaseFeedbackAt = -1f;
+    private bool _modernDrawCuePlayed;
+    private AudioClip _modernDrawTensionSound, _modernReleaseSound;
     [SerializeField, Range(.45f, .75f)] private float modernReferenceGripViewportX = .554f;
     [SerializeField, Range(.15f, .45f)] private float modernReferenceGripViewportY = .270f;
     [SerializeField, Range(.50f, .95f)] private float modernReferenceGripDepth = .70f;
@@ -250,6 +256,7 @@ public class JemparinganGame : MonoBehaviour
         HideModernPhysicalSight();
         HideModernHands();
         SetModernDesktopMouseControl(false);
+        _modernReleaseFeedbackAt = -1f;
     }
 
     private IEnumerator Start()
@@ -949,6 +956,16 @@ public class JemparinganGame : MonoBehaviour
             0f, maximumDraw);
         float power = Mathf.InverseLerp(minimumDraw, maximumDraw, distance);
         _modernDrawPower = IsModernMode() ? power : 0f;
+        // One short low-level creak per pull, not a continuously playing
+        // sound or a per-frame AudioClip allocation.
+        if (IsModernMode() && modernLightweightGameFeel && UsesDesktopInput()
+            && drawing && power >= .35f && !_modernDrawCuePlayed)
+        {
+            _modernDrawCuePlayed = true;
+            if (_audio != null && _modernDrawTensionSound != null)
+                _audio.PlayOneShot(_modernDrawTensionSound, .20f);
+        }
+        if (!drawing) _modernDrawCuePlayed = false;
         Quaternion bowRotation = Quaternion.LookRotation(aim, Vector3.up);
         if (UsesTraditionalPresentation())
         {
@@ -998,6 +1015,26 @@ public class JemparinganGame : MonoBehaviour
                 // upper-tip depth. Never stack the old virtual FOV/boost.
                 visualBowScale = _modernReferenceCalculatedScale *
                     Mathf.Lerp(modernIdleBowScale, 1f, raised);
+            }
+        }
+        // Very small, damped cosmetic release recoil. Applied ONLY to the
+        // bow viewmodel after aim is resolved; it does not rotate the
+        // camera, alter gameplayBowPosition, or modify projectile ballistics.
+        if (IsModernMode() && modernViewmodelRigV2 &&
+            modernLightweightGameFeel && _modernReleaseFeedbackAt >= 0f)
+        {
+            float elapsed = Time.time - _modernReleaseFeedbackAt;
+            if (elapsed < 0f || elapsed >= .20f)
+                _modernReleaseFeedbackAt = -1f;
+            else
+            {
+                float envelope = Mathf.Exp(-elapsed * 21f);
+                float wobble = Mathf.Sin(elapsed * 50f) * envelope;
+                bowRotation *= Quaternion.Euler(
+                    modernReleaseRecoilDegrees * wobble,
+                    0f, modernReleaseRecoilDegrees * .55f * wobble);
+                visualBowPosition -= eyeForwardForModernRecoil(_playerCamera) *
+                    (.008f * envelope);
             }
         }
         _bow.localScale = Vector3.one * visualBowScale;
@@ -1158,6 +1195,7 @@ public class JemparinganGame : MonoBehaviour
         _wasDrawing = _wasBowHeld = false;
         _lastDraw = 0f;
         _modernDrawPower = 0f;
+        _modernDrawCuePlayed = false;
         ClearFocus();
         _drawStartedAt = 0f;
         _lastPowerStep = -1;
@@ -1358,6 +1396,11 @@ public class JemparinganGame : MonoBehaviour
             Quaternion.Euler(0f, 0f, roll);
     }
 
+    private static Vector3 eyeForwardForModernRecoil(Camera eye)
+    {
+        return eye != null ? eye.transform.forward : Vector3.forward;
+    }
+
     private void Shoot(Vector3 origin, Vector3 rawAim, float draw, bool stable)
     {
         if (_shots >= arrowsPerRound) return;
@@ -1403,7 +1446,14 @@ public class JemparinganGame : MonoBehaviour
             }
         }
         _shots++;
-        _audio.PlayOneShot(_shotSound, 0.48f);
+        if (IsModernMode() && modernLightweightGameFeel)
+        {
+            _modernReleaseFeedbackAt = Time.time;
+            if (_audio != null && _modernReleaseSound != null)
+                _audio.PlayOneShot(_modernReleaseSound, .43f);
+        }
+        else if (_audio != null && _shotSound != null)
+            _audio.PlayOneShot(_shotSound, .48f);
         ShowFeedback("ARROW RELEASED");
         if (_mode == GameMode.Classic &&
             (_shots == 4 || _shots == 8 ||
@@ -1800,6 +1850,8 @@ public class JemparinganGame : MonoBehaviour
         _modernPrecisionPose = 0f;
         _modernDrawPower = 0f;
         _modernSightZeroed = false;
+        _modernReleaseFeedbackAt = -1f;
+        _modernDrawCuePlayed = false;
         if (_modernPhysicalSight != null)
             _modernPhysicalSight.ResetCalibration();
         HideModernHands();
@@ -2178,6 +2230,13 @@ public class JemparinganGame : MonoBehaviour
         _audio.spatialBlend = 0f;
         _audio.playOnAwake = false;
         _shotSound = GenerateTone("Archery String", 0.17f, 185f, true);
+        if (useOutdoorEnvironment)
+        {
+            _modernDrawTensionSound = GenerateModernStringSound(
+                "Modern | draw tension", false);
+            _modernReleaseSound = GenerateModernStringSound(
+                "Modern | short string snap", true);
+        }
         _hitSound = GenerateWoodImpact("Bandulan Wood Hit", false);
         _bullseyeSound = GenerateWoodImpact("Bandulan Center Hit", true);
         _missSound = GenerateTone("Soft Miss", 0.14f, 115f, false);
@@ -2853,6 +2912,37 @@ public class JemparinganGame : MonoBehaviour
                 Vector3.zero, Vector3.one * (.017f - i * .0009f), JemparinganArt.Tone.Jade).transform;
             _previewDots[i].gameObject.SetActive(false);
         }
+    }
+
+    // Short original one-shot bowstring sounds. Created once on scene
+    // startup (22.05 kHz mono); playback does not allocate new clips.
+    // Draw = quiet fibrous tension, release = snappy double-frequency twang.
+    private static AudioClip GenerateModernStringSound(
+        string name, bool release)
+    {
+        const int sampleRate = 22050;
+        float duration = release ? .19f : .15f;
+        int count = Mathf.CeilToInt(sampleRate * duration);
+        float[] samples = new float[count];
+        uint noiseState = release ? 81263u : 92507u;
+        float baseHz = release ? 175f : 96f;
+        for (int index = 0; index < count; index++)
+        {
+            float t = (float)index / sampleRate;
+            noiseState = noiseState * 1664525u + 1013904223u;
+            float noise = (noiseState >> 16) / 32768f - 1f;
+            float decay = Mathf.Exp(-t * (release ? 26f : 15f));
+            float pitch = baseHz * (1f + .23f * Mathf.Exp(-t * 40f));
+            float stringBody = Mathf.Sin(2f * Mathf.PI * pitch * t) +
+                .23f * Mathf.Sin(2f * Mathf.PI * pitch * 2.08f * t);
+            float snap = noise * Mathf.Exp(-t * (release ? 95f : 35f));
+            samples[index] = decay * (release ? .25f : .08f) *
+                stringBody + snap * (release ? .19f : .035f);
+        }
+        AudioClip clip = AudioClip.Create(
+            name, count, 1, sampleRate, false);
+        clip.SetData(samples, 0);
+        return clip;
     }
 
     // Short original synthesized wooden hit: harmonic resonance + soft transient.
