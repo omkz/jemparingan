@@ -44,7 +44,10 @@ public sealed class JemparinganTraditionalArcher : MonoBehaviour
         _leftSleeve.triangles = TubeIndices(ForearmRings);
         AddRenderer("Left sleeve entering from below view", _visuals,
             _leftSleeve, JemparinganArt.Tone.TraditionalCloth);
-        BuildModernRightHand();
+        // The standalone Modern left-hand viewmodel supersedes this
+        // historical Modern right-hand prototype. No code path requests
+        // Present(modernRightHandDrawing: true) anymore, so don't allocate
+        // its unused meshes or renderers in Traditional/Challenge either.
         _visuals.gameObject.SetActive(false);
     }
 
