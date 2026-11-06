@@ -714,12 +714,6 @@ public class JemparinganGame : MonoBehaviour
                 label == _phaseLabel || label == _feedbackLabel) continue;
             label.characterSize *= 1.35f;
             label.fontSize = 96;
-            if (label.name == "Intro title")
-                label.text = "JEMPARINGAN  /  RASA";
-            else if (label.name == "Intro goal")
-                label.text = "12 PANAH  |  3 BABAK  |  RASA +3";
-            else if (label.name == "Intro start" && Application.isEditor)
-                label.text = "KLIK KIRI UNTUK MULAI";
         }
     }
 
