@@ -55,6 +55,11 @@ public class JemparinganGame : MonoBehaviour
     [Header("Modern lightweight release and impact feel (cosmetic only)")]
     [SerializeField] private bool modernLightweightGameFeel = true;
     [SerializeField, Range(.2f, 2f)] private float modernReleaseRecoilDegrees = 1.1f;
+    [Header("Modern idle breathing sway (cosmetic viewmodel only, no wind)")]
+    [SerializeField] private bool modernSubtleBreathingSway = true;
+    [SerializeField, Range(0f, .50f)] private float modernIdleSwayDegrees = .28f;
+    [SerializeField, Range(3f, 7f)] private float modernBreathingCycleSeconds = 4.5f;
+    private float _modernBreathingWeight = 1f;
     private float _modernReleaseFeedbackAt = -1f;
     private bool _modernDrawCuePlayed;
     private AudioClip _modernDrawTensionSound, _modernReleaseSound;
@@ -257,6 +262,7 @@ public class JemparinganGame : MonoBehaviour
         HideModernHands();
         SetModernDesktopMouseControl(false);
         _modernReleaseFeedbackAt = -1f;
+        _modernBreathingWeight = 1f;
     }
 
     private void OnDestroy()
@@ -832,6 +838,7 @@ public class JemparinganGame : MonoBehaviour
                 modernViewmodelRigV2 = !modernViewmodelRigV2;
                 _modernRaisedPose = Input.GetMouseButton(0) ? 1f : 0f;
                 _modernPrecisionPose = 0f;
+                _modernBreathingWeight = 1f;
                 HideModernHands();
                 if (_modernPhysicalSight != null)
                     _modernPhysicalSight.ResetCalibration();
@@ -1027,6 +1034,15 @@ public class JemparinganGame : MonoBehaviour
                     Mathf.Lerp(modernIdleBowScale, 1f, raised);
             }
         }
+        // Breathing is only a viewmodel pose, on top of the solved frame.
+        // Never let the 3D optical + wander once the bow is almost drawn:
+        // the established calibrated precision aim must remain trustworthy.
+        if (IsModernMode() && modernViewmodelRigV2 &&
+            modernUseReferenceFraming && UsesDesktopInput() &&
+            modernSubtleBreathingSway)
+            ApplyModernBreathingSway(drawing, power,
+                ref visualBowPosition, ref bowRotation);
+
         // Very small, damped cosmetic release recoil. Applied ONLY to the
         // bow viewmodel after aim is resolved; it does not rotate the
         // camera, alter gameplayBowPosition, or modify projectile ballistics.
@@ -1303,6 +1319,47 @@ public class JemparinganGame : MonoBehaviour
                 : JemparinganArt.Tone.Paper;
             _focusRenderers[i].sharedMaterial = JemparinganArt.Material(tone);
         }
+    }
+
+    // Slowly breathing shooter, not wind and not random aim jitter.
+    // Called only for the Modern V2 cosmetic bow before the normal release
+    // recoil is composed. Does not touch camera transform, gameplay bow
+    // origin, launch aim, projectile, scoring or target hit plane.
+    private void ApplyModernBreathingSway(bool drawing, float drawPower,
+        ref Vector3 visualBowPosition, ref Quaternion bowRotation)
+    {
+        // Power fades the effect before full draw. A hard guard guarantees
+        // *zero* sway when the optical reticle is being calibrated.
+        if (ModernPrecisionAimRequested() || (drawing && drawPower >= .90f))
+        {
+            _modernBreathingWeight = 0f;
+            return;
+        }
+
+        float drawFade = drawing
+            ? 1f - Mathf.SmoothStep(0f, 1f,
+                Mathf.InverseLerp(.12f, .90f, drawPower))
+            : 1f;
+        float raiseFade = Mathf.Lerp(1f, .23f,
+            Mathf.SmoothStep(0f, 1f, _modernRaisedPose));
+        float targetWeight = drawFade * raiseFade;
+        _modernBreathingWeight = Mathf.MoveTowards(_modernBreathingWeight,
+            targetWeight, 3.5f * Time.deltaTime);
+        float weight = _modernBreathingWeight;
+        if (weight <= .0001f || modernIdleSwayDegrees <= 0f) return;
+
+        // One 4.5s breathing cycle plus a smaller, slower arm drift.
+        // Continuous sinusoids avoid distracting random jitter.
+        float phase = Time.time * (2f * Mathf.PI /
+            Mathf.Max(3f, modernBreathingCycleSeconds));
+        float inhale = Mathf.Sin(phase);
+        float armDrift = Mathf.Sin(phase * .63f + 1.05f);
+        float amplitude = modernIdleSwayDegrees * weight;
+        bowRotation *= Quaternion.Euler(.86f * inhale * amplitude,
+            0f, .58f * armDrift * amplitude);
+        if (_playerCamera != null)
+            visualBowPosition += _playerCamera.transform.up *
+                (.0024f * inhale * weight);
     }
 
     // Only the Modern desktop viewmodel uses this pose animation. No camera,
@@ -1859,6 +1916,7 @@ public class JemparinganGame : MonoBehaviour
         _modernRaisedPose = 0f;
         _modernPrecisionPose = 0f;
         _modernDrawPower = 0f;
+        _modernBreathingWeight = 1f;
         _modernSightZeroed = false;
         _modernReleaseFeedbackAt = -1f;
         _modernDrawCuePlayed = false;
