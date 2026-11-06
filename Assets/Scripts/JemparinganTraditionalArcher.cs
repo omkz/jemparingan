@@ -48,7 +48,7 @@ public sealed class JemparinganTraditionalArcher : MonoBehaviour
         if (_visuals != null) _visuals.gameObject.SetActive(false);
     }
 
-    public void Present(bool modernReferenceForearm = false)
+    public void Present()
     {
         if (_handle == null || _bow == null || Camera.main == null) return;
         if (!_visuals.gameObject.activeSelf) _visuals.gameObject.SetActive(true);
@@ -57,10 +57,10 @@ public sealed class JemparinganTraditionalArcher : MonoBehaviour
         // continuous with the player's camera framing.
         Vector3 contact = _handle.TransformPoint(Vector3.down * .55f);
         _leftHand.SetPositionAndRotation(contact, _handle.rotation);
-        PoseForearm(Camera.main, modernReferenceForearm);
+        PoseForearm(Camera.main);
     }
 
-    private void PoseForearm(Camera camera, bool modernReferenceForearm)
+    private void PoseForearm(Camera camera)
     {
         Transform eye = camera.transform;
         Vector3 wristWorld = _leftHand.TransformPoint(LeftWrist);
@@ -71,17 +71,11 @@ public sealed class JemparinganTraditionalArcher : MonoBehaviour
         float startDepth = Mathf.Max(.55f, camera.nearClipPlane + .18f);
         float halfViewHeight = Mathf.Tan(camera.fieldOfView *
             Mathf.Deg2Rad * .5f) * startDepth;
-        // Modern screenshot pose: the sleeve enters diagonally from the
-        // bottom-left of the frame, visibly connecting to the grip on the
-        // right. Traditional/Challenge retain their restrained original arm.
+        // Keep the Traditional/Challenge sleeve below the viewport edge.
         Vector3 startWorld = eye.position + eye.forward * startDepth -
-            eye.right * (modernReferenceForearm ? .42f : .27f) -
-            eye.up * (halfViewHeight + (modernReferenceForearm ? .16f : .14f));
-        Vector3 controlWorld = modernReferenceForearm
-            ? Vector3.Lerp(startWorld, wristWorld, .53f) +
-                eye.up * .075f + eye.right * .010f
-            : Vector3.Lerp(startWorld, wristWorld, .56f) +
-                eye.up * .018f - eye.right * .010f;
+            eye.right * .27f - eye.up * (halfViewHeight + .14f);
+        Vector3 controlWorld = Vector3.Lerp(startWorld, wristWorld, .56f) +
+            eye.up * .018f - eye.right * .010f;
 
         Vector3 start = transform.InverseTransformPoint(startWorld);
         Vector3 control = transform.InverseTransformPoint(controlWorld);
@@ -100,11 +94,8 @@ public sealed class JemparinganTraditionalArcher : MonoBehaviour
             if (across.sqrMagnitude < .01f)
                 across = Vector3.Cross(tangent, Vector3.up).normalized;
             Vector3 normal = Vector3.Cross(tangent, across).normalized;
-            // Wider, tapering low-poly sleeve creates a readable foreground
-            // silhouette instead of a small detached wrist in Modern only.
-            float radius = modernReferenceForearm
-                ? Mathf.Lerp(.090f, .024f, t)
-                : Mathf.Lerp(.046f, .021f, t);
+            // Taper the sleeve toward the real wrist without leaving a cap.
+            float radius = Mathf.Lerp(.046f, .021f, t);
 
             for (int side = 0; side < Sides; side++)
             {
