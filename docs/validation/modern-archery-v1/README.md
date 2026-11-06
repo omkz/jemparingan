@@ -6,6 +6,43 @@ first-person camera/input, procedural environment, arrow pool and
 gravity-based projectile. No external assets, scene regeneration, or
 separate physics system are required.
 
+## CURRENT: delete obsolete 3D wood HUD graphics in every mode
+
+After validating that the brown blocks were generated HUD background
+geometry, the shared builder was cleaned up. This change **removes the
+`JemparinganArt.Part(...)` construction calls entirely** instead of
+only toggling those rendered objects off.
+
+- Permanently removed: title/score wooden contrast board, gold top
+  edge, feedback wooden board, instruction wooden board, intro card and
+  its gold edge, results card and its gold edge.
+- Removed the unused `_outdoorFeedbackPanel` reference and all its
+  `SetActive` logic, retaining timed feedback text and clearing
+  feedback on round completion.
+- Other modes' functional world-space TextMesh labels, stage messages,
+  intro prompts and results texts remain intact; they now appear
+  without wooden backplates. Modern desktop continues to use its
+  compact IMGUI HUD and results while its redundant world-space copy
+  is hidden.
+- Other environment wood (pendopo, target stands) and gameplay code
+  were not touched. Do not confuse removed UI backplates with
+  environmental geometry.
+
+### Unity checks
+
+1. Modern: no brown camera-right HUD even before the first draw.
+2. Classic / Traditional / Challenge: no wood UI boards; the
+   score/phase/help text still updates and results are readable.
+3. Retry, finish, M mode switch and feedback expiry do not throw
+   missing-object exceptions.
+4. In-game Modern optical sight and impacts are unchanged.
+5. Check legibility of floating text in bright sky. If needed, use
+   a restrained outline/shadow later rather than restoring wooden
+   boards.
+
+**Static validation:** 21/21 source checks passed. Unity compilation
+and real screenshot review remain unverified.
+
 ## CURRENT: remove brown camera-right legacy HUD boards
 
 The Modern desktop HUD was simplified previously, but the old
