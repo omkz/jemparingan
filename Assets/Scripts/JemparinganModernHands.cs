@@ -200,8 +200,10 @@ public sealed class JemparinganModernHands : MonoBehaviour
             int b = r * Sides + (j + 1) % Sides;
             int c = a + Sides;
             int d = b + Sides;
-            indices.Add(a); indices.Add(c); indices.Add(b);
-            indices.Add(b); indices.Add(c); indices.Add(d);
+            // Wind triangles outward, matching the tangent-frame circle.
+            // Inverted winding hides hand/sleeve surfaces under backface cull.
+            indices.Add(a); indices.Add(b); indices.Add(c);
+            indices.Add(b); indices.Add(d); indices.Add(c);
         }
     }
 
