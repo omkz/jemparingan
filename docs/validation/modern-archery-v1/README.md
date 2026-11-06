@@ -6,6 +6,65 @@ first-person camera/input, procedural environment, arrow pool and
 gravity-based projectile. No external assets, scene regeneration, or
 separate physics system are required.
 
+## CURRENT: Modern full-draw aim wobble (optical reticle = shot direction)
+
+This adds an **optional, slow, very small ±0.10-degree** aim challenge
+to Modern desktop V2. It is intentionally a different mechanic from
+the earlier **idle breathing bow sway**, which still stops by 90% draw.
+
+- Toggle: `modernAimWobble = true`, tune
+  `modernAimWobbleDegrees = 0.10` in the Inspector (range 0–0.35).
+  Set the toggle false / amplitude zero for the previously stable
+  full-draw aiming experience. No gameplay difficulty stages changed.
+- Only starts at full/precision draw, **after the physical glass +
+  sight has successfully calibrated**. At initial sight-in the bow
+  does not wobble; this avoids offsetting the zeroing procedure.
+- A gentle sine-based lateral/vertical viewmodel displacement makes
+  the **actual physical +** drift a few screen pixels. It eases in
+  over about 0.4 seconds, with no random jitter or camera rotation.
+  Idle bow breathing remains separate; wind drift is NOT enabled.
+- While drawing, the ballistic solver projects the ray from the
+  camera **through the actual visible calibrated +**, intersects
+  the unchanged target plane, and corrects for parallax, drop and
+  arrow-tip offset. This ensures the shot tracks the visible + rather
+  than an invisible camera-center crosshair.
+- On LMB release, the display bow may begin lowering immediately
+  because DesktopBowInput resets draw power. The launch solver
+  therefore uses the **last visible calibrated + ray from the
+  preceding drawn frame**. This preserves the player's release
+  timing and avoids a one-frame off-center surprise.
+- Without a calibrated sight (unusual camera setup / V1),
+  the original camera-axis ballistic solver remains in force;
+  no invisible aim penalty is introduced.
+- No new mesh, particles, Animator, Rigidbody, materials, or
+  per-frame GameObjects. Existing target score/collision logic,
+  draw controls, shot physics, release audio, and camera logic
+  remain untouched. Legacy modes do not use aim wobble.
+
+### Unity Play Mode acceptance tests (not run in this chat)
+
+1. Modern idle: same slow breathing as before. Hold LMB until
+   the sight calibrates and precision aim settles.
+2. Keep the **mouse still at full draw**. The visible + should
+   drift slowly and only slightly around the screen center.
+3. With debug G crosshair on, compare the + against the fixed
+   camera center. The optical reticle should move but the camera
+   center remains fixed.
+4. Release as the + crosses the target bullseye. With arrow cam
+   and target hit popup, shot impact should correspond to the
+   actual + at release, not to the camera center.
+5. Change `modernAimWobbleDegrees` to 0 or uncheck
+   `modernAimWobble`. The + becomes stable and the original
+   camera-axis solver takes over.
+6. Rapid redraw/release, pause, reset R, change modes M, toggle
+   V, test different FOVs/aspect ratios, and confirm no stale
+   aim ray is carried across sessions.
+7. Test any misses/reachable limits; no target-center homing.
+   Profile in Unity/WebGL before claiming FPS improvements.
+
+**Status:** source implemented, static regression checks pending.
+Unity compile and playtesting not yet performed.
+
 ## CURRENT: Modern breathing bow sway (no wind drift yet)
 
 The first-person Modern bow now has an optional, *very subtle* idle
