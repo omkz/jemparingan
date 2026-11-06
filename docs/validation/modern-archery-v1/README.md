@@ -6,6 +6,44 @@ first-person camera/input, procedural environment, arrow pool and
 gravity-based projectile. No external assets, scene regeneration, or
 separate physics system are required.
 
+## CURRENT: remove brown camera-right legacy HUD boards
+
+The Modern desktop HUD was simplified previously, but the old
+world-space `Jemparingan HUD` and `Jemparingan Instructions` still
+contained large opaque dark-wood contrast cubes at the right edge of
+the camera. Deleting TextMesh copy alone left those boards visible.
+
+- In **Modern desktop**, hide the **two old world-space roots**, which
+  removes background boards, title gold edge, help strip, shot pips,
+  and stale intro card from the camera view.
+- The **minimal top-left IMGUI LEVEL / SCORE / ARROWS** remains visible
+  and interactive. Final results also use the existing IMGUI card.
+- When returning to Classic, Traditional, Challenge or non-desktop
+  / Quest, the original world-space HUD roots become visible again;
+  they are not destroyed, moved, or recreated.
+- The mode-selection screen is also free of those legacy boards.
+  Visibility is synchronized after each ResetRound() state update.
+- No modifications to arrows, bow geometry, optical sight, target
+  movement, stages, game scoring, wind or input.
+
+### Unity checks (not yet run)
+
+1. Enter Modern: verify **no brown title/help panels on the right**,
+   including the first frame before drawing.
+2. Move camera, aim and release: the right side stays clear,
+   while the minimal 2D HUD displays level/score/arrows.
+3. Reach next level and results: no stray 3D intro card, but
+   Modern 2D transition and result controls work.
+4. Press M, choose Classic/Traditional/Challenge; confirm their
+   existing world-space boards and instructions return normally.
+5. Retry R and switch modes again to catch stale visibility.
+6. If a brown object still appears on the right, capture a
+   screenshot: it may be an environment mesh/bow element rather
+   than the old HUD panel addressed by this fix.
+
+**Validation:** 12/12 targeted static checks passed.
+Unity visual testing and compilation still to be confirmed.
+
 ## CURRENT: minimal on-screen text for Modern desktop (presentation only)
 
 Modern's text-heavy HUD has been simplified after playtest feedback.
