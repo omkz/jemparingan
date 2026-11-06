@@ -6,6 +6,63 @@ first-person camera/input, procedural environment, arrow pool and
 gravity-based projectile. No external assets, scene regeneration, or
 separate physics system are required.
 
+## CURRENT: completely new Modern FPS hands & release animation
+
+This is **not** the old `JemparinganTraditionalArcher` reused in Modern.
+A new `JemparinganModernHands.cs` is built separately under the cosmetic
+bow hierarchy for **Modern desktop V2 only**:
+
+- **Left gripping hand:** new tapered palm/wrist, four curled fingers
+  around the leather grip, thumb, and compact cuff. It follows the grip
+  directly as the -2-degree bow raises, zooms and aims.
+- **Left forearm:** new smoothly interpolated 3D sleeve tube from the
+  lower-left camera frame to the wrist; recomputes vertices rather
+  than creating new GameObjects per frame.
+- **Right drawing hand:** new tapered palm, separate pinching
+  index/middle/thumb meshes. It tracks the *actual visual nock* every
+  frame during LMB draw; no unrelated screen-space guess.
+- **Right forearm:** separate tube enters from the lower-right frame
+  and follows its wrist. Right hand/forearm are hidden while idle.
+- **Release follow-through:** on LMB release, the fingers unfold and
+  the right wrist moves away for a short ~0.18-second gesture. With
+  the default Modern Arrow Cam active, both hands hide immediately
+  when follow begins, preventing floating body parts in the camera.
+- **Near-camera protection:** the right hand shifts minimally toward
+  the bow if the nock sits too close to the near clip plane. This
+  is visual-only; the string, release frame, and ballistic zeroing
+  are never moved by it.
+- **Old modes unchanged:** Classic/Traditional/Challenge keep the
+  pre-existing Traditional first-person left hand and original
+  gameplay. No existing hand meshes have been deleted.
+- **Inspector:** `modernUseNewHands = true` controls ONLY the new
+  Modern rig; `modernShowHands` is a retained legacy serialized
+  setting and is not reused for Modern rendering.
+
+### Required Unity Editor Play Mode tests (not yet performed)
+
+1. Enter Modern. Left fingers must wrap the visible leather grip and
+   sleeve enter from screen bottom-left without a visible cut end.
+2. Hold LMB to full draw, aim to each board: right fingers should stay
+   close to the nock and its sleeve come from bottom-right, without
+   growing huge or obscuring the optical +.
+3. Release LMB with `modernEveryShotArrowCam` disabled for one test:
+   look for the short finger opening/wrist release gesture. Then
+   re-enable Arrow Cam and confirm arms hide during follow.
+4. Repeat with G calibration and hit center and noncenter rings:
+   the successful ballistic impact must not change.
+5. Press V (v1 view), R (retry), M (menu), Esc (Arrow Cam skip),
+   and change modes. The new Modern mesh must not leak into older
+   modes; all original input schemes must still work.
+6. Check high/low camera pitch and different Game View ratios.
+   If fingertips appear offset when the nock nears the clip plane,
+   adjust only the **visual** near-plane allowance; do not move
+   the gameplay launch origin or change camera aim.
+7. No console errors, mesh leaks or recurring GameObject creation.
+   Confirm frame rate is reasonable in WebGL.
+
+**Status:** Source integration is complete. The Unity editor has not
+compiled or visually playtested this new hand rig in this session.
+
 ## CURRENT: Archery Master-inspired optical bow sight, 2-degree cant
 
 This revision **supersedes** the previous 6-degree Modern cant, and the
