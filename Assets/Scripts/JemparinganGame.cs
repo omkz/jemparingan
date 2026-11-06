@@ -1096,7 +1096,7 @@ public class JemparinganGame : MonoBehaviour
 
         // The contact targets must be current before posing hands. The old
         // call ran before the string moved and smoothed the hand away from it.
-        UpdateTraditionalPresentation();
+        UpdateTraditionalPresentation(drawing);
 
         // One uninterrupted draw-to-release transition fires exactly once.
         // Tracking loss / bow-unpinch resets without firing.
@@ -2556,7 +2556,7 @@ public class JemparinganGame : MonoBehaviour
             start, end, width);
     }
 
-    private void UpdateTraditionalPresentation()
+    private void UpdateTraditionalPresentation(bool stringDrawing)
     {
         if (!UsesTraditionalPresentation())
         {
@@ -2573,7 +2573,8 @@ public class JemparinganGame : MonoBehaviour
                 _modeChosen && !_roundOver && !_finished &&
                 (_arrowCam == null || !_arrowCam.IsActive);
             if (show && _modernHands != null)
-                _modernHands.Present(_playerCamera);
+                _modernHands.Present(_playerCamera, stringDrawing,
+                    _modernDrawPower, _modernRaisedPose);
             else
                 HideModernHands();
             return;
