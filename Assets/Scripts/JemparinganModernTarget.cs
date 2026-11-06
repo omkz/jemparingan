@@ -160,11 +160,11 @@ public sealed class JemparinganModernTarget : MonoBehaviour
     {
         if (_lateralMotionEnabled)
         {
-            float elapsed = Mathf.Max(0f, Time.time - _lateralMotionStartedAt);
+            float motionElapsed = Mathf.Max(0f, Time.time - _lateralMotionStartedAt);
             float onset = Mathf.SmoothStep(0f, 1f,
-                Mathf.Clamp01(elapsed * 1.2f));
+                Mathf.Clamp01(motionElapsed * 1.2f));
             float offset = _lateralMotionAmplitude * onset *
-                Mathf.Sin(elapsed * _lateralMotionRadiansPerSecond);
+                Mathf.Sin(motionElapsed * _lateralMotionRadiansPerSecond);
             transform.localPosition = _homeLocalPosition +
                 Vector3.right * offset;
         }
