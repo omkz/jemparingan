@@ -6,6 +6,48 @@ first-person camera/input, procedural environment, arrow pool and
 gravity-based projectile. No external assets, scene regeneration, or
 separate physics system are required.
 
+## CURRENT: Modern left-hand grip and subtle animation polish
+
+This **extends** the left-hand-only Modern FPS viewmodel; it does not
+reintroduce the right-hand geometry or modify any shot mechanics.
+
+- Bow grip is a **6cm-diameter** leather-wrapped cylinder in local
+  coordinates. The procedural left palm/wrist and fingers are positioned
+  around its real center, not an independent HUD anchor.
+- Four fingers have independently authored **different reach and curved
+  tips** instead of identical parallel tubes. Tiny knuckle joints add
+  grip pressure as the existing LMB draw advances, without re-meshing
+  fingers each frame. The thumb opposes the fingers underneath.
+- The wrist and cuff join the forearm without a floating/flat cap.
+  The single deforming sleeve now has 11 rings for smoother curves,
+  starting below the lower-left edge of the view; its elbow bend
+  follows the existing Modern bow raise pose.
+- At full draw the fingers gently tighten and palm settles by around
+  1 degree. A short, small grip recoil after release settles naturally.
+  A new LMB press immediately cancels the prior recoil.
+- **No right hand is built or updated**, including during draw/release.
+  The optical + sight, target framing, 2-degree Modern cant, control,
+  nock/string movement, ballistics and scoring are left untouched.
+  Traditional and Challenge retain their previous rig.
+
+### Unity visual checklist (not run here)
+
+1. Idle: left palm visibly wraps leather grip; sleeve enters below
+   bottom-left without a hard cutoff near the wrist.
+2. Hold LMB: fingers tighten slightly, without visibly sliding off
+   the grip. The left elbow rises as the bow rises.
+3. Full draw: the optical sight stays clear, wrist stays continuous,
+   and mouse aiming does not separate the hand from the bow.
+4. Release, then immediately draw again: no stuck finger rotations or
+   lingering recoil. For release inspection, temporarily disable
+   `modernEveryShotArrowCam` in the Unity Inspector.
+5. Shoot all three targets and check aim/impact remains accurate.
+   Press V, R, M and change modes; Modern left hand must not leak.
+6. Profile/inspect in Unity Editor and WebGL before claiming a
+   measurable performance change.
+
+**Status:** GitHub source checks only; not compiled or playtested in Unity.
+
 ## CURRENT: Modern left-hand-only viewmodel
 
 Supersedes the previous two-hand implementation documented below. The
