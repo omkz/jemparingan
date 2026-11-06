@@ -662,7 +662,6 @@ public class JemparinganGame : MonoBehaviour
 
         arrowsPerRound = 12;
         _desktopTrainingEnabled = false;
-        _target.UseTraditionalScoring(true);
         if (_traditionalBandulanVisual != null)
             _traditionalBandulanVisual.SetActive(true);
         _target.SetBody(_traditionalBandulanBody, JemparinganArt.Tone.BandulanWhite);
@@ -757,7 +756,7 @@ public class JemparinganGame : MonoBehaviour
             ResetRound();
             _awaitStringRelease = stringWasHeld;
         }
-        // During Challenge or Modern Arrow Cam, the real projectile continues
+        // During Modern Arrow Cam, the real projectile continues
         // its normal lifecycle. Pause only the player's draw/aim update.
         if (_arrowCam != null && _arrowCam.IsActive)
         {
@@ -1056,7 +1055,7 @@ public class JemparinganGame : MonoBehaviour
             }
             else
             {
-                // Original Traditional/Challenge aim is unchanged.
+                // Original Traditional aim is unchanged.
                 Transform sightTarget = _target != null
                     ? _target.transform : null;
                 float targetDist = sightTarget != null
@@ -1520,7 +1519,7 @@ public class JemparinganGame : MonoBehaviour
 
     private bool IsDesktopTrainingAimActive()
     {
-        // Desktop Editor training only. Quest input and classic v0.9 shooting
+        // Desktop Editor training only. Quest input and Traditional shooting
         // retain the original assistance behavior and physics.
         return useOutdoorEnvironment && UsesDesktopInput() &&
             _desktopTrainingEnabled;
@@ -1554,7 +1553,7 @@ public class JemparinganGame : MonoBehaviour
             (0.5f * simulatedGravity * flightTime * flightTime)).normalized;
         float angularError = Vector3.Angle(aim, direction);
         if (angularError > 8f) return aim;
-        // Traditional and Challenge default to a subtle assist, without magnetic
+        // Traditional uses a subtle assist, without magnetic
         // ballistic snapping unless training is explicitly enabled with T.
         float limitedAssist = UsesTraditionalPresentation() ?
             Mathf.Min(aimAssist, .20f) : aimAssist;
@@ -2012,11 +2011,9 @@ public class JemparinganGame : MonoBehaviour
         if (camera == null) { Debug.LogError("Jemparingan: MainCamera missing."); return false; }
         _playerCamera = camera;
         _playerBaseFov = camera.fieldOfView;
-        // Existing Playable v5 scenes still serialize 12 shots. Upgrade only
-        // outdoor gameplay at runtime so no scene regeneration or overwriting
-        // user-customized environment assets is required. Legacy stays at 12.
+        // Allocate enough pooled projectiles for either Traditional or Modern.
         if (useOutdoorEnvironment)
-            arrowsPerRound = JemparinganScoreRules.OutdoorArrowCount;
+            arrowsPerRound = Mathf.Max(12, modernArrowCount);
         Vector3 forward = Vector3.ProjectOnPlane(camera.transform.forward, Vector3.up).normalized;
         if (forward.sqrMagnitude < 0.1f) forward = Vector3.forward;
         Quaternion facing = Quaternion.LookRotation(forward);
@@ -2350,7 +2347,6 @@ public class JemparinganGame : MonoBehaviour
         _target.SetTraditionalZoneRenderers(molo.GetComponent<Renderer>(),
             jangga.GetComponent<Renderer>(), _traditionalBandulanBody);
         _target.SetBody(_traditionalBandulanBody, JemparinganArt.Tone.BandulanWhite);
-        _target.UseTraditionalScoring(true);
         traditional.SetActive(true);
     }
 
@@ -2463,7 +2459,7 @@ public class JemparinganGame : MonoBehaviour
                 HideModernHands();
             return;
         }
-        // Traditional/Challenge still use their original left-grip rig.
+        // Traditional retains its original left-grip rig.
         HideModernHands();
         if (_traditionalArcher != null)
             _traditionalArcher.Present();
