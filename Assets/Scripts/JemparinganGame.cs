@@ -46,7 +46,12 @@ public class JemparinganGame : MonoBehaviour
     // but use a modest, fixed roll for modern target archery. The old
     // landmark-derived ~17-degree lean looked excessive with a real sight.
     [SerializeField] private bool modernUseReferenceFraming = true;
+    // Legacy shared Traditional rig flag remains serialized only for migration.
+    // NEW Modern hands never use that rig, or any of its meshes.
     [SerializeField] private bool modernShowHands = false;
+    [Header("Modern-only first-person hands (new independent rig)")]
+    [SerializeField] private bool modernUseNewHands = true;
+    private JemparinganModernHands _modernHands;
     [SerializeField, Range(.45f, .75f)] private float modernReferenceGripViewportX = .554f;
     [SerializeField, Range(.15f, .45f)] private float modernReferenceGripViewportY = .270f;
     [SerializeField, Range(.50f, .95f)] private float modernReferenceGripDepth = .70f;
@@ -243,6 +248,7 @@ public class JemparinganGame : MonoBehaviour
     {
         RestoreModernCameraFov();
         HideModernPhysicalSight();
+        HideModernHands();
         SetModernDesktopMouseControl(false);
     }
 
@@ -600,6 +606,7 @@ public class JemparinganGame : MonoBehaviour
 
     private void StartModernMode()
     {
+        HideModernHands();
         if (!modernUprightV3Migrated)
         {
             if (Mathf.Approximately(modernBowCantDegrees, -6f))
@@ -636,6 +643,7 @@ public class JemparinganGame : MonoBehaviour
         if (!useOutdoorEnvironment || !_ready) return;
         RestoreModernCameraFov();
         HideModernPhysicalSight();
+        HideModernHands();
         SetModernDesktopMouseControl(false);
         _mode = next;
         _modeChosen = true;
@@ -703,6 +711,7 @@ public class JemparinganGame : MonoBehaviour
 
     public void StartChallengeMission(JemparinganChallengeRules.MissionId missionId)
     {
+        HideModernHands();
         SetModernDesktopMouseControl(false);
         _mode = GameMode.Challenge;
         _modeChosen = true;
@@ -731,6 +740,7 @@ public class JemparinganGame : MonoBehaviour
     {
         RestoreModernCameraFov();
         HideModernPhysicalSight();
+        HideModernHands();
         SetModernDesktopMouseControl(false);
         if (_modernTargetsRoot != null)
             _modernTargetsRoot.gameObject.SetActive(false);
@@ -751,6 +761,7 @@ public class JemparinganGame : MonoBehaviour
 
     public void ReturnToChallengeSelect()
     {
+        HideModernHands();
         SetModernDesktopMouseControl(false);
         _mode = GameMode.Challenge;
         _modeChosen = true;
@@ -806,6 +817,7 @@ public class JemparinganGame : MonoBehaviour
                 modernViewmodelRigV2 = !modernViewmodelRigV2;
                 _modernRaisedPose = Input.GetMouseButton(0) ? 1f : 0f;
                 _modernPrecisionPose = 0f;
+                HideModernHands();
                 if (_modernPhysicalSight != null)
                     _modernPhysicalSight.ResetCalibration();
                 RestoreModernCameraFov();
@@ -835,6 +847,7 @@ public class JemparinganGame : MonoBehaviour
         // its normal lifecycle. Pause only the player's draw/aim update.
         if (_arrowCam != null && _arrowCam.IsActive)
         {
+            HideModernHands();
             if (UsesDesktopInput() && Input.GetKeyDown(KeyCode.Escape))
                 _arrowCam.Stop();
             else
@@ -1384,7 +1397,10 @@ public class JemparinganGame : MonoBehaviour
             // Do not steal an existing follow during an automated rapid-fire test.
             if (!_arrowCam.IsActive &&
                 _arrowCam.Begin(arrow, Camera.main, desktopInput))
+            {
                 _restoreAfterArrowCam = true;
+                HideModernHands();
+            }
         }
         _shots++;
         _audio.PlayOneShot(_shotSound, 0.48f);
@@ -1644,6 +1660,7 @@ public class JemparinganGame : MonoBehaviour
         SetInfo(UsesDesktopInput() ? "PRESS R OR HOLD LEFT MOUSE TO RESTART" : "RELEASE STRING, THEN HOLD TO RESTART");
         _bow.gameObject.SetActive(false);
         HideTraditionalArms();
+        HideModernHands();
         HidePreview();
         if (_impactLabel != null) _impactLabel.text = "";
         _impactLabelUntil = 0f;
@@ -1785,6 +1802,7 @@ public class JemparinganGame : MonoBehaviour
         _modernSightZeroed = false;
         if (_modernPhysicalSight != null)
             _modernPhysicalSight.ResetCalibration();
+        HideModernHands();
         RestoreModernCameraFov();
         // Retry restores current mode's mouse scheme. Mode changes
         // already clear Modern input before switching gameplay.
@@ -2540,28 +2558,41 @@ public class JemparinganGame : MonoBehaviour
 
     private void UpdateTraditionalPresentation(bool stringDrawing)
     {
-        if (!UsesTraditionalPresentation() || _traditionalArcher == null) return;
-        // Modern calibration pass: hide BOTH arms and both hands for clear
-        // bow-only evaluation. The setting does not touch other modes.
-        if (IsModernMode() && !modernShowHands)
+        if (!UsesTraditionalPresentation())
         {
-            HideTraditionalArms();
+            HideModernHands();
             return;
         }
-        // The right hand is a small cosmetic visual only while Modern desktop
-        // players pull the string. Other modes retain their left-only view.
-        bool showRightDrawHand = IsModernMode() && UsesDesktopInput() &&
-            stringDrawing && _stringMarker != null;
-        bool referenceFraming = IsModernMode() && UsesDesktopInput() &&
-            modernViewmodelRigV2 && modernUseReferenceFraming;
-        _traditionalArcher.Present(showRightDrawHand, _stringMarker,
-            IsModernMode() && modernViewmodelRigV2 ? modernRightHandScale : 1f,
-            referenceFraming);
+        if (IsModernMode())
+        {
+            // Explicitly NEVER use the old Traditional hand meshes for Modern.
+            // The independent new rig follows grip, nock and current bow pose.
+            HideTraditionalArms();
+            bool show = modernUseNewHands && UsesDesktopInput() &&
+                modernViewmodelRigV2 && modernUseReferenceFraming &&
+                _modeChosen && !_roundOver && !_finished &&
+                (_arrowCam == null || !_arrowCam.IsActive);
+            if (show && _modernHands != null && _stringMarker != null)
+                _modernHands.Present(_playerCamera, _stringMarker,
+                    stringDrawing, _modernDrawPower);
+            else
+                HideModernHands();
+            return;
+        }
+        // Traditional/Challenge still use their original left-grip rig.
+        HideModernHands();
+        if (_traditionalArcher != null)
+            _traditionalArcher.Present();
     }
 
     private void HideTraditionalArms()
     {
         if (_traditionalArcher != null) _traditionalArcher.HideArms();
+    }
+
+    private void HideModernHands()
+    {
+        if (_modernHands != null) _modernHands.Hide();
     }
 
     private void HideModernPhysicalSight()
@@ -2628,6 +2659,11 @@ public class JemparinganGame : MonoBehaviour
         UpdateBowStrings(0f);
         BuildNockedArrow();
         BuildFocusIndicator();
+        if (useOutdoorEnvironment)
+        {
+            _modernHands = _bow.gameObject.AddComponent<JemparinganModernHands>();
+            _modernHands.Build();
+        }
         _bow.gameObject.SetActive(false);
     }
 
