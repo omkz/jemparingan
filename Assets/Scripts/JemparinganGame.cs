@@ -48,16 +48,12 @@ public class JemparinganGame : MonoBehaviour
     // calibration instead solves the actual bow projection and smoothly
     // changes the real camera FOV for modest Modern aim zoom.
     [SerializeField, Range(45f, 85f)] private float modernViewmodelFov = 65f;
-    [SerializeField, Range(.50f, 1.30f)] private float modernRightHandScale = .92f;
 
     [Header("Modern screenshot calibration (desktop only)")]
     // Preserve the screenshot's grip placement and projected bow height,
     // but use a modest, fixed roll for modern target archery. The old
     // landmark-derived ~17-degree lean looked excessive with a real sight.
     [SerializeField] private bool modernUseReferenceFraming = true;
-    // Legacy shared Traditional rig flag remains serialized only for migration.
-    // NEW Modern hands never use that rig, or any of its meshes.
-    [SerializeField] private bool modernShowHands = false;
     [Header("Modern-only first-person left hand (no right-hand rendering)")]
     [SerializeField] private bool modernUseNewHands = true;
     private JemparinganModernHands _modernHands;
