@@ -28,14 +28,20 @@ public class JemparinganGame : MonoBehaviour
     private JemparinganModernTarget[] _modernTargets;
     // Reuse the outdoor scene's 16-shot arrow and HUD pool.
     [SerializeField, Range(6, 16)] private int modernArrowCount = 12;
-    [Header("Modern progressive target challenge (3 stages)")]
+    [Header("Shared three-level progression")]
+    // Traditional targets remain bandulan; only lateral sway changes per level.
+    [SerializeField, Range(.02f, .20f)] private float traditionalLevel2Sway = .08f;
+    [SerializeField, Range(.3f, 1.5f)] private float traditionalLevel2Speed = .75f;
+    [SerializeField, Range(.08f, .30f)] private float traditionalLevel3Sway = .20f;
+    [SerializeField, Range(.8f, 2.5f)] private float traditionalLevel3Speed = 1.35f;
+    [Header("Modern progressive targets")]
     [SerializeField] private bool modernProgressiveStages = true;
     [SerializeField, Range(0f, .45f)] private float modernMovingTargetTravel = .26f;
     [SerializeField, Range(.3f, 1.8f)] private float modernMovingTargetSpeed = .85f;
-    private int _modernStage;
+    private int _stage;
     // Desktop-only presentation timing. These do not gate aiming or shots.
-    private float _modernStageIntroStartedAt = -1f;
-    private float _modernStageIntroUntil = -1f;
+    private float _stageIntroStartedAt = -1f;
+    private float _stageIntroUntil = -1f;
 
     [Header("Modern first-person rig v2 (desktop visual only)")]
     [SerializeField] private bool modernViewmodelRigV2 = true;
@@ -322,7 +328,7 @@ public class JemparinganGame : MonoBehaviour
             "CHOOSE YOUR MODE", GUI.skin.box);
         float buttonWidth = (width - 45f) / 2f;
         if (GUI.Button(new Rect(panel.x + 15f, panel.y + 91f, buttonWidth, 103f),
-            "TRADITIONAL\n12 ARROWS  |  3-2-1 SCORING"))
+            "TRADITIONAL\n3 LEVELS  |  12 ARROWS\n3-2-1 SCORING"))
             ChooseMode(GameMode.Traditional);
         if (GUI.Button(new Rect(panel.x + 30f + buttonWidth, panel.y + 91f,
             buttonWidth, 103f),
@@ -337,18 +343,17 @@ public class JemparinganGame : MonoBehaviour
 
 
 
-    // Three chapters across the existing arrow budget. Default 12 gives
-    // exactly four arrows per stage. Customized Inspector arrow counts are
-    // divided as evenly as possible, without changing their total.
-    private int ModernStageStart(int stage)
+    // Shared three-level arrow budget: Traditional uses 12 (four per level),
+    // while Modern may use an Inspector-selected count.
+    private int StageStart(int stage)
     {
         return Mathf.CeilToInt(Mathf.Clamp(stage, 0, 3) *
             arrowsPerRound / 3f);
     }
 
-    private int ModernStageEnd(int stage)
+    private int StageEnd(int stage)
     {
-        return ModernStageStart(stage + 1);
+        return StageStart(stage + 1);
     }
 
     private bool AnyArrowFlying()
@@ -360,25 +365,41 @@ public class JemparinganGame : MonoBehaviour
         return false;
     }
 
-    private void AdvanceModernStage()
+    private bool UsesProgressiveStages()
     {
-        if (_modernStage >= 2) return;
-        _modernStage++;
+        return useOutdoorEnvironment && _modeChosen &&
+            (IsTraditionalMode() || (IsModernMode() && modernProgressiveStages));
+    }
+
+    private void AdvanceStage()
+    {
+        if (_stage >= 2) return;
+        _stage++;
         // If a player starts a new draw while an old projectile is
         // finishing, release must not accidentally create a new shot.
         ClearDrawState();
         _awaitStringRelease = UsesDesktopInput() && Input.GetMouseButton(0);
-        if (_modernTargets != null && _modernTargets.Length > 1 &&
-            _modernTargets[1] != null)
-            _modernTargets[1].SetLateralMotion(_modernStage == 2,
-                modernMovingTargetTravel, modernMovingTargetSpeed);
-        _modernStageIntroStartedAt = Time.time;
-        _modernStageIntroUntil = Time.time + 1.25f;
+        if (IsModernMode())
+        {
+            // Preserve Modern's existing target behavior.
+            if (_modernTargets != null && _modernTargets.Length > 1 &&
+                _modernTargets[1] != null)
+                _modernTargets[1].SetLateralMotion(_stage == 2,
+                    modernMovingTargetTravel, modernMovingTargetSpeed);
+        }
+        else if (IsTraditionalMode() && _target != null)
+        {
+            // Level 1 is still; levels 2 and 3 progressively sway.
+            _target.SetSway(_stage == 1 ? traditionalLevel2Sway : traditionalLevel3Sway,
+                _stage == 1 ? traditionalLevel2Speed : traditionalLevel3Speed);
+        }
+        _stageIntroStartedAt = Time.time;
+        _stageIntroUntil = Time.time + 1.25f;
         // Desktop IMGUI has its own concise stage card; don't duplicate
         // it with the old world-space text at the center of the view.
-        if (_stageBanner != null && !UsesDesktopInput())
+        if (_stageBanner != null && (!UsesDesktopInput() || IsTraditionalMode()))
         {
-            _stageBanner.text = "LEVEL " + (_modernStage + 1);
+            _stageBanner.text = "LEVEL " + (_stage + 1) + "/3";
             _stageBannerUntil = Time.time + 1.5f;
         }
         if (_audio != null && _stageSound != null)
@@ -427,7 +448,7 @@ public class JemparinganGame : MonoBehaviour
         Color white = new Color(.94f, .97f, .99f);
         Color muted = new Color(.66f, .78f, .82f);
         Color accent = modernProgressiveStages ?
-            ModernStageAccent(_modernStage) : ModernStageAccent(0);
+            ModernStageAccent(_stage) : ModernStageAccent(0);
         GUIStyle caption = ModernLabelStyle(11, FontStyle.Normal,
             TextAnchor.MiddleCenter, muted);
         GUIStyle number = ModernLabelStyle(25, FontStyle.Bold,
@@ -443,7 +464,7 @@ public class JemparinganGame : MonoBehaviour
                 column == 1 ? "SCORE" : "ARROWS";
             string value = column == 0 ?
                 (modernProgressiveStages
-                    ? (_modernStage + 1) + "/3" : "RANGE") :
+                    ? (_stage + 1) + "/3" : "RANGE") :
                 column == 1 ? _score.ToString() :
                 Mathf.Max(0, arrowsPerRound - _shots).ToString();
             GUI.Label(new Rect(columnX, panel.y + 9f,
@@ -458,9 +479,9 @@ public class JemparinganGame : MonoBehaviour
             float gap = 5f, width = (innerWidth - 2f * gap) / 3f;
             for (int stage = 0; stage < 3; stage++)
             {
-                Color tint = stage == _modernStage ?
+                Color tint = stage == _stage ?
                     ModernStageAccent(stage) :
-                    stage < _modernStage
+                    stage < _stage
                         ? new Color(.31f, .57f, .50f, .75f)
                         : new Color(.31f, .40f, .47f, .60f);
                 DrawModernPanelRect(new Rect(panel.x + 12f +
@@ -475,17 +496,17 @@ public class JemparinganGame : MonoBehaviour
 
     private void DrawModernStageTransition()
     {
-        if (!modernProgressiveStages || _modernStageIntroStartedAt < 0f ||
-            Time.time >= _modernStageIntroUntil) return;
+        if (!modernProgressiveStages || _stageIntroStartedAt < 0f ||
+            Time.time >= _stageIntroUntil) return;
 
-        float fadeElapsed = Time.time - _modernStageIntroStartedAt;
+        float fadeElapsed = Time.time - _stageIntroStartedAt;
         float opacity = Mathf.Clamp01(fadeElapsed / .15f) *
-            Mathf.Clamp01((_modernStageIntroUntil - Time.time) / .28f);
+            Mathf.Clamp01((_stageIntroUntil - Time.time) / .28f);
         float bannerWidth = Mathf.Min(220f, Screen.width - 24f);
         if (bannerWidth < 160f) return;
         Rect banner = new Rect((Screen.width - bannerWidth) * .5f,
             Mathf.Max(24f, Screen.height * .12f), bannerWidth, 48f);
-        Color accent = ModernStageAccent(_modernStage);
+        Color accent = ModernStageAccent(_stage);
         DrawModernPanelRect(banner, new Color(.035f, .065f, .10f,
             .88f * opacity));
         DrawModernPanelRect(new Rect(banner.x, banner.y, 3f,
@@ -495,7 +516,7 @@ public class JemparinganGame : MonoBehaviour
             TextAnchor.MiddleCenter, new Color(.96f, .98f, 1f, opacity));
         GUI.Label(new Rect(banner.x + 8f, banner.y + 4f,
             bannerWidth - 16f, 40f),
-            "LEVEL " + (_modernStage + 1), heading);
+            "LEVEL " + (_stage + 1), heading);
     }
 
     private void DrawModernDebugCrosshair()
@@ -540,7 +561,7 @@ public class JemparinganGame : MonoBehaviour
             TextAnchor.MiddleCenter, muted);
         DrawModernPanelRect(panel, new Color(.035f, .065f, .10f, .96f));
         DrawModernPanelRect(new Rect(panel.x, panel.y, panelWidth,
-            4f), ModernStageAccent(_modernStage));
+            4f), ModernStageAccent(_stage));
         GUI.Label(new Rect(x, panel.y + 13f, contentWidth, 28f),
             "COMPLETE", heading);
         GUI.Label(new Rect(x, panel.y + 48f, contentWidth, 53f),
@@ -796,12 +817,11 @@ public class JemparinganGame : MonoBehaviour
         // Stage changes wait for the outgoing arrow to resolve, so the
         // departing shot is scored with the stage in which it was fired.
         // Do not accept a premature follow-up shot during this boundary.
-        if (IsModernMode() && modernProgressiveStages && !_roundOver &&
-            _modernStage < 2 &&
-            _shots >= ModernStageEnd(_modernStage))
+        if (UsesProgressiveStages() && !_roundOver &&
+            _stage < 2 && _shots >= StageEnd(_stage))
         {
             if (AnyArrowFlying()) return;
-            AdvanceModernStage();
+            AdvanceStage();
         }
         if (_roundOver)
         {
@@ -1673,8 +1693,8 @@ public class JemparinganGame : MonoBehaviour
         if (_introPanel != null) _introPanel.SetActive(false);
         if (_stageBanner != null) _stageBanner.text = "";
         _stageBannerUntil = 0f;
-        _modernStageIntroStartedAt = -1f;
-        _modernStageIntroUntil = -1f;
+        _stageIntroStartedAt = -1f;
+        _stageIntroUntil = -1f;
         _replayArmed = false;
         _replayHoldStartedAt = -1f;
 
@@ -1755,9 +1775,9 @@ public class JemparinganGame : MonoBehaviour
         SetModernDesktopMouseControl(_modeChosen && IsModernMode());
         for (int i = 0; i < _arrows.Length; i++) _arrows[i].Cancel();
         _shots = _hits = _score = _poolCursor = 0;
-        _modernStage = 0;
-        _modernStageIntroStartedAt = -1f;
-        _modernStageIntroUntil = -1f;
+        _stage = 0;
+        _stageIntroStartedAt = -1f;
+        _stageIntroUntil = -1f;
         _bullseyes = 0;
         _moloHits = _janggaHits = _awakHits = 0;
         _previousBest = PlayerPrefs.GetInt(BestKey(), 0);
@@ -1808,7 +1828,7 @@ public class JemparinganGame : MonoBehaviour
         else
         {
             _introTitleLabel.text = "JEMPARINGAN  /  TRADITIONAL";
-            _introGoalLabel.text = "12 ARROWS  |  MOLO 3  JANGGA 2  AWAK 1";
+            _introGoalLabel.text = "12 ARROWS  |  3 LEVELS  |  MOLO 3 / JANGGA 2 / AWAK 1";
         }
     }
 
@@ -1823,7 +1843,7 @@ public class JemparinganGame : MonoBehaviour
             if (_phaseLabel != null && !_finished)
                 _phaseLabel.text = UsesDesktopInput() ? "" :
                     (modernProgressiveStages
-                        ? "LEVEL " + (_modernStage + 1) + "/3" : "MODERN");
+                        ? "LEVEL " + (_stage + 1) + "/3" : "MODERN");
         }
         else
         {
@@ -1831,7 +1851,7 @@ public class JemparinganGame : MonoBehaviour
                 _scoreLabel.text = "SCORE " + _score + "  |  HITS " + _hits +
                     "  |  ARROWS " + _shots + "/" + arrowsPerRound;
             if (_phaseLabel != null && !_finished)
-                _phaseLabel.text = "TRADITIONAL  •  MATARAM-INSPIRED";
+                _phaseLabel.text = "TRADITIONAL  •  LEVEL " + (_stage + 1) + "/3";
         }
         UpdateShotPips();
     }
