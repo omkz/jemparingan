@@ -6,6 +6,58 @@ first-person camera/input, procedural environment, arrow pool and
 gravity-based projectile. No external assets, scene regeneration, or
 separate physics system are required.
 
+## CURRENT: minimal on-screen text for Modern desktop (presentation only)
+
+Modern's text-heavy HUD has been simplified after playtest feedback.
+The player should read the target and optical sight, not a paragraph
+of scoring rules while drawing the bow.
+
+- **During play:** only **LEVEL**, **SCORE**, and **ARROWS** remain
+  in a small top-left panel; three unlabelled bars show progression.
+  Persistent aim hints, ring-scoring explanations, stage names,
+  objective instructions, hits/best/shot text, and bottom control
+  strip are hidden. The G debug crosshair remains optional.
+- **On stage transition:** only a briefly faded **LEVEL 2** or
+  **LEVEL 3** card (~1.25 s). No previous-goal commentary.
+- **On release / impact:** no duplicate world-space
+  `ARROW RELEASED`, `MISS`, target-number or debug feedback panel
+  in Modern desktop. Existing visual ring-hit reactions, score
+  popup, audio and physical impact remain intact.
+- **Intro:** short `MODERN ARCHERY` title; the existing
+  hold-left-mouse-to-start hint is still shown before the first draw.
+- **Results:** prominent final score, best score, accuracy,
+  hits, and the same RETRY and MODES buttons. Hidden stage-goal
+  accounting is still present in code, but no longer shown as an
+  on-screen checklist.
+- Modern's duplicated world-space score/phase/help text is blanked
+  on desktop. Non-desktop gets shorter world-space labels.
+  Classic, Traditional and Challenge presentation is unchanged.
+- **No gameplay changes:** the currently playable three-target
+  setup, 3 x 4 arrow stages, stage success criteria, arrow
+  physics, scoring, optical sight and wobble remain EXACTLY as
+  before this pass. In particular, **the requested single target
+  and static → slow → faster progression are not implemented yet**.
+
+### Unity visual checks (not run here)
+
+1. Start Modern: intro is brief, top-left has only
+   `LEVEL 1/3`, `SCORE 0`, `ARROWS 12`.
+2. Aim/hold/release. No persistent instructions, release message,
+   or second score label should obstruct the target.
+3. Play arrows 1–4, 5–8, 9–12: stage change shows only
+   `LEVEL 2` and `LEVEL 3`. Existing target motion/stage rules
+   continue unchanged.
+4. Hit or miss: existing target popup/sounds remain; no duplicated
+   feedback text panel.
+5. Finish: score/best/accuracy/hits plus two working buttons.
+   Retry R, Modes M, G debug and V view toggle still work.
+6. Check smaller WebGL game windows and ensure no overlap,
+   clipping, or residual old world-space messages.
+7. Regression-check other modes and their full HUD instructions.
+
+**Status:** 19/19 static source-level regression checks passed;
+Unity compilation and visual playtesting still need confirmation.
+
 ## CURRENT: Modern HUD, stage transition and results polish
 
 This pass changes **presentation only**, preserving the now-playtested
