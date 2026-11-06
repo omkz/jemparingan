@@ -12,8 +12,7 @@ public class JemparinganTarget : MonoBehaviour
     public const float TraditionalNeckBottom = .05f;
     public const float TraditionalHeadBottom = .10f;
     public const float TraditionalTop = .196f;
-    private bool _useTraditionalScoring;
-    private JemparinganArt.Tone _normalBodyTone = JemparinganArt.Tone.Red;
+    private JemparinganArt.Tone _normalBodyTone = JemparinganArt.Tone.BandulanWhite;
     [Range(0f, 0.3f)] public float swayAmount = 0.10f;
     [Range(0f, 5f)] public float swaySpeed = 0.9f;
 
@@ -56,11 +55,7 @@ public class JemparinganTarget : MonoBehaviour
         _traditionalAwak = awak;
     }
 
-    public void UseTraditionalScoring(bool traditional)
-    {
-        _useTraditionalScoring = traditional;
-        LastTraditionalZone = TraditionalZone.None;
-    }
+
 
     // Preserve the old waveform's phase when speed changes, and ease the
     // amplitude over a short window. No random jumps between rounds.
@@ -124,60 +119,44 @@ public class JemparinganTarget : MonoBehaviour
 
     // Closest distance between the swept arrow tip and the bandulan's central axis.
     // Does not allocate or require Rigidbody/Collider on the target.
+
+
+    // Swept hit-testing against visible Traditional scoring zones.
     public bool TestShot(Vector3 arrowFrom, Vector3 arrowTo, out bool bullseye)
     {
         LastTraditionalZone = TraditionalZone.None;
-        if (_useTraditionalScoring)
+        // The cylinder is stylized and forgiving in width, but its colored
+        // Y sections use the exact same boundaries as the 3D mesh.
+        Vector3 traditionalBottom = transform.TransformPoint(
+            new Vector3(0f, TraditionalBottom, 0f));
+        Vector3 traditionalTop = transform.TransformPoint(
+            new Vector3(0f, TraditionalTop, 0f));
+        bool hitTraditional = SegmentDistanceSquared(arrowFrom, arrowTo,
+            traditionalBottom, traditionalTop) <= .07f * .07f;
+        if (!hitTraditional) { bullseye = false; return false; }
+
+        // Classify the swept arrow tip at the bandulan plane so the thin
+        // yellow neck is not swallowed by the head's collision tolerance.
+        Vector3 from = transform.InverseTransformPoint(arrowFrom);
+        Vector3 to = transform.InverseTransformPoint(arrowTo);
+        float dz = to.z - from.z;
+        float alpha = Mathf.Abs(dz) > .00001f
+            ? Mathf.Clamp01(-from.z / dz) : .5f;
+        float hitY = Mathf.Lerp(from.y, to.y, alpha);
+        float hitX = Mathf.Lerp(from.x, to.x, alpha);
+        // The previous swept-axis test can graze above/below a visual
+        // endpoint by 7 cm. Prevent empty-space hits at the bandulan tips.
+        if (hitY < TraditionalBottom || hitY > TraditionalTop ||
+            Mathf.Abs(hitX) > .07f)
         {
-            // The cylinder is stylized and forgiving in width, but its colored
-            // Y sections use the exact same boundaries as the 3D mesh.
-            Vector3 traditionalBottom = transform.TransformPoint(
-                new Vector3(0f, TraditionalBottom, 0f));
-            Vector3 traditionalTop = transform.TransformPoint(
-                new Vector3(0f, TraditionalTop, 0f));
-            bool hitTraditional = SegmentDistanceSquared(arrowFrom, arrowTo,
-                traditionalBottom, traditionalTop) <= .07f * .07f;
-            if (!hitTraditional) { bullseye = false; return false; }
-
-            // Classify the swept arrow tip at the bandulan plane so the thin
-            // yellow neck is not swallowed by the head's collision tolerance.
-            Vector3 from = transform.InverseTransformPoint(arrowFrom);
-            Vector3 to = transform.InverseTransformPoint(arrowTo);
-            float dz = to.z - from.z;
-            float alpha = Mathf.Abs(dz) > .00001f
-                ? Mathf.Clamp01(-from.z / dz) : .5f;
-            float hitY = Mathf.Lerp(from.y, to.y, alpha);
-            float hitX = Mathf.Lerp(from.x, to.x, alpha);
-            // The previous swept-axis test can graze above/below a visual
-            // endpoint by 7 cm. Prevent empty-space hits at the bandulan tips.
-            if (hitY < TraditionalBottom || hitY > TraditionalTop ||
-                Mathf.Abs(hitX) > .07f)
-            {
-                bullseye = false;
-                return false;
-            }
-            LastTraditionalZone = hitY >= TraditionalHeadBottom
-                ? TraditionalZone.Molo
-                : hitY >= TraditionalNeckBottom
-                    ? TraditionalZone.Jangga : TraditionalZone.Awak;
-            bullseye = LastTraditionalZone == TraditionalZone.Molo;
-            return true;
+            bullseye = false;
+            return false;
         }
-
-        Vector3 axisA = transform.TransformPoint(new Vector3(0f, -0.21f, 0f));
-        Vector3 axisB = transform.TransformPoint(new Vector3(0f, 0.21f, 0f));
-        float d2 = SegmentDistanceSquared(arrowFrom, arrowTo, axisA, axisB);
-        // The visible shaft radius is ~0.048 m and its bindings ~0.052 m.
-        // Keep modest forgiveness instead of scoring a visibly distant shot.
-        bool hit = d2 <= 0.07f * 0.07f;
-        if (!hit) { bullseye = false; return false; }
-
-        // A central hit is near the MIDDLE of the bandulan, not anywhere along
-        // the full-length vertical axis. Score a smaller central segment.
-        Vector3 centerA = transform.TransformPoint(new Vector3(0f, -0.075f, 0f));
-        Vector3 centerB = transform.TransformPoint(new Vector3(0f, 0.075f, 0f));
-        float centerDistance = SegmentDistanceSquared(arrowFrom, arrowTo, centerA, centerB);
-        bullseye = centerDistance <= 0.035f * 0.035f;
+        LastTraditionalZone = hitY >= TraditionalHeadBottom
+            ? TraditionalZone.Molo
+            : hitY >= TraditionalNeckBottom
+                ? TraditionalZone.Jangga : TraditionalZone.Awak;
+        bullseye = LastTraditionalZone == TraditionalZone.Molo;
         return true;
     }
 
@@ -190,23 +169,20 @@ public class JemparinganTarget : MonoBehaviour
         RestoreFlash();
         _flashRenderer = _body;
         _flashOriginalTone = _normalBodyTone;
-        if (_useTraditionalScoring)
+        switch (LastTraditionalZone)
         {
-            switch (LastTraditionalZone)
-            {
-                case TraditionalZone.Molo:
-                    _flashRenderer = _traditionalMolo;
-                    _flashOriginalTone = JemparinganArt.Tone.Red;
-                    break;
-                case TraditionalZone.Jangga:
-                    _flashRenderer = _traditionalJangga;
-                    _flashOriginalTone = JemparinganArt.Tone.BandulanYellow;
-                    break;
-                case TraditionalZone.Awak:
-                    _flashRenderer = _traditionalAwak;
-                    _flashOriginalTone = JemparinganArt.Tone.BandulanWhite;
-                    break;
-            }
+            case TraditionalZone.Molo:
+                _flashRenderer = _traditionalMolo;
+                _flashOriginalTone = JemparinganArt.Tone.Red;
+                break;
+            case TraditionalZone.Jangga:
+                _flashRenderer = _traditionalJangga;
+                _flashOriginalTone = JemparinganArt.Tone.BandulanYellow;
+                break;
+            case TraditionalZone.Awak:
+                _flashRenderer = _traditionalAwak;
+                _flashOriginalTone = JemparinganArt.Tone.BandulanWhite;
+                break;
         }
         if (_flashRenderer != null)
         {
