@@ -1,44 +1,31 @@
-# JEMPARINGAN — RASA
+# JEMPARINGAN
 
-Mixed Reality archery prototype inspired by Javanese jemparingan, targeting Meta Quest 3 / 3S for the 2026 Meta VR Start Developer Competition.
-
-**Current stage: v0.9 gameplay hardening and regression checks built on v0.8; desktop-editor prototype only.** Not yet validated as a Quest APK.
+A Unity archery project inspired by Javanese jemparingan, currently developed for desktop/Web and eventual Meta Quest experimentation.
 
 ## Open and play
 
-- Unity editor version recorded in `ProjectSettings/ProjectVersion.txt`: **6000.2.14f1**.
-- Use **Tools → Jemparingan → Create Optimized Scene v0.2** to create a new demo scene at `Assets/Jemparingan/Scenes/JemparinganOptimized_v02.unity`.
-- Click Play. **Hold left mouse** to pull the string, **release** to shoot, **hold right mouse + move mouse** to aim; press **R** to reset the round.
-- Set **Active Input Handling = Both** if the legacy mouse input APIs do not respond.
+- Unity version: **6000.2.14f1** (`ProjectSettings/ProjectVersion.txt`).
+- Open `Assets/Jemparingan/Scenes/JemparinganPlayableEnvironment_v05.unity`.
+- Enter Play Mode and choose **Traditional (1)** or **Modern (2)**. Press **M** to return to the mode selector before the first shot or after the round.
+- On desktop: **hold left mouse** to draw, **release** to shoot, **hold right mouse + move mouse** to aim, and **R** to restart.
+- The Joglo, rice-field landscape and target scene are already committed. Do not regenerate the scene merely to change gameplay scripts.
 
-## Optional environment preview (separate branch)
+## Active modes
 
-The `feature/safe-environment-preview-v1` branch includes a standalone outdoor Joglo environment:
+- **Traditional** (primary): 12 arrows with stationary bandulan and zone scoring: **molo (red) = 3**, **jangga (yellow) = 2**, **awak (white) = 1**. This is a Mataram-inspired adaptation, not a claim of complete historical authenticity. The first-person bow, grip and seated-body presentation remain.
+- **Modern** (retained): ring-scored targets, physical sight, optional arrow camera and a three-stage progression with a moving target.
 
-- **Lighting v3:** golden-hour procedural skybox, warm daylight and distance fog.
-- **Landscape v4:** more organic sawah groups, banana plants and layered mesh mountains.
-- **Playable Environment v5:** one live bandulan at 10/20/30 m, desktop mouse input (including Web builds), and **16 arrows across four rounds**, finishing with **ROUND IV — EXTREME SWING**. The original v0.9 indoor scene remains 12 arrows / three stages.
+**Classic and Challenge have been removed** from the runtime mode selector, scoring and mission logic. The old Challenge medal system and Classic arcade bonuses are no longer part of active gameplay. Existing historical documentation and screenshots may still describe earlier builds.
 
-The generator creates scenes under `Assets/Jemparingan/Scenes/` using
-**Tools > Jemparingan > Environment > Create Joglo Preview v2** (scenic) or
-**Create Playable Environment v5** (interactive). The existing `JemparinganOptimized_v02`
-scene is not overwritten. See [Environment v3–v5 Guide](docs/ENVIRONMENT_V3_V5.md).
-The final round adds four shots (arrows 13–16). The bandulan moves 1.8× farther and about 1.35× faster than Round III, with deterministic turns and smooth round transitions. No wind-force mechanic or score bonus change. **Existing Playable v5 scenes work without regeneration**: the outdoor shot count is upgraded at runtime. For the Unity Play browser version, rebuild and publish a new Web build to update the hosted game.
+The scenic-only preview lives in `Assets/Jemparingan/Scenes/JemparinganEnvironmentPreview_v01.unity`; the older indoor scene `JemparinganOptimized_v02.unity` is retained as a historical/legacy scene. The playable outdoor scene is the recommended one.
 
-These changes are source-reviewed, not Unity/Quest-tested in this environment.
+## Validation
 
-## Game modes (Playable Environment v5)
+In Unity Edit Mode, use **Tools > Jemparingan > Run Target Hitbox Checks**, then **Tools > Jemparingan > Run Gameplay QA (Traditional + Modern)**. In Play Mode, check Traditional hit zones, 12-shot results, Modern stages, arrow camera, input and replay. These checks supplement—not replace—real Unity compilation and headset testing.
 
-Outdoor mode now offers **two separate experiences** in the existing scene, with a clickable mode selector on Unity Editor and Web:
+See [Traditional Mode v1](docs/TRADITIONAL_MODE_V1.md) and [Environment v3–v5](docs/ENVIRONMENT_V3_V5.md) for design context.
 
-- **Classic** — the existing **16 arrows / 4 rounds**, including Extreme Swing, combo and RASA bonuses, and its original red/gold bandulan.
-- **Traditional** — a **Mataram-inspired 12-arrow session**, with a still bandulan whose **molo (red) scores 3**, **jangga (yellow) scores 2**, and **awak (white) scores 1**. Arcade combo bonuses are not applied, and records are stored separately. Adds low first-person seated posture cues and a more horizontal gandewa visualization.
-
-Choose with the on-screen buttons (or **1 / 2**), press **M** to reopen mode selection before your first shot or after finishing, **R** to restart, and **T** for optional aim training. Classic is the default for native headset builds until native UI selection exists.
-
-**Both modes are runtime-generated; no scene regeneration.** Traditional is an **inspired adaptation**, not yet a fully faithful reconstruction of historical rules or posture. See [Traditional Mode v1](docs/TRADITIONAL_MODE_V1.md). The Unity Play upload must be rebuilt and republished after local testing.
-
-## Gameplay and visual features (v0.9)
+## Historical development notes (v0.9 and earlier)
 
 - A 12-shot round with three difficulty stages, combo scoring, bullseye/stability bonus, and local best-score persistence.
 - Reusable arrow pool, swept arrow-tip collision, modest aim assist, and trajectory preview.
@@ -61,7 +48,7 @@ Choose with the on-screen buttons (or **1 / 2**), press **M** to reopen mode sel
 - `Assets/Scripts/MetaQuestBowInput.cs` — future Quest hand input adapter; **not yet wired into a tested headset build**.
 - `Assets/Scripts/Editor/JemparinganEditorMenu.cs` — scene creation menu.
 
-## Gameplay roadmap
+## Archived gameplay roadmap
 
 See [Gameplay Roadmap](docs/GAMEPLAY_ROADMAP.md) for the three-stage 12-arrow loop, RASA mechanic, gameplay milestones, and acceptance gates.
 
