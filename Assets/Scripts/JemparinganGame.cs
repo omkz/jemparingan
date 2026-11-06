@@ -46,7 +46,7 @@ public class JemparinganGame : MonoBehaviour
     private Transform[] _previewDots;
     private TextMesh _scoreLabel, _infoLabel, _feedbackLabel, _titleLabel, _phaseLabel;
     private TextMesh _resultsTitle, _resultsDetails, _resultsHint, _stageBanner;
-    private GameObject _introPanel, _resultsPanel;
+    private GameObject _resultsPanel;
     private Renderer[] _shotPipRenderers;
     private AudioSource _audio, _ambientAudio;
     private AudioClip _shotSound, _hitSound, _bullseyeSound, _missSound, _focusSound, _stageSound;
@@ -141,8 +141,6 @@ public class JemparinganGame : MonoBehaviour
             }
             _awaitStringRelease = false;
         }
-        if (_introPanel != null && _introPanel.activeSelf && pose.StringPinched)
-            _introPanel.SetActive(false);
         Vector3 aim = pose.AimDirection.sqrMagnitude > 0.01f ? pose.AimDirection.normalized : _lastAim;
         _lastAim = aim;
         _bow.SetPositionAndRotation(pose.BowPosition, Quaternion.LookRotation(aim, Vector3.up));
@@ -432,7 +430,6 @@ public class JemparinganGame : MonoBehaviour
         HidePreview();
         if (_impactLabel != null) _impactLabel.text = "";
         _impactLabelUntil = 0f;
-        if (_introPanel != null) _introPanel.SetActive(false);
         if (_stageBanner != null) _stageBanner.text = "";
         _stageBannerUntil = 0f;
         _replayArmed = false;
@@ -497,7 +494,6 @@ public class JemparinganGame : MonoBehaviour
         _replayHoldStartedAt = -1f;
         _stageBannerUntil = 0f;
         if (_stageBanner != null) _stageBanner.text = "";
-        if (_introPanel != null) _introPanel.SetActive(true);
         if (_resultsPanel != null) _resultsPanel.SetActive(false);
         _roundOver = _finished = false;
         _ready = true;
@@ -647,7 +643,7 @@ public class JemparinganGame : MonoBehaviour
         _phaseLabel = JemparinganArt.Label("Phase", hud, new Vector3(0f, .87f, 0f), "", .0033f, new Color(.93f, .90f, .70f));
         _feedbackLabel = JemparinganArt.Label("Feedback", hud, new Vector3(0f, .70f, 0f), "", .0042f, new Color(.40f, .94f, .75f));
         BuildShotPips(hud);
-        BuildSessionPanels(hud);
+        BuildResultsDisplay(hud);
         var help = new GameObject("Jemparingan Instructions").transform;
         if (useOutdoorEnvironment)
         {
@@ -712,21 +708,6 @@ public class JemparinganGame : MonoBehaviour
         _infoLabel.fontSize = 96;
         _infoLabel.fontStyle = FontStyle.Bold;
 
-        // Shared material, very low draw/geometry cost for readable contrast
-        // against the bright rice fields and light sky.
-        JemparinganArt.Part("HUD title + score contrast panel", PrimitiveType.Cube, hud,
-            new Vector3(0f, 1.04f, .085f),
-            new Vector3(1.88f, .49f, .025f), JemparinganArt.Tone.DarkWood);
-        JemparinganArt.Part("HUD title gold top edge", PrimitiveType.Cube, hud,
-            new Vector3(0f, 1.293f, .075f),
-            new Vector3(1.88f, .015f, .022f), JemparinganArt.Tone.Gold);
-        JemparinganArt.Part("HUD feedback contrast panel", PrimitiveType.Cube, hud,
-            new Vector3(0f, .67f, .09f),
-            new Vector3(1.75f, .18f, .023f), JemparinganArt.Tone.DarkWood);
-        JemparinganArt.Part("Instruction contrast panel", PrimitiveType.Cube, help,
-            new Vector3(0f, 0f, .08f),
-            new Vector3(1.77f, .18f, .022f), JemparinganArt.Tone.DarkWood);
-
         foreach (TextMesh label in hud.GetComponentsInChildren<TextMesh>(true))
         {
             if (label == _titleLabel || label == _scoreLabel ||
@@ -742,34 +723,14 @@ public class JemparinganGame : MonoBehaviour
         }
     }
 
-    // UI stays in world space; no external canvas or Quest-specific SDK required.
-    // It deliberately uses the existing shared primitive materials.
-    private void BuildSessionPanels(Transform hud)
+    // Results appear only after the round, as text without a 3D background card.
+    // Keep the gameplay view clear in all environments.
+    private void BuildResultsDisplay(Transform hud)
     {
-        var intro = new GameObject("Session Intro | Auto Hides On Draw");
-        intro.transform.SetParent(hud, false);
-        intro.transform.localPosition = new Vector3(0f, .09f, -.27f);
-        _introPanel = intro;
-        JemparinganArt.Part("Intro card", PrimitiveType.Cube, intro.transform,
-            Vector3.zero, new Vector3(1.46f, .55f, .016f), JemparinganArt.Tone.DarkWood);
-        JemparinganArt.Part("Intro gold edge", PrimitiveType.Cube, intro.transform,
-            new Vector3(0f, .268f, -.013f), new Vector3(1.46f, .012f, .01f), JemparinganArt.Tone.Gold);
-        JemparinganArt.Label("Intro title", intro.transform, new Vector3(0f, .16f, -.025f),
-            "J E M P A R I N G A N   /   R A S A", .0045f, new Color(.98f, .82f, .51f));
-        JemparinganArt.Label("Intro goal", intro.transform, new Vector3(0f, .015f, -.025f),
-            "12 PANAH   •   3 BABAK   •   RASA +3 SAAT TENANG", .0035f, Color.white);
-        JemparinganArt.Label("Intro start", intro.transform, new Vector3(0f, -.14f, -.025f),
-            Application.isEditor ? "TARIK DENGAN KLIK KIRI UNTUK MULAI" : "TARIK TALI UNTUK MULAI",
-            .0037f, new Color(.56f, .94f, .76f));
-
         var results = new GameObject("Round Results | Hidden Until Finish");
         results.transform.SetParent(hud, false);
         results.transform.localPosition = new Vector3(0f, .09f, -.30f);
         _resultsPanel = results;
-        JemparinganArt.Part("Results card", PrimitiveType.Cube, results.transform,
-            Vector3.zero, new Vector3(1.62f, .80f, .018f), JemparinganArt.Tone.DarkWood);
-        JemparinganArt.Part("Results gold edge", PrimitiveType.Cube, results.transform,
-            new Vector3(0f, .39f, -.014f), new Vector3(1.62f, .014f, .01f), JemparinganArt.Tone.Gold);
         _resultsTitle = JemparinganArt.Label("Results heading", results.transform,
             new Vector3(0f, .28f, -.026f), "", .0050f, new Color(.98f, .82f, .51f));
         _resultsDetails = JemparinganArt.Label("Results score and accuracy", results.transform,
