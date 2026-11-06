@@ -188,6 +188,10 @@ public class JemparinganGame : MonoBehaviour
     // Cached sight state keeps TextMesh updates event-driven, not every frame.
     private bool _practiceSightStateKnown, _practiceSightWasAligned, _practiceSightWasDrawing;
     private GameObject _outdoorFeedbackPanel;
+    // The original world-space HUD includes opaque dark-wood background
+    // boards at camera-right. Modern desktop has its own minimal IMGUI,
+    // so hide the ENTIRE legacy HUD and help roots, not just their text.
+    private GameObject _worldSpaceHudRoot, _worldSpaceHelpRoot;
     private Renderer[] _focusRenderers;
     private Transform _upperString, _lowerString;
     // Cosmetic arrow follows the bowstring in outdoor mode.
@@ -820,6 +824,21 @@ public class JemparinganGame : MonoBehaviour
         if (_seatedBodyRenderers == null) return;
         foreach (Renderer renderer in _seatedBodyRenderers)
             if (renderer != null) renderer.enabled = visible;
+    }
+
+    // Hide the old camera-right brown HUD boards in Modern desktop.
+    // The separate IMGUI score/level overlay is unaffected. Restores
+    // the original 3D HUD for Classic, Traditional, Challenge and Quest.
+    private void SyncWorldSpaceHudVisibility()
+    {
+        bool visible = !(useOutdoorEnvironment && UsesDesktopInput() &&
+            (!_modeChosen || IsModernMode()));
+        if (_worldSpaceHudRoot != null &&
+            _worldSpaceHudRoot.activeSelf != visible)
+            _worldSpaceHudRoot.SetActive(visible);
+        if (_worldSpaceHelpRoot != null &&
+            _worldSpaceHelpRoot.activeSelf != visible)
+            _worldSpaceHelpRoot.SetActive(visible);
     }
 
     private void StartModernMode()
@@ -2304,6 +2323,9 @@ public class JemparinganGame : MonoBehaviour
             (IsTraditionalMode() ? "TRADITIONAL  •  FOCUS" : "ROUND I  •  CALM")));
         UpdateIntroMode();
         UpdateHUD();
+        // Apply after ResetRound's intro/result/pip state changes.
+        // When Modern is active no old 3D board may obstruct the sight.
+        SyncWorldSpaceHudVisibility();
     }
 
     private void UpdateIntroMode()
@@ -2613,6 +2635,7 @@ public class JemparinganGame : MonoBehaviour
         BuildLeadMarker(root);
 
         var hud = new GameObject("Jemparingan HUD").transform;
+        _worldSpaceHudRoot = hud.gameObject;
         if (useOutdoorEnvironment)
         {
             // Place all outdoor HUD copy in the upper RIGHT of the viewpoint.
@@ -2631,6 +2654,7 @@ public class JemparinganGame : MonoBehaviour
         BuildShotPips(hud);
         BuildSessionPanels(hud);
         var help = new GameObject("Jemparingan Instructions").transform;
+        _worldSpaceHelpRoot = help.gameObject;
         if (useOutdoorEnvironment)
         {
             // Instructions sit below the right-hand HUD and session cards,
