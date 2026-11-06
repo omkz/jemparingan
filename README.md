@@ -12,7 +12,7 @@ A Unity archery project inspired by Javanese jemparingan, currently developed fo
 
 ## Active modes
 
-- **Traditional** (primary): 12 arrows with stationary bandulan and zone scoring: **molo (red) = 3**, **jangga (yellow) = 2**, **awak (white) = 1**. This is a Mataram-inspired adaptation, not a claim of complete historical authenticity. The first-person bow, grip and seated-body presentation remain.
+- **Traditional** (primary): 12 arrows across **three levels (4 arrows each)**: stationary bandulan, gentle lateral sway, then faster/wider sway. Zone scoring stays **molo (red) = 3**, **jangga (yellow) = 2**, **awak (white) = 1**. This is a Mataram-inspired adaptation, not a claim of complete historical authenticity. The first-person bow, grip and seated-body presentation remain.
 - **Modern** (retained): ring-scored targets, physical sight, optional arrow camera and a three-stage progression with a moving target.
 
 **Classic and Challenge have been removed** from the runtime mode selector, scoring and mission logic. The old Challenge medal system and Classic arcade bonuses are no longer part of active gameplay. Existing historical documentation and screenshots may still describe earlier builds.
@@ -21,7 +21,7 @@ The scenic-only preview lives in `Assets/Jemparingan/Scenes/JemparinganEnvironme
 
 ## Validation
 
-In Unity Edit Mode, use **Tools > Jemparingan > Run Target Hitbox Checks**, then **Tools > Jemparingan > Run Gameplay QA (Traditional + Modern)**. In Play Mode, check Traditional hit zones, 12-shot results, Modern stages, arrow camera, input and replay. These checks supplement—not replace—real Unity compilation and headset testing.
+In Unity Edit Mode, use **Tools > Jemparingan > Run Target Hitbox Checks**, then **Tools > Jemparingan > Run Gameplay QA (Traditional + Modern)**. In Play Mode, check Traditional hit zones, stage boundaries at shots 4 and 8, 12-shot results, Modern stages, arrow camera, input and replay. These checks supplement—not replace—real Unity compilation and headset testing.
 
 See [Traditional Mode v1](docs/TRADITIONAL_MODE_V1.md) and [Environment v3–v5](docs/ENVIRONMENT_V3_V5.md) for design context.
 
