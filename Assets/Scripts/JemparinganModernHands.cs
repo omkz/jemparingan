@@ -9,13 +9,20 @@ using UnityEngine.Rendering;
 public sealed class JemparinganModernHands : MonoBehaviour
 {
     private const int Sides = 9;
-    private const int SleeveRings = 9;
+    private const int SleeveRings = 11;
+    private const float ReleaseFollowSeconds = .17f;
 
+    // Hand, fingers, and sleeve remain children of the cosmetic bow.
+    // These are prebuilt meshes; animation only rotates tiny grip joints.
     private readonly List<Mesh> _meshes = new List<Mesh>();
-    private Transform _root, _leftPalm;
+    private readonly Transform[] _gripFingers = new Transform[4];
+    private Transform _root, _leftPalm, _thumb;
     private Mesh _leftSleeve;
     private readonly Vector3[] _leftSleeveVertices =
         new Vector3[SleeveRings * Sides];
+    private float _gripPressure;
+    private bool _wasDrawing;
+    private float _releaseAt = -1f;
 
     public void Build()
     {
@@ -37,40 +44,67 @@ public sealed class JemparinganModernHands : MonoBehaviour
 
     private void BuildLeftGrip()
     {
-        // Integrated tapered wrist + palm volume. Wrapped fingers visibly
-        // curl around the actual grip, not the old detached sphere fingers.
-        AddSkinnedTube("Left wrist and palm", _leftPalm,
+        // The leather handle is a 0.060m-diameter cylinder centered on
+        // bow-local origin. Palm is behind it (-Z), while four differently
+        // sized fingers curl around its right edge toward the front (+Z).
+        // Keep the grip contact itself at local (0,0,0) while animating.
+        AddSkinnedTube("Left tapered wrist into palm", _leftPalm,
             JemparinganArt.Tone.TraditionalSkin, new[] {
-                new Vector3(-.059f, -.072f, -.041f),
-                new Vector3(-.046f, -.047f, -.039f),
-                new Vector3(-.032f, -.019f, -.033f),
-                new Vector3(-.023f, .005f, -.026f) },
-            new[] { .020f, .024f, .030f, .028f }, .86f);
+                new Vector3(-.064f, -.080f, -.044f),
+                new Vector3(-.056f, -.057f, -.042f),
+                new Vector3(-.040f, -.032f, -.037f),
+                new Vector3(-.027f, -.007f, -.030f),
+                new Vector3(-.025f, .022f, -.028f) },
+            new[] { .019f, .024f, .028f, .031f, .024f }, .87f);
 
-        for (int finger = 0; finger < 4; finger++)
+        // Fingertips do not all end at the same place: the middle finger
+        // reaches furthest, ring shorter, and little finger shortest.
+        // Pivot each curved finger at its actual knuckle so pressure makes
+        // a slight visible curl without detaching it from the palm.
+        float[] reach = { .98f, 1.06f, .93f, .81f };
+        for (int finger = 0; finger < _gripFingers.Length; finger++)
         {
             float y = .031f - finger * .019f;
-            AddSkinnedTube("Left curled grip finger " + finger,
-                _leftPalm, JemparinganArt.Tone.TraditionalSkin,
-                new[] {
-                    new Vector3(-.037f, y, -.024f),
-                    new Vector3(-.013f, y, -.030f),
-                    new Vector3(.016f, y - .002f, -.020f),
-                    new Vector3(.025f, y - .007f, .003f),
-                    new Vector3(.010f, y - .011f, .024f) },
-                new[] { .011f, .010f, .009f, .008f, .006f }, .90f);
+            float extension = reach[finger];
+            Transform knuckle = new GameObject(
+                "Left finger " + finger + " | grip knuckle").transform;
+            knuckle.SetParent(_leftPalm, false);
+            knuckle.localPosition = new Vector3(-.037f, y, -.025f);
+            _gripFingers[finger] = knuckle;
+
+            AddSkinnedTube("Curved grip finger " + finger, knuckle,
+                JemparinganArt.Tone.TraditionalSkin, new[] {
+                    Vector3.zero,
+                    new Vector3(.018f * extension, .002f, -.006f),
+                    new Vector3(.047f * extension, .000f, -.005f),
+                    new Vector3(.066f * extension, -.003f, .012f),
+                    new Vector3(.061f * extension, -.009f, .031f),
+                    new Vector3(.041f * extension, -.013f, .049f) },
+                new[] { .0105f, .011f, .0096f, .0084f, .0072f, .0054f },
+                .91f);
         }
-        AddSkinnedTube("Left thumb presses front of grip", _leftPalm,
+
+        // Opposing thumb presses the grip from underneath, rather than
+        // looking like a fifth finger parallel to the others.
+        _thumb = new GameObject("Left thumb | opposing grip").transform;
+        _thumb.SetParent(_leftPalm, false);
+        _thumb.localPosition = new Vector3(-.030f, -.024f, -.030f);
+        AddSkinnedTube("Left curved thumb", _thumb,
             JemparinganArt.Tone.TraditionalSkin, new[] {
-                new Vector3(-.029f, -.018f, -.030f),
-                new Vector3(-.025f, -.036f, -.008f),
-                new Vector3(-.006f, -.022f, .021f) },
-            new[] { .013f, .011f, .007f }, .90f);
-        AddSkinnedTube("Left cuff | tucked into palm", _leftPalm,
+                Vector3.zero,
+                new Vector3(.006f, -.012f, .011f),
+                new Vector3(.024f, -.011f, .029f),
+                new Vector3(.037f, .003f, .047f) },
+            new[] { .014f, .013f, .010f, .006f }, .88f);
+
+        // Keep the navy cuff inserted into the skin, matching the sleeve
+        // end so there is no floating wrist or exposed sleeve cap.
+        AddSkinnedTube("Left wrist cuff | joins sleeve", _leftPalm,
             JemparinganArt.Tone.Indigo, new[] {
-                new Vector3(-.070f, -.095f, -.046f),
-                new Vector3(-.059f, -.073f, -.042f) },
-            new[] { .025f, .024f }, .95f);
+                new Vector3(-.072f, -.103f, -.050f),
+                new Vector3(-.064f, -.083f, -.044f),
+                new Vector3(-.055f, -.068f, -.042f) },
+            new[] { .026f, .025f, .021f }, .94f);
     }
 
     private void AddSkinnedTube(string name, Transform parent,
@@ -170,20 +204,61 @@ public sealed class JemparinganModernHands : MonoBehaviour
         renderer.receiveShadows = false;
     }
 
-    // Called after the cosmetic bow has moved. Left palm remains fixed to
-    // the grip, while only the sleeve mesh follows the camera framing.
-    public void Present(Camera camera)
+    // Called after the Modern cosmetic bow has been posed, and after
+    // the gameplay string/nock has updated. Only LEFT-HAND animation here.
+    // Input, projectile launch, bow pose and optical sight are untouched.
+    public void Present(Camera camera, bool drawing,
+        float drawPower, float raisedPose)
     {
         if (_root == null || camera == null) return;
         if (!_root.gameObject.activeSelf)
             _root.gameObject.SetActive(true);
 
+        if (_wasDrawing && !drawing) _releaseAt = Time.time;
+        _wasDrawing = drawing;
+
+        // The large idle-to-full-draw movement belongs to the existing bow
+        // controller. This joint adds only subtle grip pressure and recoil
+        // (1-2 degrees), without sliding fingers off the 6cm grip.
+        float pressureTarget = drawing ? Mathf.Clamp01(drawPower) : 0f;
+        _gripPressure = Mathf.MoveTowards(_gripPressure, pressureTarget,
+            6f * Time.deltaTime);
+        float raised = Mathf.Clamp01(raisedPose);
+        float recoil = 0f;
+        if (_releaseAt >= 0f)
+        {
+            float t = (Time.time - _releaseAt) / ReleaseFollowSeconds;
+            if (t >= 1f) _releaseAt = -1f;
+            else recoil = Mathf.Sin(Mathf.Clamp01(t) * Mathf.PI);
+        }
         _leftPalm.localPosition = Vector3.zero;
+        _leftPalm.localRotation = Quaternion.Euler(
+            Mathf.Lerp(1.3f, -.3f, raised) - .6f * _gripPressure +
+                1.2f * recoil,
+            .65f * _gripPressure,
+            Mathf.Lerp(-.9f, .4f, raised) - .8f * recoil);
+
+        for (int finger = 0; finger < _gripFingers.Length; finger++)
+        {
+            // Tiny knuckle flex (no procedural mesh rebuilding).
+            float curl = _gripPressure * (2.6f + finger * .35f);
+            _gripFingers[finger].localRotation =
+                Quaternion.Euler(0f, -curl, -curl * .32f);
+        }
+        _thumb.localRotation =
+            Quaternion.Euler(0f, 1.3f * _gripPressure, 0f);
+
         Vector3 leftWrist = _leftPalm.TransformPoint(
-            new Vector3(-.065f, -.085f, -.044f));
+            new Vector3(-.066f, -.090f, -.046f));
+        float rise = Mathf.SmoothStep(0f, 1f, raised);
+        // The sleeve naturally changes its elbow bend as the existing bow
+        // rises. Its first ring remains below the screen at all draw stages.
+        Vector3 sleeveStart = camera.ViewportToWorldPoint(
+            new Vector3(Mathf.Lerp(.20f, .17f, rise),
+                -.29f, .56f));
         PoseSleeve(camera, _leftSleeve, _leftSleeveVertices,
-            camera.ViewportToWorldPoint(new Vector3(.19f, -.27f, .56f)),
-            leftWrist, .064f, .021f, .022f);
+            sleeveStart, leftWrist, .061f, .023f,
+            Mathf.Lerp(.014f, .040f, rise));
     }
 
     private void PoseSleeve(Camera camera, Mesh sleeve, Vector3[] vertices,
@@ -229,6 +304,14 @@ public sealed class JemparinganModernHands : MonoBehaviour
     public void Hide()
     {
         if (_root != null) _root.gameObject.SetActive(false);
+        if (_leftPalm != null)
+        {
+            _leftPalm.localPosition = Vector3.zero;
+            _leftPalm.localRotation = Quaternion.identity;
+        }
+        _wasDrawing = false;
+        _gripPressure = 0f;
+        _releaseAt = -1f;
     }
 
     private void OnDestroy()
