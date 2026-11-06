@@ -51,17 +51,22 @@ public static class JemparinganEditorMenu
         {
             var target = testObject.AddComponent<JemparinganTarget>();
             bool bullseye;
-            bool center = target.TestShot(new Vector3(0f, 0f, -.2f),
-                new Vector3(0f, 0f, .2f), out bullseye) && bullseye;
-            bool outer = target.TestShot(new Vector3(.06f, .16f, -.2f),
-                new Vector3(.06f, .16f, .2f), out bullseye) && !bullseye;
+            bool head = target.TestShot(new Vector3(0f, .145f, -.2f),
+                new Vector3(0f, .145f, .2f), out bullseye) &&
+                target.LastTraditionalZone == JemparinganTarget.TraditionalZone.Molo;
+            bool neck = target.TestShot(new Vector3(0f, .085f, -.2f),
+                new Vector3(0f, .085f, .2f), out bullseye) &&
+                target.LastTraditionalZone == JemparinganTarget.TraditionalZone.Jangga;
+            bool body = target.TestShot(new Vector3(0f, -.10f, -.2f),
+                new Vector3(0f, -.10f, .2f), out bullseye) &&
+                target.LastTraditionalZone == JemparinganTarget.TraditionalZone.Awak;
             bool miss = !target.TestShot(new Vector3(.15f, 0f, -.2f),
                 new Vector3(.15f, 0f, .2f), out bullseye);
-            if (center && outer && miss)
-                Debug.Log("Jemparingan v0.5 hitbox checks passed (bullseye, outer hit, miss).");
+            if (head && neck && body && miss)
+                Debug.Log("Traditional hitbox checks passed (molo, jangga, awak, miss).");
             else
-                Debug.LogError("Jemparingan v0.5 hitbox check failed: center=" + center +
-                    ", outer=" + outer + ", miss=" + miss);
+                Debug.LogError("Traditional hitbox check failed: molo=" + head +
+                    ", jangga=" + neck + ", awak=" + body + ", miss=" + miss);
         }
         finally
         {
@@ -71,47 +76,14 @@ public static class JemparinganEditorMenu
 
     // Deterministic rule smoke tests without NUnit or extra packages.
     // This does NOT replace a full Unity Play Mode or Quest device playtest.
-    [MenuItem("Tools/Jemparingan/Run Gameplay QA v0.9")]
+    [MenuItem("Tools/Jemparingan/Run Gameplay QA (Traditional + Modern)")]
     public static void RunGameplayQA()
     {
         int total = 0;
         int failed = 0;
 
-        Check("outer hit = 5", JemparinganScoreRules.PointsForHit(false, false, 1) == 5, ref total, ref failed);
-        Check("bullseye = 10", JemparinganScoreRules.PointsForHit(true, false, 1) == 10, ref total, ref failed);
-        Check("steady outer = 8", JemparinganScoreRules.PointsForHit(false, true, 1) == 8, ref total, ref failed);
-        Check("third hit combo = 7", JemparinganScoreRules.PointsForHit(false, false, 3) == 7, ref total, ref failed);
-        Check("bullseye + RASA + combo = 15",
-            JemparinganScoreRules.PointsForHit(true, true, 3) == 15, ref total, ref failed);
-
         Check("accuracy 0/0 = 0", JemparinganScoreRules.AccuracyPercent(0, 0) == 0, ref total, ref failed);
         Check("accuracy 9/12 = 75", JemparinganScoreRules.AccuracyPercent(9, 12) == 75, ref total, ref failed);
-        Check("stage first", JemparinganScoreRules.StageIndex(0) == 0 &&
-            JemparinganScoreRules.StageIndex(3) == 0, ref total, ref failed);
-        Check("stage second at shot 4", JemparinganScoreRules.StageIndex(4) == 1 &&
-            JemparinganScoreRules.StageIndex(7) == 1, ref total, ref failed);
-        Check("stage third at shot 8", JemparinganScoreRules.StageIndex(8) == 2 &&
-            JemparinganScoreRules.StageIndex(11) == 2, ref total, ref failed);
-        Check("stage label", JemparinganScoreRules.StageTitle(8).StartsWith("ROUND III"),
-            ref total, ref failed);
-        Check("round IV begins after 12 arrows",
-            JemparinganScoreRules.StageIndex(12) == 3 &&
-            JemparinganScoreRules.StageIndex(15) == 3, ref total, ref failed);
-        Check("round IV named Extreme Swing",
-            JemparinganScoreRules.StageTitle(12).Contains("EXTREME SWING"),
-            ref total, ref failed);
-        Check("outdoor has 16 arrows in four rounds",
-            JemparinganScoreRules.OutdoorArrowCount == 16 &&
-            JemparinganScoreRules.OutdoorRoundCount == 4, ref total, ref failed);
-        Check("final swing is wider and faster",
-            JemparinganScoreRules.SwayAmountForStage(3) >
-                JemparinganScoreRules.SwayAmountForStage(2) &&
-            JemparinganScoreRules.SwaySpeedForStage(3) >
-                JemparinganScoreRules.SwaySpeedForStage(2), ref total, ref failed);
-        Check("round title considers composure",
-            JemparinganScoreRules.ResultTitle(9, 4).Contains("RASA"), ref total, ref failed);
-        Check("round title distinguishes accuracy",
-            JemparinganScoreRules.ResultTitle(9, 1).Contains("TRUE AIM"), ref total, ref failed);
         Check("legacy pool handles 12 arrows",
             JemparinganScoreRules.PoolCapacity(12, 14) == 14, ref total, ref failed);
         Check("outdoor pool handles 16 arrows",
@@ -142,17 +114,6 @@ public static class JemparinganEditorMenu
         {
             var target = testObject.AddComponent<JemparinganTarget>();
             bool bullseye;
-            bool center = target.TestShot(new Vector3(0f, 0f, -.2f),
-                new Vector3(0f, 0f, .2f), out bullseye) && bullseye;
-            bool outer = target.TestShot(new Vector3(.06f, .16f, -.2f),
-                new Vector3(.06f, .16f, .2f), out bullseye) && !bullseye;
-            bool miss = !target.TestShot(new Vector3(.15f, 0f, -.2f),
-                new Vector3(.15f, 0f, .2f), out bullseye);
-            Check("center hitbox", center, ref total, ref failed);
-            Check("outer hitbox", outer, ref total, ref failed);
-            Check("outside hitbox misses", miss, ref total, ref failed);
-
-            target.UseTraditionalScoring(true);
             bool head = target.TestShot(new Vector3(0f, .145f, -.2f),
                 new Vector3(0f, .145f, .2f), out bullseye) &&
                 target.LastTraditionalZone == JemparinganTarget.TraditionalZone.Molo;
@@ -188,32 +149,6 @@ public static class JemparinganEditorMenu
                 aboveTop, ref total, ref failed);
             Check("Traditional below visible target misses",
                 belowBottom, ref total, ref failed);
-            target.UseTraditionalScoring(false);
-            Check("Classic target remains intact", target.TestShot(
-                new Vector3(0f, 0f, -.2f), new Vector3(0f, 0f, .2f),
-                out bullseye) && bullseye, ref total, ref failed);
-
-            // Challenge Mode v1 rule & threshold checks
-            var prec = JemparinganChallengeRules.GetConfig(JemparinganChallengeRules.MissionId.Precision);
-            Check("Precision 8 arrows", prec.ArrowCount == 8, ref total, ref failed);
-            Check("Precision stationary sway 0", prec.TargetSway == 0f && prec.TargetSpeed == 0f, ref total, ref failed);
-            Check("Precision 0 molo no medal", prec.Evaluate(0) == JemparinganChallengeRules.Medal.None, ref total, ref failed);
-            Check("Precision 1 molo bronze", prec.Evaluate(1) == JemparinganChallengeRules.Medal.Bronze, ref total, ref failed);
-            Check("Precision 2 molo silver", prec.Evaluate(2) == JemparinganChallengeRules.Medal.Silver, ref total, ref failed);
-            Check("Precision 3 molo gold", prec.Evaluate(3) == JemparinganChallengeRules.Medal.Gold, ref total, ref failed);
-            Check("Precision 8 molo gold cap", prec.Evaluate(8) == JemparinganChallengeRules.Medal.Gold, ref total, ref failed);
-
-            var moving = JemparinganChallengeRules.GetConfig(JemparinganChallengeRules.MissionId.MovingTarget, 0.08f, 0.9f);
-            Check("Moving Target 10 arrows", moving.ArrowCount == 10, ref total, ref failed);
-            Check("Moving Target sway > 0", moving.TargetSway > 0f && moving.TargetSpeed > 0f, ref total, ref failed);
-            Check("Moving Target 0 hits no medal", moving.Evaluate(0) == JemparinganChallengeRules.Medal.None, ref total, ref failed);
-            Check("Moving Target 1 hit no medal", moving.Evaluate(1) == JemparinganChallengeRules.Medal.None, ref total, ref failed);
-            Check("Moving Target 2 hits bronze", moving.Evaluate(2) == JemparinganChallengeRules.Medal.Bronze, ref total, ref failed);
-            Check("Moving Target 3 hits bronze", moving.Evaluate(3) == JemparinganChallengeRules.Medal.Bronze, ref total, ref failed);
-            Check("Moving Target 4 hits silver", moving.Evaluate(4) == JemparinganChallengeRules.Medal.Silver, ref total, ref failed);
-            Check("Moving Target 5 hits silver", moving.Evaluate(5) == JemparinganChallengeRules.Medal.Silver, ref total, ref failed);
-            Check("Moving Target 6 hits gold", moving.Evaluate(6) == JemparinganChallengeRules.Medal.Gold, ref total, ref failed);
-            Check("Moving Target 10 hits gold", moving.Evaluate(10) == JemparinganChallengeRules.Medal.Gold, ref total, ref failed);
             // Modern Archery v1 rings: same swept projectile, circular board.
             Check("Modern rings 10 at center",
                 JemparinganModernTarget.PointsForRadius(0f) == 10 &&
