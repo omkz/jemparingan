@@ -84,9 +84,9 @@ public static class JemparinganEditorMenu
 
         Check("accuracy 0/0 = 0", JemparinganScoreRules.AccuracyPercent(0, 0) == 0, ref total, ref failed);
         Check("accuracy 9/12 = 75", JemparinganScoreRules.AccuracyPercent(9, 12) == 75, ref total, ref failed);
-        Check("legacy pool handles 12 arrows",
+        Check("Traditional pool handles 12 arrows",
             JemparinganScoreRules.PoolCapacity(12, 14) == 14, ref total, ref failed);
-        Check("outdoor pool handles 16 arrows",
+        Check("Modern pool handles 16 arrows",
             JemparinganScoreRules.PoolCapacity(16, 14) == 16, ref total, ref failed);
         Check("arrow pool 30",
             JemparinganScoreRules.PoolCapacity(30, 14) == 30, ref total, ref failed);
