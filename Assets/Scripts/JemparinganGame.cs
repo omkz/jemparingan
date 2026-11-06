@@ -34,6 +34,10 @@ public class JemparinganGame : MonoBehaviour
     [SerializeField, Range(.3f, 1.8f)] private float modernMovingTargetSpeed = .85f;
     private int _modernStage;
     private readonly int[] _modernStageObjectiveHits = new int[3];
+    // Desktop-only presentation timing. These do not gate aiming or shots.
+    private float _modernStageIntroStartedAt = -1f;
+    private float _modernStageIntroUntil = -1f;
+    private bool _modernPreviousStageCleared;
 
     [Header("Modern first-person rig v2 (desktop visual only)")]
     [SerializeField] private bool modernViewmodelRigV2 = true;
@@ -610,12 +614,17 @@ public class JemparinganGame : MonoBehaviour
             _modernTargets[1] != null)
             _modernTargets[1].SetLateralMotion(_modernStage == 2,
                 modernMovingTargetTravel, modernMovingTargetSpeed);
+        _modernPreviousStageCleared = ModernStageGoalMet(completed);
+        _modernStageIntroStartedAt = Time.time;
+        _modernStageIntroUntil = Time.time + 2.0f;
         ShowFeedback("STAGE " + (_modernStage + 1) + "  |  " +
             ModernStageTitle(_modernStage) + "  |  " +
             (ModernStageGoalMet(completed) ? "PREVIOUS GOAL CLEARED"
                 : "KEEP IMPROVING"),
             new Color(.48f, .92f, .84f));
-        if (_stageBanner != null)
+        // Desktop IMGUI has its own concise stage card; don't duplicate
+        // it with the old world-space text at the center of the view.
+        if (_stageBanner != null && !UsesDesktopInput())
         {
             _stageBanner.text = "STAGE " + (_modernStage + 1) +
                 "  •  " + ModernStageTitle(_modernStage);
@@ -626,57 +635,179 @@ public class JemparinganGame : MonoBehaviour
         UpdateHUD();
     }
 
+    // DrawTexture avoids adding textures, materials, cameras or UI canvases.
+    // Every call restores GUI.color, keeping other IMGUI modes unaffected.
+    private static void DrawModernPanelRect(Rect rect, Color tint)
+    {
+        Color previous = GUI.color;
+        GUI.color = tint;
+        GUI.DrawTexture(rect, Texture2D.whiteTexture);
+        GUI.color = previous;
+    }
+
+    private static GUIStyle ModernLabelStyle(int fontSize,
+        FontStyle weight, TextAnchor alignment, Color tint)
+    {
+        GUIStyle style = new GUIStyle(GUI.skin.label);
+        style.fontSize = fontSize;
+        style.fontStyle = weight;
+        style.alignment = alignment;
+        style.normal.textColor = tint;
+        return style;
+    }
+
+    private static Color ModernStageAccent(int stage)
+    {
+        return stage == 0 ? new Color(.37f, .86f, .74f) :
+            stage == 1 ? new Color(.96f, .73f, .38f) :
+            new Color(.54f, .76f, 1f);
+    }
+
     private void DrawModernInGameHUD()
     {
-        Rect hud = new Rect(16f, 16f, 328f,
-            modernProgressiveStages ? 183f : 140f);
-        GUI.Box(hud, "");
-        GUIStyle title = new GUIStyle(GUI.skin.label);
-        title.fontStyle = FontStyle.Bold;
-        title.fontSize = 15;
-        GUI.Label(new Rect(hud.x + 12f, hud.y + 9f, 305f, 24f),
-            "MODERN ARCHERY  |  3 TARGETS", title);
-        GUI.Label(new Rect(hud.x + 12f, hud.y + 36f, 305f, 21f),
-            "Score: " + _score + "   Best: " + Mathf.Max(_previousBest, _score));
-        GUI.Label(new Rect(hud.x + 12f, hud.y + 59f, 305f, 21f),
-            "Arrows: " + Mathf.Max(0, arrowsPerRound - _shots) +
-            " / " + arrowsPerRound + "   Hits: " + _hits);
-        float aimY = 103f;
+        float width = Mathf.Min(364f, Screen.width - 24f);
+        if (width < 240f) return;
+        float height = modernProgressiveStages ? 218f : 176f;
+        Rect hud = new Rect(12f, 12f, width, height);
+        float x = hud.x + 14f, contentWidth = width - 28f;
+        Color textColor = new Color(.94f, .97f, .99f);
+        Color muted = new Color(.69f, .78f, .82f);
+        Color accent = modernProgressiveStages
+            ? ModernStageAccent(_modernStage)
+            : ModernStageAccent(0);
+        GUIStyle title = ModernLabelStyle(14, FontStyle.Bold,
+            TextAnchor.MiddleLeft, textColor);
+        GUIStyle label = ModernLabelStyle(12, FontStyle.Normal,
+            TextAnchor.MiddleLeft, muted);
+        GUIStyle right = ModernLabelStyle(12, FontStyle.Normal,
+            TextAnchor.MiddleRight, muted);
+        GUIStyle number = ModernLabelStyle(25, FontStyle.Bold,
+            TextAnchor.MiddleLeft, textColor);
+        GUIStyle small = ModernLabelStyle(11, FontStyle.Normal,
+            TextAnchor.MiddleLeft, textColor);
+        GUIStyle smallCentered = ModernLabelStyle(10, FontStyle.Bold,
+            TextAnchor.MiddleCenter, textColor);
+
+        DrawModernPanelRect(hud, new Color(.035f, .065f, .10f, .91f));
+        DrawModernPanelRect(new Rect(hud.x, hud.y, width, 3f), accent);
+        GUI.Label(new Rect(x, hud.y + 10f, contentWidth, 23f),
+            "MODERN ARCHERY  /  TARGET RANGE", title);
+        GUI.Label(new Rect(x, hud.y + 40f, 72f, 17f), "SCORE", label);
+        GUI.Label(new Rect(x, hud.y + 56f, 95f, 32f), _score.ToString(), number);
+        GUI.Label(new Rect(x + 102f, hud.y + 44f,
+            contentWidth - 102f, 20f),
+            "BEST  " + Mathf.Max(_previousBest, _score), right);
+        GUI.Label(new Rect(x + 102f, hud.y + 65f,
+            contentWidth - 102f, 20f),
+            "ARROWS  " + Mathf.Max(0, arrowsPerRound - _shots) +
+            " / " + arrowsPerRound + "    HITS  " + _hits, right);
+
+        DrawModernPanelRect(new Rect(x, hud.y + 95f, contentWidth, 1f),
+            new Color(.55f, .70f, .75f, .30f));
+        float aimY;
         if (modernProgressiveStages)
         {
-            GUI.Label(new Rect(hud.x + 12f, hud.y + 82f, 305f, 21f),
-                "STAGE " + (_modernStage + 1) + "/3  " +
-                ModernStageTitle(_modernStage) + "  |  SHOT " +
-                Mathf.Clamp(_shots - ModernStageStart(_modernStage),
-                    0, ModernStageLength(_modernStage)) + "/" +
+            float chipGap = 4f;
+            float chipWidth = (contentWidth - chipGap * 2f) / 3f;
+            for (int stage = 0; stage < 3; stage++)
+            {
+                bool current = stage == _modernStage;
+                bool completed = stage < _modernStage;
+                Rect chip = new Rect(x + stage * (chipWidth + chipGap),
+                    hud.y + 103f, chipWidth, 26f);
+                Color stageTint = current ? ModernStageAccent(stage) :
+                    completed && ModernStageGoalMet(stage)
+                        ? new Color(.29f, .62f, .54f, .76f)
+                        : new Color(.20f, .29f, .34f, .88f);
+                DrawModernPanelRect(chip, stageTint);
+                string chipLabel = (stage + 1) + "  " +
+                    (stage == 2 ? "MOVING" : ModernStageTitle(stage));
+                GUI.Label(chip, chipLabel, smallCentered);
+            }
+
+            int stageShots = Mathf.Clamp(_shots -
+                ModernStageStart(_modernStage), 0,
                 ModernStageLength(_modernStage));
-            GUI.Label(new Rect(hud.x + 12f, hud.y + 105f, 305f, 21f),
-                ModernStageGoalText(_modernStage));
-            GUI.Label(new Rect(hud.x + 12f, hud.y + 128f, 305f, 21f),
-                "Rings: 10 / 8 / 6 / 4 / 2");
-            aimY = 151f;
+            int stageLength = ModernStageLength(_modernStage);
+            GUI.Label(new Rect(x, hud.y + 137f, contentWidth * .72f, 18f),
+                "STAGE " + (_modernStage + 1) + "  " +
+                ModernStageTitle(_modernStage), small);
+            GUI.Label(new Rect(x + contentWidth * .73f, hud.y + 137f,
+                contentWidth * .27f, 18f),
+                "SHOT " + stageShots + "/" + stageLength, right);
+            Rect track = new Rect(x, hud.y + 158f, contentWidth, 5f);
+            DrawModernPanelRect(track, new Color(.28f, .38f, .43f, .75f));
+            DrawModernPanelRect(new Rect(track.x, track.y,
+                track.width * (stageLength > 0
+                    ? stageShots / (float)stageLength : 0f), track.height),
+                accent);
+            GUI.Label(new Rect(x, hud.y + 169f, contentWidth, 18f),
+                ModernStageGoalText(_modernStage), small);
+            aimY = hud.y + 193f;
         }
         else
         {
-            GUI.Label(new Rect(hud.x + 12f, hud.y + 82f, 305f, 21f),
-                "Rings: 10  /  8  /  6  /  4  /  2");
+            GUI.Label(new Rect(x, hud.y + 105f, contentWidth, 18f),
+                "RINGS  10 / 8 / 6 / 4 / 2", small);
+            aimY = hud.y + 145f;
         }
-        bool precision = ModernPrecisionAimRequested();
-        string aimState = precision ? "FULL DRAW - MOVE MOUSE TO AIM" :
-            (!modernViewmodelRigV2 || !modernUseReferenceFraming)
-                ? "V1 VIEW - LMB AIM AND RELEASE TO SHOOT"
-                : Input.GetMouseButton(0)
-                    ? "DRAWING - KEEP LMB HELD TO AIM"
-                    : "READY - HOLD LMB TO DRAW AND AIM";
-        GUI.Label(new Rect(hud.x + 12f, hud.y + aimY, 305f, 21f), aimState);
-        if (precision && modernDebugCameraCrosshair)
+
+        string aimState = ModernPrecisionAimRequested()
+            ? "FULL DRAW  /  HOLD STEADY, RELEASE TO SHOOT"
+            : Input.GetMouseButton(0)
+                ? "DRAWING  /  MOVE MOUSE TO AIM"
+                : "READY  /  HOLD LMB TO DRAW";
+        GUI.Label(new Rect(x, aimY, contentWidth, 18f),
+            aimState, label);
+        if (ModernPrecisionAimRequested() && modernDebugCameraCrosshair)
             DrawModernDebugCrosshair();
-        GUI.Label(new Rect(16f, Screen.height - 34f,
-            Mathf.Min(720f, Screen.width - 32f), 24f),
-            _arrowCam != null && _arrowCam.IsActive
-                ? "ARROW CAM  |  ESC SKIP  |  R RETRY  |  M MODES"
-                : "HOLD LMB + MOVE MOUSE TO AIM  |  RELEASE TO SHOOT  |  SHIFT FINE  |  G DEBUG  |  V VIEW",
-            GUI.skin.box);
+        DrawModernStageTransition();
+        // Keep the existing controls available, but as a small corner
+        // hint instead of a second large box over the target range.
+        string controls = _arrowCam != null && _arrowCam.IsActive
+            ? "ARROW CAM  •  ESC SKIP  •  R RETRY  •  M MODES"
+            : "LMB DRAW / AIM  •  SHIFT FINE  •  G DEBUG  •  V VIEW  •  R RETRY";
+        float hintWidth = Mathf.Min(545f, Screen.width - 24f);
+        Rect hint = new Rect(12f, Screen.height - 31f, hintWidth, 22f);
+        DrawModernPanelRect(hint, new Color(.035f, .065f, .10f, .77f));
+        GUI.Label(new Rect(hint.x + 8f, hint.y, hint.width - 16f,
+            hint.height), controls, label);
+    }
+
+    private void DrawModernStageTransition()
+    {
+        if (!modernProgressiveStages || _modernStageIntroStartedAt < 0f ||
+            Time.time >= _modernStageIntroUntil) return;
+
+        float elapsed = Time.time - _modernStageIntroStartedAt;
+        float opacity = Mathf.Clamp01(elapsed / .22f) *
+            Mathf.Clamp01((_modernStageIntroUntil - Time.time) / .42f);
+        float width = Mathf.Min(320f, Screen.width - 32f);
+        if (width < 190f) return;
+        float y = Mathf.Max(24f, Screen.height * .12f);
+        Rect banner = new Rect((Screen.width - width) * .5f, y,
+            width, 88f);
+        Color stageColor = ModernStageAccent(_modernStage);
+        DrawModernPanelRect(banner, new Color(.035f, .065f,
+            .10f, .89f * opacity));
+        DrawModernPanelRect(new Rect(banner.x, banner.y, 4f,
+            banner.height), new Color(stageColor.r, stageColor.g,
+            stageColor.b, opacity));
+        GUIStyle head = ModernLabelStyle(18, FontStyle.Bold,
+            TextAnchor.MiddleCenter, new Color(.96f, .98f,
+                1f, opacity));
+        GUIStyle sub = ModernLabelStyle(12, FontStyle.Normal,
+            TextAnchor.MiddleCenter, new Color(stageColor.r,
+                stageColor.g, stageColor.b, opacity));
+        GUI.Label(new Rect(banner.x + 8f, banner.y + 13f,
+            width - 16f, 29f),
+            "STAGE " + (_modernStage + 1) + "  /  " +
+            ModernStageTitle(_modernStage), head);
+        GUI.Label(new Rect(banner.x + 8f, banner.y + 46f,
+            width - 16f, 22f),
+            _modernPreviousStageCleared
+                ? "PREVIOUS GOAL CLEARED  •  NEW CHALLENGE"
+                : "NEW CHALLENGE  •  KEEP IMPROVING", sub);
     }
 
     private void DrawModernDebugCrosshair()
@@ -703,51 +834,100 @@ public class JemparinganGame : MonoBehaviour
 
     private void DrawModernResultsGUI()
     {
-        float width = Mathf.Min(440f, Screen.width - 24f);
-        float height = modernProgressiveStages ? 328f : 258f;
+        float width = Mathf.Min(510f, Screen.width - 28f);
+        if (width < 260f) return;
+        float height = modernProgressiveStages ? 420f : 312f;
         Rect panel = new Rect((Screen.width - width) * .5f,
             (Screen.height - height) * .5f, width, height);
-        GUI.Box(panel, "");
-        GUIStyle header = new GUIStyle(GUI.skin.label);
-        header.fontSize = 21;
-        header.fontStyle = FontStyle.Bold;
-        header.alignment = TextAnchor.MiddleCenter;
-        GUI.Label(new Rect(panel.x + 12f, panel.y + 18f, width - 24f, 32f),
-            "MODERN ARCHERY COMPLETE", header);
+        float x = panel.x + 20f, contentWidth = width - 40f;
+        Color bright = new Color(.95f, .98f, 1f);
+        Color muted = new Color(.68f, .79f, .83f);
+        Color gold = new Color(.97f, .78f, .42f);
+        GUIStyle heading = ModernLabelStyle(21, FontStyle.Bold,
+            TextAnchor.MiddleCenter, bright);
+        GUIStyle sub = ModernLabelStyle(12, FontStyle.Normal,
+            TextAnchor.MiddleCenter, muted);
+        GUIStyle large = ModernLabelStyle(37, FontStyle.Bold,
+            TextAnchor.MiddleCenter, bright);
+        GUIStyle rowTitle = ModernLabelStyle(13, FontStyle.Bold,
+            TextAnchor.MiddleLeft, bright);
+        GUIStyle rowStatus = ModernLabelStyle(12, FontStyle.Bold,
+            TextAnchor.MiddleRight, bright);
+        GUIStyle metric = ModernLabelStyle(13, FontStyle.Normal,
+            TextAnchor.MiddleCenter, bright);
+
+        DrawModernPanelRect(panel, new Color(.035f, .065f, .10f, .96f));
+        DrawModernPanelRect(new Rect(panel.x, panel.y,
+            width, 4f), gold);
+        GUI.Label(new Rect(x, panel.y + 15f, contentWidth, 32f),
+            "MODERN ARCHERY  /  COMPLETE", heading);
+        int cleared = 0;
+        if (modernProgressiveStages)
+            for (int stage = 0; stage < 3; stage++)
+                if (ModernStageGoalMet(stage)) cleared++;
+        string caption = modernProgressiveStages
+            ? cleared + " OF 3 STAGE GOALS CLEARED"
+            : "THREE TARGET RANGE";
+        GUI.Label(new Rect(x, panel.y + 48f, contentWidth, 20f),
+            caption, sub);
+
+        GUI.Label(new Rect(x, panel.y + 76f, contentWidth, 48f),
+            _score.ToString(), large);
+        GUI.Label(new Rect(x, panel.y + 118f, contentWidth, 18f),
+            _score > _previousBest ? "NEW PERSONAL BEST"
+                : "BEST  " + Mathf.Max(_previousBest, _score), sub);
+        DrawModernPanelRect(new Rect(x, panel.y + 147f, contentWidth, 1f),
+            new Color(.65f, .76f, .81f, .3f));
+
         int accuracy = JemparinganScoreRules.AccuracyPercent(_hits, _shots);
-        GUI.Label(new Rect(panel.x + 12f, panel.y + 70f, width - 24f, 24f),
-            "SCORE  " + _score + "    BEST  " + Mathf.Max(_score, _previousBest),
-            GUI.skin.box);
-        GUI.Label(new Rect(panel.x + 12f, panel.y + 102f, width - 24f, 24f),
-            "HITS  " + _hits + "/" + _shots + "    ACCURACY  " + accuracy + "%",
-            GUI.skin.box);
-        GUI.Label(new Rect(panel.x + 12f, panel.y + 134f, width - 24f, 24f),
-            "BULLSEYES  " + _bullseyes, GUI.skin.box);
+        GUI.Label(new Rect(x, panel.y + 154f, contentWidth, 25f),
+            "HITS  " + _hits + "/" + _shots +
+            "       ACCURACY  " + accuracy + "%" +
+            "       BULLSEYES  " + _bullseyes, metric);
         if (modernProgressiveStages)
         {
-            GUIStyle stageStyle = new GUIStyle(GUI.skin.label);
-            stageStyle.alignment = TextAnchor.MiddleCenter;
+            float rowStart = panel.y + 190f;
             for (int stage = 0; stage < 3; stage++)
-                GUI.Label(new Rect(panel.x + 12f, panel.y + 168f +
-                    stage * 21f, width - 24f, 21f),
-                    ModernStageTitle(stage) + "  " +
+            {
+                bool clearedGoal = ModernStageGoalMet(stage);
+                Color statusColor = clearedGoal
+                    ? new Color(.40f, .88f, .73f)
+                    : new Color(.99f, .75f, .45f);
+                Rect row = new Rect(x, rowStart + stage * 47f,
+                    contentWidth, 39f);
+                DrawModernPanelRect(row,
+                    new Color(.13f, .20f, .26f, .87f));
+                DrawModernPanelRect(new Rect(row.x, row.y, 3f, row.height),
+                    ModernStageAccent(stage));
+                GUI.Label(new Rect(row.x + 12f, row.y + 4f,
+                    row.width * .52f, 29f),
+                    (stage + 1) + "  " + ModernStageTitle(stage), rowTitle);
+                GUIStyle stateStyle = new GUIStyle(rowStatus);
+                stateStyle.normal.textColor = statusColor;
+                GUI.Label(new Rect(row.x + row.width * .53f, row.y + 4f,
+                    row.width * .44f, 29f),
                     _modernStageObjectiveHits[stage] + "/" +
-                    ModernStageGoal(stage) +
-                    (ModernStageGoalMet(stage) ? "  CLEAR" : "  BELOW GOAL"),
-                    stageStyle);
+                    ModernStageGoal(stage) + "  " +
+                    (clearedGoal ? "CLEAR" : "BELOW GOAL"), stateStyle);
+            }
         }
-        float buttonWidth = (width - 36f) * .5f;
-        float buttonY = modernProgressiveStages ? 260f : 190f;
-        if (GUI.Button(new Rect(panel.x + 12f, panel.y + buttonY,
-            buttonWidth, 44f), "RETRY (R)"))
+
+        float buttonY = modernProgressiveStages ? 355f : 232f;
+        float gap = 12f;
+        float buttonWidth = (contentWidth - gap) * .5f;
+        Color previousBackground = GUI.backgroundColor;
+        GUI.backgroundColor = new Color(.46f, .83f, .71f);
+        if (GUI.Button(new Rect(x, panel.y + buttonY,
+            buttonWidth, 44f), "RETRY  (R)"))
         {
             ResetRound();
-            // The UI click is not a bow draw or another projectile.
             _awaitStringRelease = UsesDesktopInput() && Input.GetMouseButton(0);
         }
-        if (GUI.Button(new Rect(panel.x + 24f + buttonWidth, panel.y + buttonY,
-            buttonWidth, 44f), "MODES (M)"))
+        GUI.backgroundColor = new Color(.75f, .82f, .88f);
+        if (GUI.Button(new Rect(x + buttonWidth + gap,
+            panel.y + buttonY, buttonWidth, 44f), "MODES  (M)"))
             ReturnToModeSelect();
+        GUI.backgroundColor = previousBackground;
     }
 
     private void SetSceneBandulanFrameVisible(bool visible)
@@ -2042,6 +2222,8 @@ public class JemparinganGame : MonoBehaviour
         if (_introPanel != null) _introPanel.SetActive(false);
         if (_stageBanner != null) _stageBanner.text = "";
         _stageBannerUntil = 0f;
+        _modernStageIntroStartedAt = -1f;
+        _modernStageIntroUntil = -1f;
         _replayArmed = false;
         _replayHoldStartedAt = -1f;
 
@@ -2197,6 +2379,9 @@ public class JemparinganGame : MonoBehaviour
         for (int i = 0; i < _arrows.Length; i++) _arrows[i].Cancel();
         _shots = _hits = _score = _combo = _poolCursor = 0;
         _modernStage = 0;
+        _modernStageIntroStartedAt = -1f;
+        _modernStageIntroUntil = -1f;
+        _modernPreviousStageCleared = false;
         for (int stage = 0; stage < _modernStageObjectiveHits.Length; stage++)
             _modernStageObjectiveHits[stage] = 0;
         _bullseyes = _bestCombo = _rasaHits = _rasaBonus = 0;
