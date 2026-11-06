@@ -91,17 +91,41 @@ public static class JemparinganEditorMenu
         Check("stage second at shot 4", JemparinganScoreRules.StageIndex(4) == 1 &&
             JemparinganScoreRules.StageIndex(7) == 1, ref total, ref failed);
         Check("stage third at shot 8", JemparinganScoreRules.StageIndex(8) == 2 &&
-            JemparinganScoreRules.StageIndex(12) == 2, ref total, ref failed);
-        Check("stage label", JemparinganScoreRules.StageTitle(8).StartsWith("BABAK III"),
+            JemparinganScoreRules.StageIndex(11) == 2, ref total, ref failed);
+        Check("stage label", JemparinganScoreRules.StageTitle(8).StartsWith("ROUND III"),
             ref total, ref failed);
+        Check("round IV begins after 12 arrows",
+            JemparinganScoreRules.StageIndex(12) == 3 &&
+            JemparinganScoreRules.StageIndex(15) == 3, ref total, ref failed);
+        Check("round IV named Extreme Swing",
+            JemparinganScoreRules.StageTitle(12).Contains("EXTREME SWING"),
+            ref total, ref failed);
+        Check("outdoor has 16 arrows in four rounds",
+            JemparinganScoreRules.OutdoorArrowCount == 16 &&
+            JemparinganScoreRules.OutdoorRoundCount == 4, ref total, ref failed);
+        Check("final swing is wider and faster",
+            JemparinganScoreRules.SwayAmountForStage(3) >
+                JemparinganScoreRules.SwayAmountForStage(2) &&
+            JemparinganScoreRules.SwaySpeedForStage(3) >
+                JemparinganScoreRules.SwaySpeedForStage(2), ref total, ref failed);
         Check("round title considers composure",
-            JemparinganScoreRules.ResultTitle(9, 4).Contains("R A S A"), ref total, ref failed);
+            JemparinganScoreRules.ResultTitle(9, 4).Contains("RASA"), ref total, ref failed);
         Check("round title distinguishes accuracy",
-            JemparinganScoreRules.ResultTitle(9, 1).Contains("P A N A H"), ref total, ref failed);
-        Check("arrow pool default 12",
+            JemparinganScoreRules.ResultTitle(9, 1).Contains("TRUE AIM"), ref total, ref failed);
+        Check("legacy pool handles 12 arrows",
             JemparinganScoreRules.PoolCapacity(12, 14) == 14, ref total, ref failed);
+        Check("outdoor pool handles 16 arrows",
+            JemparinganScoreRules.PoolCapacity(16, 14) == 16, ref total, ref failed);
         Check("arrow pool 30",
             JemparinganScoreRules.PoolCapacity(30, 14) == 30, ref total, ref failed);
+        Check("Traditional red 3", JemparinganScoreRules.TraditionalPointsForZone(
+            JemparinganTarget.TraditionalZone.Molo) == 3, ref total, ref failed);
+        Check("Traditional yellow 2", JemparinganScoreRules.TraditionalPointsForZone(
+            JemparinganTarget.TraditionalZone.Jangga) == 2, ref total, ref failed);
+        Check("Traditional white 1", JemparinganScoreRules.TraditionalPointsForZone(
+            JemparinganTarget.TraditionalZone.Awak) == 1, ref total, ref failed);
+        Check("Traditional miss 0", JemparinganScoreRules.TraditionalPointsForZone(
+            JemparinganTarget.TraditionalZone.None) == 0, ref total, ref failed);
 
         Vector3 flat = JemparinganTrajectory.Position(Vector3.zero, Vector3.forward * 10f, 0f, 1f);
         Vector3 falling = JemparinganTrajectory.Position(Vector3.zero, Vector3.forward * 10f, 2f, 1f);
@@ -127,6 +151,112 @@ public static class JemparinganEditorMenu
             Check("center hitbox", center, ref total, ref failed);
             Check("outer hitbox", outer, ref total, ref failed);
             Check("outside hitbox misses", miss, ref total, ref failed);
+
+            target.UseTraditionalScoring(true);
+            bool head = target.TestShot(new Vector3(0f, .145f, -.2f),
+                new Vector3(0f, .145f, .2f), out bullseye) &&
+                target.LastTraditionalZone == JemparinganTarget.TraditionalZone.Molo;
+            bool neck = target.TestShot(new Vector3(0f, .085f, -.2f),
+                new Vector3(0f, .085f, .2f), out bullseye) &&
+                target.LastTraditionalZone == JemparinganTarget.TraditionalZone.Jangga;
+            bool body = target.TestShot(new Vector3(0f, -.10f, -.2f),
+                new Vector3(0f, -.10f, .2f), out bullseye) &&
+                target.LastTraditionalZone == JemparinganTarget.TraditionalZone.Awak;
+            Check("Traditional red zone", head, ref total, ref failed);
+            Check("Traditional yellow zone", neck, ref total, ref failed);
+            Check("Traditional white zone", body, ref total, ref failed);
+            bool nearNeckBottom = target.TestShot(new Vector3(0f, .055f, -.2f),
+                new Vector3(0f, .055f, .2f), out bullseye) &&
+                target.LastTraditionalZone == JemparinganTarget.TraditionalZone.Jangga;
+            bool nearHeadBottom = target.TestShot(new Vector3(0f, .105f, -.2f),
+                new Vector3(0f, .105f, .2f), out bullseye) &&
+                target.LastTraditionalZone == JemparinganTarget.TraditionalZone.Molo;
+            bool belowNeck = target.TestShot(new Vector3(0f, .045f, -.2f),
+                new Vector3(0f, .045f, .2f), out bullseye) &&
+                target.LastTraditionalZone == JemparinganTarget.TraditionalZone.Awak;
+            bool aboveTop = !target.TestShot(new Vector3(0f, .22f, -.2f),
+                new Vector3(0f, .22f, .2f), out bullseye);
+            bool belowBottom = !target.TestShot(new Vector3(0f, -.24f, -.2f),
+                new Vector3(0f, -.24f, .2f), out bullseye);
+            Check("Traditional neck lower visual boundary",
+                nearNeckBottom, ref total, ref failed);
+            Check("Traditional head lower visual boundary",
+                nearHeadBottom, ref total, ref failed);
+            Check("Traditional white ends at neck",
+                belowNeck, ref total, ref failed);
+            Check("Traditional above visible target misses",
+                aboveTop, ref total, ref failed);
+            Check("Traditional below visible target misses",
+                belowBottom, ref total, ref failed);
+            target.UseTraditionalScoring(false);
+            Check("Classic target remains intact", target.TestShot(
+                new Vector3(0f, 0f, -.2f), new Vector3(0f, 0f, .2f),
+                out bullseye) && bullseye, ref total, ref failed);
+
+            // Challenge Mode v1 rule & threshold checks
+            var prec = JemparinganChallengeRules.GetConfig(JemparinganChallengeRules.MissionId.Precision);
+            Check("Precision 8 arrows", prec.ArrowCount == 8, ref total, ref failed);
+            Check("Precision stationary sway 0", prec.TargetSway == 0f && prec.TargetSpeed == 0f, ref total, ref failed);
+            Check("Precision 0 molo no medal", prec.Evaluate(0) == JemparinganChallengeRules.Medal.None, ref total, ref failed);
+            Check("Precision 1 molo bronze", prec.Evaluate(1) == JemparinganChallengeRules.Medal.Bronze, ref total, ref failed);
+            Check("Precision 2 molo silver", prec.Evaluate(2) == JemparinganChallengeRules.Medal.Silver, ref total, ref failed);
+            Check("Precision 3 molo gold", prec.Evaluate(3) == JemparinganChallengeRules.Medal.Gold, ref total, ref failed);
+            Check("Precision 8 molo gold cap", prec.Evaluate(8) == JemparinganChallengeRules.Medal.Gold, ref total, ref failed);
+
+            var moving = JemparinganChallengeRules.GetConfig(JemparinganChallengeRules.MissionId.MovingTarget, 0.08f, 0.9f);
+            Check("Moving Target 10 arrows", moving.ArrowCount == 10, ref total, ref failed);
+            Check("Moving Target sway > 0", moving.TargetSway > 0f && moving.TargetSpeed > 0f, ref total, ref failed);
+            Check("Moving Target 0 hits no medal", moving.Evaluate(0) == JemparinganChallengeRules.Medal.None, ref total, ref failed);
+            Check("Moving Target 1 hit no medal", moving.Evaluate(1) == JemparinganChallengeRules.Medal.None, ref total, ref failed);
+            Check("Moving Target 2 hits bronze", moving.Evaluate(2) == JemparinganChallengeRules.Medal.Bronze, ref total, ref failed);
+            Check("Moving Target 3 hits bronze", moving.Evaluate(3) == JemparinganChallengeRules.Medal.Bronze, ref total, ref failed);
+            Check("Moving Target 4 hits silver", moving.Evaluate(4) == JemparinganChallengeRules.Medal.Silver, ref total, ref failed);
+            Check("Moving Target 5 hits silver", moving.Evaluate(5) == JemparinganChallengeRules.Medal.Silver, ref total, ref failed);
+            Check("Moving Target 6 hits gold", moving.Evaluate(6) == JemparinganChallengeRules.Medal.Gold, ref total, ref failed);
+            Check("Moving Target 10 hits gold", moving.Evaluate(10) == JemparinganChallengeRules.Medal.Gold, ref total, ref failed);
+            // Modern Archery v1 rings: same swept projectile, circular board.
+            Check("Modern rings 10 at center",
+                JemparinganModernTarget.PointsForRadius(0f) == 10 &&
+                JemparinganModernTarget.PointsForRadius(.085f) == 10,
+                ref total, ref failed);
+            Check("Modern rings 8/6/4/2",
+                JemparinganModernTarget.PointsForRadius(.10f) == 8 &&
+                JemparinganModernTarget.PointsForRadius(.20f) == 6 &&
+                JemparinganModernTarget.PointsForRadius(.32f) == 4 &&
+                JemparinganModernTarget.PointsForRadius(.46f) == 2,
+                ref total, ref failed);
+            Check("Modern rings miss outside",
+                JemparinganModernTarget.PointsForRadius(.51f) == 0,
+                ref total, ref failed);
+
+            var modernObject = new GameObject("Modern ring QA (temporary)");
+            try
+            {
+                var modern = modernObject.AddComponent<JemparinganModernTarget>();
+                Vector3 impact;
+                int ringScore;
+                Check("Modern center swept hit",
+                    modern.TestShot(new Vector3(0f, 0f, -.2f),
+                        new Vector3(0f, 0f, .2f), out ringScore, out impact) &&
+                    ringScore == 10 && Mathf.Abs(impact.z - JemparinganModernTarget.FaceDepth) < .0001f,
+                    ref total, ref failed);
+                Check("Modern red swept hit",
+                    modern.TestShot(new Vector3(.12f, 0f, -.2f),
+                        new Vector3(.12f, 0f, .2f), out ringScore, out impact) &&
+                    ringScore == 8, ref total, ref failed);
+                Check("Modern off-board swept miss",
+                    !modern.TestShot(new Vector3(.60f, 0f, -.2f),
+                        new Vector3(.60f, 0f, .2f), out ringScore, out impact),
+                    ref total, ref failed);
+                Check("Modern parallel segment misses",
+                    !modern.TestShot(new Vector3(0f, 0f, -.2f),
+                        new Vector3(.2f, 0f, -.2f), out ringScore, out impact),
+                    ref total, ref failed);
+            }
+            finally
+            {
+                Object.DestroyImmediate(modernObject);
+            }
         }
         finally
         {

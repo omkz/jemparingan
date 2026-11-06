@@ -3,14 +3,32 @@ using UnityEngine;
 // Procedural bandulan: swept hit test, lightweight recoil and reusable impact sparks.
 public class JemparinganTarget : MonoBehaviour
 {
+    public enum TraditionalZone { None, Awak, Jangga, Molo }
+    public TraditionalZone LastTraditionalZone { get; private set; }
+
+    // Shared visual and scoring boundaries. Keep these synchronized with
+    // BuildBandulan so every colored region awards its advertised points.
+    public const float TraditionalBottom = -.22f;
+    public const float TraditionalNeckBottom = .05f;
+    public const float TraditionalHeadBottom = .10f;
+    public const float TraditionalTop = .196f;
+    private bool _useTraditionalScoring;
+    private JemparinganArt.Tone _normalBodyTone = JemparinganArt.Tone.Red;
     [Range(0f, 0.3f)] public float swayAmount = 0.10f;
     [Range(0f, 5f)] public float swaySpeed = 0.9f;
 
     private const float BurstDuration = 0.40f;
+    // Fade between round amplitudes instead of teleporting the bandulan.
+    private const float SwayAmplitudeTransitionPerSecond = 0.34f;
     private const int SparkCount = 8;
     private Vector3 _rest;
     private Quaternion _restRotation;
+    private float _activeSwayAmount;
+    private float _swayPhaseOffset;
     private Renderer _body;
+    private Renderer _traditionalMolo, _traditionalJangga, _traditionalAwak;
+    private Renderer _flashRenderer;
+    private JemparinganArt.Tone _flashOriginalTone;
     private Transform _fxRoot;
     private Transform[] _sparks;
     private Renderer[] _sparkRenderers;
@@ -22,13 +40,54 @@ public class JemparinganTarget : MonoBehaviour
     {
         _rest = transform.localPosition;
         _restRotation = transform.localRotation;
+        _activeSwayAmount = swayAmount;
     }
 
-    public void SetBody(Renderer body) { _body = body; }
+    public void SetBody(Renderer body, JemparinganArt.Tone normalTone = JemparinganArt.Tone.Red)
+    {
+        _body = body;
+        _normalBodyTone = normalTone;
+    }
+
+    public void SetTraditionalZoneRenderers(Renderer molo, Renderer jangga, Renderer awak)
+    {
+        _traditionalMolo = molo;
+        _traditionalJangga = jangga;
+        _traditionalAwak = awak;
+    }
+
+    public void UseTraditionalScoring(bool traditional)
+    {
+        _useTraditionalScoring = traditional;
+        LastTraditionalZone = TraditionalZone.None;
+    }
+
+    // Preserve the old waveform's phase when speed changes, and ease the
+    // amplitude over a short window. No random jumps between rounds.
+    public void SetSway(float amount, float speed, bool resetImmediately = false)
+    {
+        amount = Mathf.Clamp(amount, 0f, 0.3f);
+        speed = Mathf.Clamp(speed, 0f, 5f);
+        if (resetImmediately)
+        {
+            _activeSwayAmount = amount;
+            _swayPhaseOffset = 0f;
+        }
+        else
+        {
+            _swayPhaseOffset += Time.time * (swaySpeed - speed);
+        }
+        swayAmount = amount;
+        swaySpeed = speed;
+    }
 
     private void Update()
     {
-        transform.localPosition = _rest + Vector3.right * (Mathf.Sin(Time.time * swaySpeed) * swayAmount);
+        _activeSwayAmount = Mathf.MoveTowards(_activeSwayAmount, swayAmount,
+            SwayAmplitudeTransitionPerSecond * Time.deltaTime);
+        float phase = Time.time * swaySpeed + _swayPhaseOffset;
+        transform.localPosition = _rest +
+            Vector3.right * (Mathf.Sin(phase) * _activeSwayAmount);
 
         if (_hitAt >= 0f)
         {
@@ -46,18 +105,19 @@ public class JemparinganTarget : MonoBehaviour
             }
         }
 
-        if (_body != null && _flashUntil > 0f && Time.time >= _flashUntil)
-        {
-            _body.sharedMaterial = JemparinganArt.Material(JemparinganArt.Tone.Red);
-            _flashUntil = 0f;
-        }
+        if (_flashUntil > 0f && Time.time >= _flashUntil)
+            RestoreFlash();
     }
 
     // Predicted target center for a small, optional lead cue on later stages.
     // Uses the same deterministic sine function as Update; no random wind.
     public Vector3 PredictCenter(float secondsAhead)
     {
-        float predictedSway = Mathf.Sin((Time.time + Mathf.Max(0f, secondsAhead)) * swaySpeed) * swayAmount;
+        float ahead = Mathf.Max(0f, secondsAhead);
+        float predictedAmount = Mathf.MoveTowards(_activeSwayAmount, swayAmount,
+            SwayAmplitudeTransitionPerSecond * ahead);
+        float predictedPhase = (Time.time + ahead) * swaySpeed + _swayPhaseOffset;
+        float predictedSway = Mathf.Sin(predictedPhase) * predictedAmount;
         Vector3 localCenter = _rest + Vector3.right * predictedSway;
         return transform.parent != null ? transform.parent.TransformPoint(localCenter) : localCenter;
     }
@@ -66,6 +126,44 @@ public class JemparinganTarget : MonoBehaviour
     // Does not allocate or require Rigidbody/Collider on the target.
     public bool TestShot(Vector3 arrowFrom, Vector3 arrowTo, out bool bullseye)
     {
+        LastTraditionalZone = TraditionalZone.None;
+        if (_useTraditionalScoring)
+        {
+            // The cylinder is stylized and forgiving in width, but its colored
+            // Y sections use the exact same boundaries as the 3D mesh.
+            Vector3 traditionalBottom = transform.TransformPoint(
+                new Vector3(0f, TraditionalBottom, 0f));
+            Vector3 traditionalTop = transform.TransformPoint(
+                new Vector3(0f, TraditionalTop, 0f));
+            bool hitTraditional = SegmentDistanceSquared(arrowFrom, arrowTo,
+                traditionalBottom, traditionalTop) <= .07f * .07f;
+            if (!hitTraditional) { bullseye = false; return false; }
+
+            // Classify the swept arrow tip at the bandulan plane so the thin
+            // yellow neck is not swallowed by the head's collision tolerance.
+            Vector3 from = transform.InverseTransformPoint(arrowFrom);
+            Vector3 to = transform.InverseTransformPoint(arrowTo);
+            float dz = to.z - from.z;
+            float alpha = Mathf.Abs(dz) > .00001f
+                ? Mathf.Clamp01(-from.z / dz) : .5f;
+            float hitY = Mathf.Lerp(from.y, to.y, alpha);
+            float hitX = Mathf.Lerp(from.x, to.x, alpha);
+            // The previous swept-axis test can graze above/below a visual
+            // endpoint by 7 cm. Prevent empty-space hits at the bandulan tips.
+            if (hitY < TraditionalBottom || hitY > TraditionalTop ||
+                Mathf.Abs(hitX) > .07f)
+            {
+                bullseye = false;
+                return false;
+            }
+            LastTraditionalZone = hitY >= TraditionalHeadBottom
+                ? TraditionalZone.Molo
+                : hitY >= TraditionalNeckBottom
+                    ? TraditionalZone.Jangga : TraditionalZone.Awak;
+            bullseye = LastTraditionalZone == TraditionalZone.Molo;
+            return true;
+        }
+
         Vector3 axisA = transform.TransformPoint(new Vector3(0f, -0.21f, 0f));
         Vector3 axisB = transform.TransformPoint(new Vector3(0f, 0.21f, 0f));
         float d2 = SegmentDistanceSquared(arrowFrom, arrowTo, axisA, axisB);
@@ -87,12 +185,35 @@ public class JemparinganTarget : MonoBehaviour
     {
         _bullseye = bullseye;
         _hitAt = Time.time;
-        if (_body != null)
+        // Light up the hit colored section rather than flashing only the
+        // white body even when the arrow struck the red head.
+        RestoreFlash();
+        _flashRenderer = _body;
+        _flashOriginalTone = _normalBodyTone;
+        if (_useTraditionalScoring)
         {
-            _body.sharedMaterial = JemparinganArt.Material(JemparinganArt.Tone.Gold);
+            switch (LastTraditionalZone)
+            {
+                case TraditionalZone.Molo:
+                    _flashRenderer = _traditionalMolo;
+                    _flashOriginalTone = JemparinganArt.Tone.Red;
+                    break;
+                case TraditionalZone.Jangga:
+                    _flashRenderer = _traditionalJangga;
+                    _flashOriginalTone = JemparinganArt.Tone.BandulanYellow;
+                    break;
+                case TraditionalZone.Awak:
+                    _flashRenderer = _traditionalAwak;
+                    _flashOriginalTone = JemparinganArt.Tone.BandulanWhite;
+                    break;
+            }
+        }
+        if (_flashRenderer != null)
+        {
+            _flashRenderer.sharedMaterial = JemparinganArt.Material(JemparinganArt.Tone.Gold);
             _flashUntil = Time.time + 0.14f;
         }
-        if (_sparks == null) CreateBurst();
+        if (_sparks == null || _fxRoot == null) CreateBurst();
         Material sparkMaterial = JemparinganArt.Material(bullseye ? JemparinganArt.Tone.Gold : JemparinganArt.Tone.Jade);
         for (int i = 0; i < _sparkRenderers.Length; i++)
             _sparkRenderers[i].sharedMaterial = sparkMaterial;
@@ -100,12 +221,20 @@ public class JemparinganTarget : MonoBehaviour
         AnimateBurst(0f);
     }
 
+    private void RestoreFlash()
+    {
+        if (_flashRenderer != null)
+            _flashRenderer.sharedMaterial = JemparinganArt.Material(_flashOriginalTone);
+        _flashRenderer = null;
+        _flashUntil = 0f;
+    }
+
     public void ResetReaction()
     {
         _hitAt = -1f;
-        _flashUntil = 0f;
+        RestoreFlash();
         transform.localRotation = _restRotation;
-        if (_body != null) _body.sharedMaterial = JemparinganArt.Material(JemparinganArt.Tone.Red);
+        if (_body != null) _body.sharedMaterial = JemparinganArt.Material(_normalBodyTone);
         if (_fxRoot != null) _fxRoot.gameObject.SetActive(false);
     }
 

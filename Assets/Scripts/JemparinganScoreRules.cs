@@ -3,10 +3,27 @@ using UnityEngine;
 // Pure gameplay rules shared by runtime and editor QA checks.
 public static class JemparinganScoreRules
 {
+    public const int ArrowsPerStage = 4;
+    public const int OutdoorRoundCount = 4;
+    public const int OutdoorArrowCount = ArrowsPerStage * OutdoorRoundCount;
+
     public static int PointsForHit(bool bullseye, bool stableRelease, int consecutiveHits)
     {
         return (bullseye ? 10 : 5) + (stableRelease ? 3 : 0) +
             (consecutiveHits >= 3 ? 2 : 0);
+    }
+
+    // Simplified Mataram-inspired red/yellow/white bandulan scoring.
+    // Arcade combo and RASA bonus remain exclusive to Classic Mode.
+    public static int TraditionalPointsForZone(JemparinganTarget.TraditionalZone zone)
+    {
+        switch (zone)
+        {
+            case JemparinganTarget.TraditionalZone.Molo: return 3;
+            case JemparinganTarget.TraditionalZone.Jangga: return 2;
+            case JemparinganTarget.TraditionalZone.Awak: return 1;
+            default: return 0;
+        }
     }
 
     public static int AccuracyPercent(int hits, int shots)
@@ -17,22 +34,40 @@ public static class JemparinganScoreRules
 
     public static int StageIndex(int shotsFired)
     {
-        return shotsFired < 4 ? 0 : shotsFired < 8 ? 1 : 2;
+        return Mathf.Clamp(Mathf.Max(0, shotsFired) / ArrowsPerStage,
+            0, OutdoorRoundCount - 1);
     }
 
     public static string StageTitle(int shotsFired)
     {
-        int stage = StageIndex(shotsFired);
-        return stage == 0 ? "BABAK I  •  TENANG" :
-            stage == 1 ? "BABAK II  •  ANGIN" : "BABAK III  •  UJIAN RASA";
+        switch (StageIndex(shotsFired))
+        {
+            case 0: return "ROUND I  •  CALM";
+            case 1: return "ROUND II  •  WIND";
+            case 2: return "ROUND III  •  RASA CHALLENGE";
+            default: return "ROUND IV  •  EXTREME SWING";
+        }
+    }
+
+    // First three stages keep their existing swing settings. The final stage
+    // has 1.8x the Round III travel and ~1.35x its angular speed. Sine-based
+    // motion naturally eases at both turning points; there is no randomness.
+    public static float SwayAmountForStage(int stage)
+    {
+        return stage >= 3 ? 0.27f : 0.06f + Mathf.Clamp(stage, 0, 2) * 0.045f;
+    }
+
+    public static float SwaySpeedForStage(int stage)
+    {
+        return stage >= 3 ? 2.35f : 0.7f + Mathf.Clamp(stage, 0, 2) * 0.52f;
     }
 
     public static string ResultTitle(int hits, int stableHits)
     {
-        if (hits >= 8 && stableHits >= 4) return "R A S A   T E R J A G A";
-        if (hits >= 8) return "P A N A H   J I T U";
-        if (stableHits >= 3) return "T E N A N G   B E R T U M B U H";
-        return "L A N G K A H   P E R T A M A";
+        if (hits >= 8 && stableHits >= 4) return "RASA IN BALANCE";
+        if (hits >= 8) return "TRUE AIM";
+        if (stableHits >= 3) return "FINDING CALM";
+        return "FIRST STEPS";
     }
 
     public static int PoolCapacity(int arrowsPerRound, int baseCapacity)

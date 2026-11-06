@@ -17,13 +17,26 @@ The `feature/safe-environment-preview-v1` branch includes a standalone outdoor J
 
 - **Lighting v3:** golden-hour procedural skybox, warm daylight and distance fog.
 - **Landscape v4:** more organic sawah groups, banana plants and layered mesh mountains.
-- **Playable Environment v5:** one live bandulan at 10/20/30 m, wired to the existing 12-arrow gameplay and desktop mouse input.
+- **Playable Environment v5:** one live bandulan at 10/20/30 m, desktop mouse input (including Web builds), and **16 arrows across four rounds**, finishing with **ROUND IV — EXTREME SWING**. The original v0.9 indoor scene remains 12 arrows / three stages.
 
 The generator creates scenes under `Assets/Jemparingan/Scenes/` using
 **Tools > Jemparingan > Environment > Create Joglo Preview v2** (scenic) or
 **Create Playable Environment v5** (interactive). The existing `JemparinganOptimized_v02`
 scene is not overwritten. See [Environment v3–v5 Guide](docs/ENVIRONMENT_V3_V5.md).
+The final round adds four shots (arrows 13–16). The bandulan moves 1.8× farther and about 1.35× faster than Round III, with deterministic turns and smooth round transitions. No wind-force mechanic or score bonus change. **Existing Playable v5 scenes work without regeneration**: the outdoor shot count is upgraded at runtime. For the Unity Play browser version, rebuild and publish a new Web build to update the hosted game.
+
 These changes are source-reviewed, not Unity/Quest-tested in this environment.
+
+## Game modes (Playable Environment v5)
+
+Outdoor mode now offers **two separate experiences** in the existing scene, with a clickable mode selector on Unity Editor and Web:
+
+- **Classic** — the existing **16 arrows / 4 rounds**, including Extreme Swing, combo and RASA bonuses, and its original red/gold bandulan.
+- **Traditional** — a **Mataram-inspired 12-arrow session**, with a still bandulan whose **molo (red) scores 3**, **jangga (yellow) scores 2**, and **awak (white) scores 1**. Arcade combo bonuses are not applied, and records are stored separately. Adds low first-person seated posture cues and a more horizontal gandewa visualization.
+
+Choose with the on-screen buttons (or **1 / 2**), press **M** to reopen mode selection before your first shot or after finishing, **R** to restart, and **T** for optional aim training. Classic is the default for native headset builds until native UI selection exists.
+
+**Both modes are runtime-generated; no scene regeneration.** Traditional is an **inspired adaptation**, not yet a fully faithful reconstruction of historical rules or posture. See [Traditional Mode v1](docs/TRADITIONAL_MODE_V1.md). The Unity Play upload must be rebuilt and republished after local testing.
 
 ## Gameplay and visual features (v0.9)
 
