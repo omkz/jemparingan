@@ -117,11 +117,7 @@ public class JemparinganTarget : MonoBehaviour
         return transform.parent != null ? transform.parent.TransformPoint(localCenter) : localCenter;
     }
 
-    // Closest distance between the swept arrow tip and the bandulan's central axis.
-    // Does not allocate or require Rigidbody/Collider on the target.
-
-
-    // Swept hit-testing against visible Traditional scoring zones.
+    // Swept hit-testing against visible Traditional zones; no Rigidbody required.
     public bool TestShot(Vector3 arrowFrom, Vector3 arrowTo, out bool bullseye)
     {
         LastTraditionalZone = TraditionalZone.None;
