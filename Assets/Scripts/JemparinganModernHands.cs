@@ -215,6 +215,7 @@ public sealed class JemparinganModernHands : MonoBehaviour
             _root.gameObject.SetActive(true);
 
         if (_wasDrawing && !drawing) _releaseAt = Time.time;
+        if (drawing) _releaseAt = -1f; // Rapid redraw cancels old recoil.
         _wasDrawing = drawing;
 
         // The large idle-to-full-draw movement belongs to the existing bow
