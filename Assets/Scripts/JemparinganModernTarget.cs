@@ -10,8 +10,11 @@ public sealed class JemparinganModernTarget : MonoBehaviour
     private GameObject _impactMarker;
     private Transform _face, _burstRoot;
     private Transform[] _sparks;
+    private Renderer[] _sparkRenderers;
     private TextMesh _scorePopup;
     private float _impactAt = -1f;
+    private float _impactStrength = 1f;
+    private bool _isBullseye;
     private const float ImpactDuration = .42f;
     private const int SparkCount = 8;
 
@@ -52,11 +55,13 @@ public sealed class JemparinganModernTarget : MonoBehaviour
         _burstRoot = new GameObject("Impact sparks | reused").transform;
         _burstRoot.SetParent(transform, false);
         _sparks = new Transform[SparkCount];
+        _sparkRenderers = new Renderer[SparkCount];
         for (int i = 0; i < SparkCount; i++)
         {
             _sparks[i] = JemparinganArt.Part("Impact spark " + i,
                 PrimitiveType.Sphere, _burstRoot, Vector3.zero,
                 Vector3.one * .02f, JemparinganArt.Tone.Gold).transform;
+            _sparkRenderers[i] = _sparks[i].GetComponent<Renderer>();
         }
         _burstRoot.gameObject.SetActive(false);
         _scorePopup = JemparinganArt.Label("Ring score popup", transform,
@@ -110,11 +115,20 @@ public sealed class JemparinganModernTarget : MonoBehaviour
         point.z = FaceDepth - .018f;
         _impactMarker.transform.localPosition = point;
         _impactMarker.SetActive(true);
+        _isBullseye = ringPoints == 10;
+        _impactStrength = _isBullseye ? 1.24f : .88f;
         _burstRoot.localPosition = point;
         _burstRoot.gameObject.SetActive(true);
+        // Reuse the exact same eight sparks. No prefab instantiate,
+        // particle-system emission, or runtime material construction.
+        Material sparkMaterial = JemparinganArt.Material(_isBullseye
+            ? JemparinganArt.Tone.Gold : JemparinganArt.Tone.Jade);
+        for (int i = 0; i < _sparkRenderers.Length; i++)
+            _sparkRenderers[i].sharedMaterial = sparkMaterial;
         _scorePopup.transform.localPosition = point + Vector3.up * .15f;
-        _scorePopup.text = ringPoints == 10 ? "BULLSEYE +10" : "+" + ringPoints;
-        _scorePopup.color = ringPoints == 10 ?
+        _scorePopup.transform.localScale = Vector3.one;
+        _scorePopup.text = _isBullseye ? "BULLSEYE +10" : "+" + ringPoints;
+        _scorePopup.color = _isBullseye ?
             new Color(1f, .89f, .4f) : Color.white;
         _impactAt = Time.time;
         AnimateImpact(0f);
@@ -134,14 +148,25 @@ public sealed class JemparinganModernTarget : MonoBehaviour
         float recoil = Mathf.Sin(elapsed * 37f) * Mathf.Exp(-elapsed * 13f);
         if (_face != null)
         {
-            _face.localRotation = Quaternion.Euler(recoil * 3f, 0f, recoil * 2f);
-            _face.localPosition = Vector3.forward * (recoil * .012f);
+            // Bullseye punches slightly harder; only the decorative face
+            // moves. TestShot still intersects the unchanged root plane.
+            _face.localRotation = Quaternion.Euler(
+                recoil * 3f * _impactStrength, 0f,
+                recoil * 2f * _impactStrength);
+            _face.localPosition = Vector3.forward *
+                (recoil * .012f * _impactStrength);
+            float pulse = 1f + .014f * _impactStrength *
+                Mathf.Exp(-elapsed * 19f);
+            _face.localScale = Vector3.one * pulse;
         }
         AnimateImpact(t);
         if (_scorePopup != null)
         {
             _scorePopup.transform.localPosition =
                 _burstRoot.localPosition + Vector3.up * (.15f + t * .12f);
+            float pop = 1f + (_isBullseye ? .32f : .15f) *
+                Mathf.Exp(-elapsed * 13f);
+            _scorePopup.transform.localScale = Vector3.one * pop;
             Color color = _scorePopup.color;
             color.a = Mathf.Clamp01((1f - t) * 2f);
             _scorePopup.color = color;
@@ -151,8 +176,10 @@ public sealed class JemparinganModernTarget : MonoBehaviour
     private void AnimateImpact(float progress)
     {
         if (_burstRoot == null || _sparks == null) return;
-        float radius = Mathf.Lerp(.025f, .17f, progress);
-        float size = Mathf.Lerp(.024f, .002f, progress);
+        float radius = Mathf.Lerp(.025f, .17f, progress) *
+            _impactStrength;
+        float size = Mathf.Lerp(.024f, .002f, progress) *
+            _impactStrength;
         for (int i = 0; i < _sparks.Length; i++)
         {
             float angle = i * (Mathf.PI * 2f / SparkCount);
@@ -171,11 +198,18 @@ public sealed class JemparinganModernTarget : MonoBehaviour
         _impactAt = -1f;
         if (_impactMarker != null) _impactMarker.SetActive(false);
         if (_burstRoot != null) _burstRoot.gameObject.SetActive(false);
-        if (_scorePopup != null) _scorePopup.text = "";
+        if (_scorePopup != null)
+        {
+            _scorePopup.text = "";
+            _scorePopup.transform.localScale = Vector3.one;
+        }
         if (_face != null)
         {
             _face.localRotation = Quaternion.identity;
             _face.localPosition = Vector3.zero;
+            _face.localScale = Vector3.one;
         }
+        _impactStrength = 1f;
+        _isBullseye = false;
     }
 }
