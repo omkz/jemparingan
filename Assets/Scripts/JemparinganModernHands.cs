@@ -161,6 +161,21 @@ public sealed class JemparinganModernHands : MonoBehaviour
             }
         }
         AddSleeveFaces(indices, path.Length);
+        // Close both ends of the static finger/palm tubes. The sleeve tube
+        // stays uncapped because its start is outside the screen and its
+        // other end is buried inside the hand.
+        int startCap = verts.Count;
+        verts.Add(path[0]);
+        int endCap = verts.Count;
+        verts.Add(path[path.Length - 1]);
+        int last = (path.Length - 1) * Sides;
+        for (int side = 0; side < Sides; side++)
+        {
+            int next = (side + 1) % Sides;
+            indices.Add(startCap); indices.Add(next); indices.Add(side);
+            indices.Add(endCap);
+            indices.Add(last + side); indices.Add(last + next);
+        }
         Mesh mesh = new Mesh { name = name };
         mesh.SetVertices(verts);
         mesh.SetTriangles(indices, 0);
