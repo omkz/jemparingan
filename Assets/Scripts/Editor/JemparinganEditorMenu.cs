@@ -198,6 +198,47 @@ public static class JemparinganEditorMenu
             Object.DestroyImmediate(testObject);
         }
 
+        // Traditional shares Modern's optical/ballistic alignment, but
+        // must not magnetize a shot towards any red/yellow/white target zone.
+        var sightCameraObject = new GameObject("Traditional sight QA camera (temporary)");
+        var sightBandulanObject = new GameObject("Traditional sight QA target (temporary)");
+        try
+        {
+            Camera sightCamera = sightCameraObject.AddComponent<Camera>();
+            sightCamera.transform.position = Vector3.zero;
+            sightCamera.transform.rotation = Quaternion.identity;
+            sightBandulanObject.transform.position = Vector3.forward * 10f;
+
+            Vector3 straightDirection;
+            bool straightOnBandulan;
+            bool straightZero = JemparinganModernAim.TryZeroToBandulanSightRay(
+                sightCamera, Vector3.forward,
+                new Vector3(.15f, -.16f, .95f), 11f, 2.25f, 4f,
+                sightBandulanObject.transform,
+                out straightDirection, out straightOnBandulan);
+            Check("Traditional sight zero on bandulan plane",
+                straightZero && straightOnBandulan &&
+                Mathf.Abs(straightDirection.magnitude - 1f) < .001f,
+                ref total, ref failed);
+
+            Vector3 outsideDirection;
+            bool outsideOnBandulan;
+            bool outsideZero = JemparinganModernAim.TryZeroToBandulanSightRay(
+                sightCamera, new Vector3(.15f, 0f, 1f).normalized,
+                new Vector3(.15f, -.16f, .95f), 11f, 2.25f, 4f,
+                sightBandulanObject.transform,
+                out outsideDirection, out outsideOnBandulan);
+            Check("Traditional off-bandulan aim does not snap",
+                outsideZero && !outsideOnBandulan &&
+                outsideDirection.x > straightDirection.x,
+                ref total, ref failed);
+        }
+        finally
+        {
+            Object.DestroyImmediate(sightBandulanObject);
+            Object.DestroyImmediate(sightCameraObject);
+        }
+
         if (failed == 0)
             Debug.Log("Jemparingan gameplay QA v0.9 PASSED (" + total +
                 " deterministic rule/hitbox checks). Still requires full Play Mode testing.");
