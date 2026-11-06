@@ -33,7 +33,6 @@ public class JemparinganGame : MonoBehaviour
     [SerializeField, Range(0f, .45f)] private float modernMovingTargetTravel = .26f;
     [SerializeField, Range(.3f, 1.8f)] private float modernMovingTargetSpeed = .85f;
     private int _modernStage;
-    private readonly int[] _modernStageObjectiveHits = new int[3];
     // Desktop-only presentation timing. These do not gate aiming or shots.
     private float _modernStageIntroStartedAt = -1f;
     private float _modernStageIntroUntil = -1f;
@@ -48,16 +47,12 @@ public class JemparinganGame : MonoBehaviour
     // calibration instead solves the actual bow projection and smoothly
     // changes the real camera FOV for modest Modern aim zoom.
     [SerializeField, Range(45f, 85f)] private float modernViewmodelFov = 65f;
-    [SerializeField, Range(.50f, 1.30f)] private float modernRightHandScale = .92f;
 
     [Header("Modern screenshot calibration (desktop only)")]
     // Preserve the screenshot's grip placement and projected bow height,
     // but use a modest, fixed roll for modern target archery. The old
     // landmark-derived ~17-degree lean looked excessive with a real sight.
     [SerializeField] private bool modernUseReferenceFraming = true;
-    // Legacy shared Traditional rig flag remains serialized only for migration.
-    // NEW Modern hands never use that rig, or any of its meshes.
-    [SerializeField] private bool modernShowHands = false;
     [Header("Modern-only first-person left hand (no right-hand rendering)")]
     [SerializeField] private bool modernUseNewHands = true;
     private JemparinganModernHands _modernHands;
@@ -556,41 +551,6 @@ public class JemparinganGame : MonoBehaviour
     private int ModernStageEnd(int stage)
     {
         return ModernStageStart(stage + 1);
-    }
-
-    private int ModernStageLength(int stage)
-    {
-        return ModernStageEnd(stage) - ModernStageStart(stage);
-    }
-
-    private int ModernStageGoal(int stage)
-    {
-        // Precision = 75% general hits; Accuracy = 50% red/gold;
-        // Moving = 50% shots landing on the moving middle board.
-        float fraction = stage == 0 ? .75f : .5f;
-        return Mathf.Max(1, Mathf.CeilToInt(ModernStageLength(stage) *
-            fraction));
-    }
-
-    private bool ModernStageGoalMet(int stage)
-    {
-        return _modernStageObjectiveHits[stage] >= ModernStageGoal(stage);
-    }
-
-    private static string ModernStageTitle(int stage)
-    {
-        return stage == 0 ? "PRECISION" :
-            stage == 1 ? "ACCURACY" : "MOVING TARGET";
-    }
-
-    private string ModernStageGoalText(int stage)
-    {
-        string goal = stage == 0 ? "HIT ANY TARGET" :
-            stage == 1 ? "HIT RED / GOLD (8+)" :
-            "HIT MOVING TARGET 2";
-        return "GOAL: " + goal + "  " +
-            _modernStageObjectiveHits[stage] + "/" +
-            ModernStageGoal(stage);
     }
 
     private bool AnyArrowFlying()
@@ -1943,14 +1903,6 @@ public class JemparinganGame : MonoBehaviour
         JemparinganModernTarget target, int points)
     {
         if (!IsModernMode()) return;
-        if (modernProgressiveStages)
-        {
-            bool objectiveHit = _modernStage == 0 ||
-                (_modernStage == 1 && points >= 8) ||
-                (_modernStage == 2 && target.TargetNumber == 2);
-            if (objectiveHit)
-                _modernStageObjectiveHits[_modernStage]++;
-        }
         _hits++;
         _score += points;
         if (points == 10) _bullseyes++;
@@ -2266,8 +2218,6 @@ public class JemparinganGame : MonoBehaviour
         _modernStage = 0;
         _modernStageIntroStartedAt = -1f;
         _modernStageIntroUntil = -1f;
-        for (int stage = 0; stage < _modernStageObjectiveHits.Length; stage++)
-            _modernStageObjectiveHits[stage] = 0;
         _bullseyes = _bestCombo = _rasaHits = _rasaBonus = 0;
         _moloHits = _janggaHits = _awakHits = 0;
         _challengeObjectiveHits = 0;

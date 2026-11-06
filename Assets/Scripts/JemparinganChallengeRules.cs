@@ -121,17 +121,6 @@ public static class JemparinganChallengeRules
         }
     }
 
-    public static Color MedalColor(Medal medal)
-    {
-        switch (medal)
-        {
-            case Medal.Gold: return new Color(1.0f, 0.84f, 0.25f);
-            case Medal.Silver: return new Color(0.85f, 0.88f, 0.92f);
-            case Medal.Bronze: return new Color(0.85f, 0.55f, 0.35f);
-            default: return new Color(0.7f, 0.7f, 0.7f);
-        }
-    }
-
     public static string PrefsBestMedalKey(MissionId id)
     {
         return "JemparinganChallenge_" + id + "_BestMedal";
