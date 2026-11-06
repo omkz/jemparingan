@@ -368,7 +368,10 @@ public class JemparinganGame : MonoBehaviour
             ChooseMode(GameMode.Challenge);
         if (GUI.Button(new Rect(panel.x + 60f + buttonWidth * 3f, panel.y + 102f,
             buttonWidth, 100f),
-            "MODERN ARCHERY\n3 ROUND TARGETS\nRING SCORING"))
+            modernProgressiveStages
+                ? "MODERN ARCHERY\n3 STAGES  |  " + modernArrowCount +
+                    " ARROWS\nRING SCORING"
+                : "MODERN ARCHERY\n3 ROUND TARGETS\nRING SCORING"))
             ChooseMode(GameMode.Modern);
         GUI.Label(new Rect(panel.x + 15f, panel.y + 216f, width - 30f, 24f),
             "Keys: 1 Classic   |   2 Traditional   |   3 Challenge   |   4 Modern", GUI.skin.box);
@@ -2055,9 +2058,10 @@ public class JemparinganGame : MonoBehaviour
                     "  |  BULLSEYES " + _bullseyes +
                     (modernProgressiveStages
                         ? "\nSTAGES CLEAR " +
-                            (ModernStageGoalMet(0) ? 1 : 0) +
-                            (ModernStageGoalMet(1) ? " + 1" : "") +
-                            (ModernStageGoalMet(2) ? " + 1" : "")
+                            ((ModernStageGoalMet(0) ? 1 : 0) +
+                             (ModernStageGoalMet(1) ? 1 : 0) +
+                             (ModernStageGoalMet(2) ? 1 : 0)) +
+                            " / 3"
                         : "");
                 _resultsHint.text = UsesDesktopInput()
                     ? "R: RETRY  |  M: MODES"
