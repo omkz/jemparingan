@@ -6,6 +6,72 @@ first-person camera/input, procedural environment, arrow pool and
 gravity-based projectile. No external assets, scene regeneration, or
 separate physics system are required.
 
+## CURRENT: Modern progressive three-stage target challenge
+
+Modern now defaults to `modernProgressiveStages = true`: the same
+**12 arrows** and three circular boards are reused across three stages,
+with no changes to draw controls, optical sight, aim wobble, ballistic
+zeroing, score per ring, shot pool, other modes, or scene assets.
+
+| Stage (default arrows) | Target behavior | Stage goal |
+| --- | --- | --- |
+| **1. Precision (1–4)** | All 3 boards stationary | Hit any board on **3/4** shots |
+| **2. Accuracy (5–8)** | All 3 boards stationary | Land in red/gold **8 or 10** rings on **2/4** shots |
+| **3. Moving Target (9–12)** | Middle board **#2** gently moves laterally; outer two remain stationary | Hit moving board **#2** on **2/4** shots |
+
+- Goals are **milestones**, not gates: all three stages play regardless
+  of individual stage performance. Regular ring scoring (10/8/6/4/2),
+  overall score/personal best, hit count and bullseyes are unchanged.
+  Hits on side targets still score during Stage 3 but only hits on
+  moving target #2 count toward its milestone.
+- The HUD shows current stage, shot counter, goal progress and
+  score. The result overlay shows each stage goal status:
+  **CLEAR** / **BELOW GOAL**. No medals or bonus scores yet.
+- Stage changes occur **only after the last arrow from the preceding
+  stage finishes flying** (hit or miss); the following stage may not
+  receive another shot until then. This prevents misattribution of
+  impacts and movement kicking in under the previous arrow.
+- Default board #2 motion: lateral travel amplitude **0.26m**,
+  angular speed **0.85 rad/s** (about 7.4-second cycle).
+  Its entire board transform, stand, reactive visuals and **actual
+  target hit plane** move together. No physics or target magnetism.
+  The onset ramps up gently; Stage 1–2 remain stationary.
+- Reset/retry and mode switch return all boards to their precise
+  original positions and reset stage counters. Arrow Cam continues
+  to work and the projectile remains the authority for impact.
+- Inspector: `modernProgressiveStages` toggles the feature;
+  `modernMovingTargetTravel` and `modernMovingTargetSpeed`
+  tune Stage 3. `modernArrowCount` still defaults to 12; custom
+  counts (6–16) are distributed over the three stages, with goals
+  proportionally scaled.
+
+### Recommended Unity Play Mode checks (not run in this chat)
+
+1. Enter Modern: stage 1/3 Precision, 0/4, all boards stationary.
+   Score hits on all three boards normally.
+2. On shot #4, observe that Stage 2 does not begin until the
+   projectile resolves and Arrow Cam exits; try firing quickly
+   with Arrow Cam disabled to test the transition lock.
+3. Stage 2 only counts **8/10-ring** hits toward its milestone,
+   but 2/4/6-ring hits still award their standard points.
+4. On shot #8, verify Stage 3 transition and only center board #2
+   begins moving smoothly, while side boards remain stationary.
+5. Lead center board #2 slightly on the moving shots; the real
+   collision plane must follow the visible board without jitter.
+   Shots hitting side boards still score, but do not increment the
+   moving-stage goal.
+6. On shot #12, ensure no 13th projectile, wait for hit/miss,
+   then inspect the three stage statuses, total/best/accuracy.
+7. Retry (R), switch modes (M), Arrow Cam skip (Esc), aim
+   wobble on/off, and custom Modern arrow counts. All other modes
+   must remain identical. No flying or stuck arrow should remain
+   after retry.
+8. Profile game FPS on the target WebGL/Unity build. No benchmark
+   or Play Mode compilation was possible in this chat.
+
+**Verification:** source review/static checks only. Unity compilation,
+playtesting and performance are still pending.
+
 ## CURRENT: Modern full-draw aim wobble (optical reticle = shot direction)
 
 This adds an **optional, slow, very small ±0.10-degree** aim challenge
