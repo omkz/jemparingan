@@ -10,13 +10,13 @@ public class JemparinganGame : MonoBehaviour
     [SerializeField] private MetaQuestBowInput questInput;
     [SerializeField] private bool preferQuestHandsInEditor;
 
-    public enum GameMode { Classic, Traditional, Challenge, Modern }
-    [Header("Outdoor game mode (Classic v1 remains unchanged)")]
-    [SerializeField] private GameMode initialOutdoorMode = GameMode.Classic;
-    private GameMode _mode = GameMode.Classic;
+    public enum GameMode { Traditional = 1, Modern = 3 }
+    [Header("Outdoor game mode (Traditional / Modern)")]
+    [SerializeField] private GameMode initialOutdoorMode = GameMode.Traditional;
+    private GameMode _mode = GameMode.Traditional;
     private bool _modeChosen;
-    private GameObject _classicBandulanVisual, _traditionalBandulanVisual;
-    private Renderer _classicBandulanBody, _traditionalBandulanBody;
+    private GameObject _traditionalBandulanVisual;
+    private Renderer _traditionalBandulanBody;
     private Transform _traditionalPosture;
     private JemparinganTraditionalArcher _traditionalArcher;
     private Renderer[] _seatedBodyRenderers;
@@ -108,41 +108,20 @@ public class JemparinganGame : MonoBehaviour
     private float _modernRaisedPose;
     private TextMesh _introGoalLabel, _introTitleLabel;
 
-    [Header("Challenge Mode tuning")]
-    [SerializeField, Range(0.02f, 0.20f)] private float movingChallengeSway = 0.08f;
-    [SerializeField, Range(0.3f, 2.5f)] private float movingChallengeSpeed = 0.9f;
-    // Quest/non-desktop has no IMGUI mission picker; start this mission directly.
-    [SerializeField] private JemparinganChallengeRules.MissionId nonDesktopChallengeMission =
-        JemparinganChallengeRules.MissionId.Precision;
-
-    [Header("Experimental Challenge Arrow Cam (desktop only)")]
-    // Keep Inspector values from the first-shot prototype after renaming.
-    [SerializeField, UnityEngine.Serialization.FormerlySerializedAs("challengeFirstShotArrowCam")]
-    private bool challengeEveryShotArrowCam = true;
     [Header("Experimental Modern Arrow Cam (desktop only)")]
     [SerializeField] private bool modernEveryShotArrowCam = true;
     private JemparinganArrowFollowCamera _arrowCam;
     private bool _restoreAfterArrowCam;
 
-    private JemparinganChallengeRules.MissionId _activeChallengeMission = JemparinganChallengeRules.MissionId.Precision;
-    private bool _challengeInMissionSelect;
-    private int _challengeObjectiveHits;
-    private JemparinganChallengeRules.Medal _lastChallengeMedal = JemparinganChallengeRules.Medal.None;
-
-    private bool IsTraditionalMode() { return useOutdoorEnvironment && _mode == GameMode.Traditional; }
-    private bool IsChallengeMode() { return useOutdoorEnvironment && _mode == GameMode.Challenge; }
+    private bool IsTraditionalMode() { return _mode == GameMode.Traditional; }
     private bool IsModernMode() { return useOutdoorEnvironment && _mode == GameMode.Modern; }
     private bool UsesTraditionalPresentation()
     {
-        return IsTraditionalMode() || IsChallengeMode() || IsModernMode();
+        return IsTraditionalMode() || IsModernMode();
     }
-    private JemparinganChallengeRules.MissionConfig ActiveChallengeConfig()
-    {
-        return JemparinganChallengeRules.GetConfig(_activeChallengeMission, movingChallengeSway, movingChallengeSpeed);
-    }
+
     private string BestKey()
     {
-        if (IsChallengeMode()) return "JemparinganChallenge_" + _activeChallengeMission + "_BestScore";
         if (IsModernMode()) return "JemparinganModernBestScore";
         return IsTraditionalMode() ? "JemparinganTraditionalBest" : "JemparinganRasaBest";
     }
@@ -175,7 +154,7 @@ public class JemparinganGame : MonoBehaviour
 
     private const int ArrowPoolSize = 14;
     private const int PreviewDotCount = 8;
-    private Transform _bow, _stringMarker, _focusRoot, _leadMarker;
+    private Transform _bow, _stringMarker, _focusRoot;
     private Transform _desktopPracticeSight;
     private Renderer[] _practiceSightRenderers;
     private TextMesh _practiceSightLabel;
@@ -211,8 +190,8 @@ public class JemparinganGame : MonoBehaviour
     private int _lastFocusStep = -1;
     private bool _focusCuePlayed;
     private float _replayHoldStartedAt = -1f, _stageBannerUntil;
-    private int _shots, _hits, _score, _combo, _best, _poolCursor;
-    private int _previousBest, _bullseyes, _bestCombo, _rasaHits, _rasaBonus;
+    private int _shots, _hits, _score, _best, _poolCursor;
+    private int _previousBest, _bullseyes;
     private int _moloHits, _janggaHits, _awakHits;
     private string _lastInfo = "";
     private int _lastPowerStep = -1;
@@ -298,12 +277,8 @@ public class JemparinganGame : MonoBehaviour
             // Desktop/Web use an explicit menu. For a future native Quest
             // scene, the Inspector selects the initial mode without IMGUI.
             _modeChosen = !UsesDesktopInput();
-            if (initialOutdoorMode == GameMode.Traditional)
-                ChooseMode(GameMode.Traditional);
-            else if (initialOutdoorMode == GameMode.Challenge)
-                ChooseMode(GameMode.Challenge);
-            else if (initialOutdoorMode == GameMode.Modern)
-                ChooseMode(GameMode.Modern);
+            ChooseMode(initialOutdoorMode == GameMode.Modern
+                ? GameMode.Modern : GameMode.Traditional);
             if (UsesDesktopInput())
             {
                 _modeChosen = false;
@@ -323,16 +298,7 @@ public class JemparinganGame : MonoBehaviour
             return;
         }
 
-        if (_mode == GameMode.Challenge)
-        {
-            if (_challengeInMissionSelect)
-                DrawChallengeMissionSelectGUI();
-            else if (_finished)
-                DrawChallengeResultsGUI();
-            else
-                DrawChallengeInGameHUD();
-        }
-        else if (IsModernMode())
+        if (IsModernMode())
         {
             if (_finished) DrawModernResultsGUI();
             else DrawModernInGameHUD();
@@ -341,8 +307,8 @@ public class JemparinganGame : MonoBehaviour
 
     private void DrawMainModeSelectGUI()
     {
-        float width = Mathf.Min(800f, Screen.width - 24f);
-        float height = 260f;
+        float width = Mathf.Min(560f, Screen.width - 24f);
+        float height = 245f;
         Rect panel = new Rect((Screen.width - width) * .5f,
             (Screen.height - height) * .5f, width, height);
         GUI.Box(panel, "");
@@ -350,194 +316,26 @@ public class JemparinganGame : MonoBehaviour
         header.fontSize = 21;
         header.fontStyle = FontStyle.Bold;
         header.alignment = TextAnchor.MiddleCenter;
-        GUI.Label(new Rect(panel.x + 15f, panel.y + 15f, width - 30f, 36f),
-            "JEMPARINGAN: RASA", header);
-        GUI.Label(new Rect(panel.x + 15f, panel.y + 58f, width - 30f, 24f),
+        GUI.Label(new Rect(panel.x + 15f, panel.y + 14f, width - 30f, 36f),
+            "JEMPARINGAN", header);
+        GUI.Label(new Rect(panel.x + 15f, panel.y + 53f, width - 30f, 24f),
             "CHOOSE YOUR MODE", GUI.skin.box);
-        float buttonWidth = (width - 75f) / 4f;
-        if (GUI.Button(new Rect(panel.x + 15f, panel.y + 102f, buttonWidth, 100f),
-            "CLASSIC\n16 ARROWS  |  4 ROUNDS\nARCADE SCORING"))
-            ChooseMode(GameMode.Classic);
-        if (GUI.Button(new Rect(panel.x + 30f + buttonWidth, panel.y + 102f,
-            buttonWidth, 100f),
-            "TRADITIONAL\n12 ARROWS  |  3-2-1 SCORING\nMATARAM-INSPIRED"))
+        float buttonWidth = (width - 45f) / 2f;
+        if (GUI.Button(new Rect(panel.x + 15f, panel.y + 91f, buttonWidth, 103f),
+            "TRADITIONAL\n12 ARROWS  |  3-2-1 SCORING"))
             ChooseMode(GameMode.Traditional);
-        if (GUI.Button(new Rect(panel.x + 45f + buttonWidth * 2f, panel.y + 102f,
-            buttonWidth, 100f),
-            "CHALLENGE\nMEDAL MISSIONS\nPRECISION & MOTION"))
-            ChooseMode(GameMode.Challenge);
-        if (GUI.Button(new Rect(panel.x + 60f + buttonWidth * 3f, panel.y + 102f,
-            buttonWidth, 100f),
+        if (GUI.Button(new Rect(panel.x + 30f + buttonWidth, panel.y + 91f,
+            buttonWidth, 103f),
             modernProgressiveStages
-                ? "MODERN ARCHERY\n3 STAGES  |  " + modernArrowCount +
+                ? "MODERN ARCHERY\n3 LEVELS  |  " + modernArrowCount +
                     " ARROWS\nRING SCORING"
                 : "MODERN ARCHERY\n3 ROUND TARGETS\nRING SCORING"))
             ChooseMode(GameMode.Modern);
-        GUI.Label(new Rect(panel.x + 15f, panel.y + 216f, width - 30f, 24f),
-            "Keys: 1 Classic   |   2 Traditional   |   3 Challenge   |   4 Modern", GUI.skin.box);
+        GUI.Label(new Rect(panel.x + 15f, panel.y + 205f, width - 30f, 24f),
+            "Keys: 1 Traditional  |  2 Modern", GUI.skin.box);
     }
 
-    private void DrawChallengeMissionSelectGUI()
-    {
-        float width = Mathf.Min(680f, Screen.width - 24f);
-        float height = 370f;
-        Rect panel = new Rect((Screen.width - width) * .5f,
-            (Screen.height - height) * .5f, width, height);
-        GUI.Box(panel, "");
 
-        GUIStyle header = new GUIStyle(GUI.skin.label);
-        header.fontSize = 20;
-        header.fontStyle = FontStyle.Bold;
-        header.alignment = TextAnchor.MiddleCenter;
-        GUI.Label(new Rect(panel.x + 15f, panel.y + 12f, width - 30f, 32f),
-            "CHALLENGE MISSIONS", header);
-        GUI.Label(new Rect(panel.x + 15f, panel.y + 48f, width - 30f, 24f),
-            "SELECT AN ARCHERY MISSION TO EARN MEDALS", GUI.skin.box);
-
-        float colWidth = (width - 45f) * 0.5f;
-
-        // Column 1: Precision
-        var precConfig = JemparinganChallengeRules.GetConfig(JemparinganChallengeRules.MissionId.Precision);
-        var precBest = JemparinganChallengeRules.LoadBestMedal(JemparinganChallengeRules.MissionId.Precision);
-        Rect col1 = new Rect(panel.x + 15f, panel.y + 82f, colWidth, 220f);
-        GUI.Box(col1, "");
-        GUIStyle colHeader = new GUIStyle(GUI.skin.label);
-        colHeader.fontSize = 15;
-        colHeader.fontStyle = FontStyle.Bold;
-        colHeader.alignment = TextAnchor.MiddleCenter;
-        GUI.Label(new Rect(col1.x + 10f, col1.y + 8f, colWidth - 20f, 24f),
-            "1. PRECISION", colHeader);
-        GUI.Label(new Rect(col1.x + 10f, col1.y + 34f, colWidth - 20f, 40f),
-            precConfig.Description);
-        GUI.Label(new Rect(col1.x + 10f, col1.y + 78f, colWidth - 20f, 20f),
-            "Arrows: " + precConfig.ArrowCount + "  |  Stationary Target");
-        GUI.Label(new Rect(col1.x + 10f, col1.y + 100f, colWidth - 20f, 36f),
-            "🥉 Bronze: 1 Molo\n🥈 Silver: 2 Molo   🥇 Gold: 3 Molo");
-        GUI.Label(new Rect(col1.x + 10f, col1.y + 140f, colWidth - 20f, 22f),
-            "Personal Best: " + JemparinganChallengeRules.MedalSymbol(precBest));
-        if (GUI.Button(new Rect(col1.x + 15f, col1.y + 172f, colWidth - 30f, 38f),
-            "START PRECISION (1)"))
-            StartChallengeMission(JemparinganChallengeRules.MissionId.Precision);
-
-        // Column 2: Moving Target
-        var movConfig = JemparinganChallengeRules.GetConfig(
-            JemparinganChallengeRules.MissionId.MovingTarget,
-            movingChallengeSway, movingChallengeSpeed);
-        var movBest = JemparinganChallengeRules.LoadBestMedal(JemparinganChallengeRules.MissionId.MovingTarget);
-        Rect col2 = new Rect(panel.x + 30f + colWidth, panel.y + 82f, colWidth, 220f);
-        GUI.Box(col2, "");
-        GUI.Label(new Rect(col2.x + 10f, col2.y + 8f, colWidth - 20f, 24f),
-            "2. MOVING TARGET", colHeader);
-        GUI.Label(new Rect(col2.x + 10f, col2.y + 34f, colWidth - 20f, 40f),
-            movConfig.Description);
-        GUI.Label(new Rect(col2.x + 10f, col2.y + 78f, colWidth - 20f, 20f),
-            "Arrows: " + movConfig.ArrowCount + "  |  Swinging Bandulan");
-        GUI.Label(new Rect(col2.x + 10f, col2.y + 100f, colWidth - 20f, 36f),
-            "🥉 Bronze: 2 Hits\n🥈 Silver: 4 Hits   🥇 Gold: 6 Hits");
-        GUI.Label(new Rect(col2.x + 10f, col2.y + 140f, colWidth - 20f, 22f),
-            "Personal Best: " + JemparinganChallengeRules.MedalSymbol(movBest));
-        if (GUI.Button(new Rect(col2.x + 15f, col2.y + 172f, colWidth - 30f, 38f),
-            "START MOVING (2)"))
-            StartChallengeMission(JemparinganChallengeRules.MissionId.MovingTarget);
-
-        // Bottom row
-        if (GUI.Button(new Rect(panel.x + (width - 240f) * 0.5f, panel.y + 314f, 240f, 36f),
-            "< BACK TO MODES (M / Esc)"))
-            ReturnToModeSelect();
-    }
-
-    private void DrawChallengeInGameHUD()
-    {
-        // Unobtrusive corner HUD; preserves sightline and bow visibility
-        Rect hudRect = new Rect(16f, 16f, 310f, 102f);
-        GUI.Box(hudRect, "");
-        var config = ActiveChallengeConfig();
-        var currentMedal = config.Evaluate(_challengeObjectiveHits);
-        int arrowsRemaining = Mathf.Max(0, arrowsPerRound - _shots);
-
-        GUIStyle titleStyle = new GUIStyle(GUI.skin.label);
-        titleStyle.fontSize = 13;
-        titleStyle.fontStyle = FontStyle.Bold;
-        GUI.Label(new Rect(hudRect.x + 12f, hudRect.y + 8f, hudRect.width - 24f, 20f),
-            "CHALLENGE: " + config.Name.ToUpper(), titleStyle);
-
-        GUI.Label(new Rect(hudRect.x + 12f, hudRect.y + 30f, hudRect.width - 24f, 20f),
-            "Remaining Arrows: " + arrowsRemaining + " / " + config.ArrowCount);
-
-        GUI.Label(new Rect(hudRect.x + 12f, hudRect.y + 52f, hudRect.width - 24f, 20f),
-            config.ObjectiveLabel + ": " + _challengeObjectiveHits);
-
-        string medalStr = currentMedal == JemparinganChallengeRules.Medal.None
-            ? "None (" + config.GetProgressHint(_challengeObjectiveHits) + ")"
-            : JemparinganChallengeRules.MedalSymbol(currentMedal) + " (" + config.GetProgressHint(_challengeObjectiveHits) + ")";
-        GUI.Label(new Rect(hudRect.x + 12f, hudRect.y + 74f, hudRect.width - 24f, 20f),
-            "Current Medal: " + medalStr);
-
-        // Bottom hint bar
-        GUI.Label(new Rect(16f, Screen.height - 34f, 360f, 24f),
-            _arrowCam != null && _arrowCam.IsActive
-                ? "ARROW CAM   |   ESC: SKIP"
-                : "R: Retry   |   C: Missions   |   M: Main Modes", GUI.skin.box);
-    }
-
-    private void DrawChallengeResultsGUI()
-    {
-        float width = 500f;
-        float height = 310f;
-        Rect panel = new Rect((Screen.width - width) * .5f,
-            (Screen.height - height) * .5f, width, height);
-        GUI.Box(panel, "");
-
-        var config = ActiveChallengeConfig();
-        var medal = config.Evaluate(_challengeObjectiveHits);
-        var bestMedal = JemparinganChallengeRules.LoadBestMedal(_activeChallengeMission);
-        int accuracy = JemparinganScoreRules.AccuracyPercent(_hits, _shots);
-
-        GUIStyle header = new GUIStyle(GUI.skin.label);
-        header.fontSize = 20;
-        header.fontStyle = FontStyle.Bold;
-        header.alignment = TextAnchor.MiddleCenter;
-        GUI.Label(new Rect(panel.x + 15f, panel.y + 14f, width - 30f, 30f),
-            "CHALLENGE RESULTS", header);
-
-        GUIStyle subheader = new GUIStyle(GUI.skin.label);
-        subheader.fontSize = 14;
-        subheader.alignment = TextAnchor.MiddleCenter;
-        GUI.Label(new Rect(panel.x + 15f, panel.y + 46f, width - 30f, 22f),
-            "MISSION: " + config.Name.ToUpper(), subheader);
-
-        GUIStyle medalStyle = new GUIStyle(GUI.skin.box);
-        medalStyle.fontSize = 16;
-        medalStyle.fontStyle = FontStyle.Bold;
-        medalStyle.alignment = TextAnchor.MiddleCenter;
-        string medalText = medal == JemparinganChallengeRules.Medal.None
-            ? "NO MEDAL EARNED"
-            : JemparinganChallengeRules.MedalSymbol(medal) + " EARNED!";
-        GUI.Label(new Rect(panel.x + 25f, panel.y + 76f, width - 50f, 36f),
-            medalText, medalStyle);
-
-        Rect statsRect = new Rect(panel.x + 25f, panel.y + 120f, width - 50f, 100f);
-        GUI.Box(statsRect, "");
-        GUI.Label(new Rect(statsRect.x + 15f, statsRect.y + 10f, statsRect.width - 30f, 22f),
-            config.ObjectiveLabel + ": " + _challengeObjectiveHits + " / " + config.ArrowCount);
-        GUI.Label(new Rect(statsRect.x + 15f, statsRect.y + 32f, statsRect.width - 30f, 22f),
-            "Total Hits: " + _hits + " / " + _shots + "  |  Accuracy: " + accuracy + "%  |  Score: " + _score);
-        GUI.Label(new Rect(statsRect.x + 15f, statsRect.y + 54f, statsRect.width - 30f, 22f),
-            "Personal Best Medal: " + JemparinganChallengeRules.MedalSymbol(bestMedal));
-        GUI.Label(new Rect(statsRect.x + 15f, statsRect.y + 74f, statsRect.width - 30f, 22f),
-            "Requirements: " + config.GetThresholdsText());
-
-        float btnWidth = (width - 60f) / 3f;
-        if (GUI.Button(new Rect(panel.x + 15f, panel.y + 242f, btnWidth, 44f),
-            "RETRY (R)"))
-            StartChallengeMission(_activeChallengeMission);
-        if (GUI.Button(new Rect(panel.x + 30f + btnWidth, panel.y + 242f, btnWidth, 44f),
-            "MISSIONS (C)"))
-            ReturnToChallengeSelect();
-        if (GUI.Button(new Rect(panel.x + 45f + btnWidth * 2f, panel.y + 242f, btnWidth, 44f),
-            "MODES (M)"))
-            ReturnToModeSelect();
-    }
 
     // Three chapters across the existing arrow budget. Default 12 gives
     // exactly four arrows per stage. Customized Inspector arrow counts are
@@ -784,9 +582,7 @@ public class JemparinganGame : MonoBehaviour
             if (renderer != null) renderer.enabled = visible;
     }
 
-    // Modern desktop has a separate minimal IMGUI, so hide the
-    // duplicated world-space text, shot pips and session labels.
-    // Other modes (and non-desktop) keep their world-space text HUD.
+    // Modern desktop uses a minimal IMGUI. Traditional and VR keep world-space text.
     // Decorative background boards are no longer constructed anywhere.
     private void SyncWorldSpaceHudVisibility()
     {
@@ -815,7 +611,6 @@ public class JemparinganGame : MonoBehaviour
         // per Modern entry for test/compare via G.
         modernDebugCameraCrosshair = false;
         SetModernDesktopMouseControl(true);
-        _challengeInMissionSelect = false;
         arrowsPerRound = modernArrowCount;
         _desktopTrainingEnabled = false;
         if (_target != null) _target.gameObject.SetActive(false);
@@ -837,6 +632,7 @@ public class JemparinganGame : MonoBehaviour
     public void ChooseMode(GameMode next)
     {
         if (!useOutdoorEnvironment || !_ready) return;
+        if (next != GameMode.Modern) next = GameMode.Traditional;
         RestoreModernCameraFov();
         HideModernPhysicalSight();
         HideModernHands();
@@ -858,45 +654,13 @@ public class JemparinganGame : MonoBehaviour
             return;
         }
 
-        if (_mode == GameMode.Challenge)
-        {
-            // Only desktop has an IMGUI mission picker. On Quest/non-desktop,
-            // launch the Inspector-selected mission rather than getting stuck
-            // in a selection state with no interaction path.
-            if (!UsesDesktopInput())
-            {
-                StartChallengeMission(nonDesktopChallengeMission);
-                return;
-            }
-            _challengeInMissionSelect = true;
-            if (_classicBandulanVisual != null) _classicBandulanVisual.SetActive(false);
-            if (_traditionalBandulanVisual != null) _traditionalBandulanVisual.SetActive(true);
-            _target.UseTraditionalScoring(true);
-            _target.SetBody(_traditionalBandulanBody, JemparinganArt.Tone.BandulanWhite);
-            if (_traditionalPosture != null)
-                _traditionalPosture.gameObject.SetActive(false);
-            HideTraditionalArms();
-            HideDesktopPracticeSight();
-            _target.SetSway(0f, 0f, true);
-            ResetRound();
-            _awaitStringRelease = UsesDesktopInput() && Input.GetMouseButton(0);
-            return;
-        }
-
-        _challengeInMissionSelect = false;
-        arrowsPerRound = IsTraditionalMode()
-            ? 12 : JemparinganScoreRules.OutdoorArrowCount;
-        _desktopTrainingEnabled = !IsTraditionalMode();
-        _target.UseTraditionalScoring(IsTraditionalMode());
-        if (_classicBandulanVisual != null)
-            _classicBandulanVisual.SetActive(!IsTraditionalMode());
+        arrowsPerRound = 12;
+        _desktopTrainingEnabled = false;
         if (_traditionalBandulanVisual != null)
-            _traditionalBandulanVisual.SetActive(IsTraditionalMode());
-        _target.SetBody(IsTraditionalMode() ? _traditionalBandulanBody :
-            _classicBandulanBody, IsTraditionalMode() ?
-            JemparinganArt.Tone.BandulanWhite : JemparinganArt.Tone.Red);
+            _traditionalBandulanVisual.SetActive(true);
+        _target.SetBody(_traditionalBandulanBody, JemparinganArt.Tone.BandulanWhite);
         if (_traditionalPosture != null)
-            _traditionalPosture.gameObject.SetActive(IsTraditionalMode());
+            _traditionalPosture.gameObject.SetActive(true);
         HideTraditionalArms();
         _lastInfo = "";
         HideDesktopPracticeSight();
@@ -905,32 +669,7 @@ public class JemparinganGame : MonoBehaviour
         _awaitStringRelease = UsesDesktopInput() && Input.GetMouseButton(0);
     }
 
-    public void StartChallengeMission(JemparinganChallengeRules.MissionId missionId)
-    {
-        HideModernHands();
-        SetModernDesktopMouseControl(false);
-        _mode = GameMode.Challenge;
-        _modeChosen = true;
-        _challengeInMissionSelect = false;
-        _activeChallengeMission = missionId;
-        _challengeObjectiveHits = 0;
 
-        var config = ActiveChallengeConfig();
-        arrowsPerRound = config.ArrowCount;
-        _desktopTrainingEnabled = false;
-        _target.UseTraditionalScoring(true);
-        if (_classicBandulanVisual != null) _classicBandulanVisual.SetActive(false);
-        if (_traditionalBandulanVisual != null) _traditionalBandulanVisual.SetActive(true);
-        _target.SetBody(_traditionalBandulanBody, JemparinganArt.Tone.BandulanWhite);
-        if (_traditionalPosture != null) _traditionalPosture.gameObject.SetActive(true);
-
-        HideTraditionalArms();
-        _lastInfo = "";
-        HideDesktopPracticeSight();
-        ResetRound();
-        _target.SetSway(config.TargetSway, config.TargetSpeed, true);
-        _awaitStringRelease = UsesDesktopInput() && Input.GetMouseButton(0);
-    }
 
     public void ReturnToModeSelect()
     {
@@ -948,25 +687,13 @@ public class JemparinganGame : MonoBehaviour
         if (_traditionalPosture != null)
             _traditionalPosture.gameObject.SetActive(false);
         _modeChosen = false;
-        _challengeInMissionSelect = false;
         HideTraditionalArms();
         HideDesktopPracticeSight();
         ResetRound();
         _awaitStringRelease = UsesDesktopInput() && Input.GetMouseButton(0);
     }
 
-    public void ReturnToChallengeSelect()
-    {
-        HideModernHands();
-        SetModernDesktopMouseControl(false);
-        _mode = GameMode.Challenge;
-        _modeChosen = true;
-        _challengeInMissionSelect = true;
-        HideTraditionalArms();
-        HideDesktopPracticeSight();
-        ResetRound();
-        _awaitStringRelease = UsesDesktopInput() && Input.GetMouseButton(0);
-    }
+
 
     private void Update()
     {
@@ -976,18 +703,8 @@ public class JemparinganGame : MonoBehaviour
         {
             if (!_modeChosen)
             {
-                if (Input.GetKeyDown(KeyCode.Alpha1)) ChooseMode(GameMode.Classic);
-                else if (Input.GetKeyDown(KeyCode.Alpha2)) ChooseMode(GameMode.Traditional);
-                else if (Input.GetKeyDown(KeyCode.Alpha3)) ChooseMode(GameMode.Challenge);
-                else if (Input.GetKeyDown(KeyCode.Alpha4)) ChooseMode(GameMode.Modern);
-                return;
-            }
-
-            if (_mode == GameMode.Challenge && _challengeInMissionSelect)
-            {
-                if (Input.GetKeyDown(KeyCode.Alpha1)) StartChallengeMission(JemparinganChallengeRules.MissionId.Precision);
-                else if (Input.GetKeyDown(KeyCode.Alpha2)) StartChallengeMission(JemparinganChallengeRules.MissionId.MovingTarget);
-                else if (Input.GetKeyDown(KeyCode.M) || Input.GetKeyDown(KeyCode.Escape)) ReturnToModeSelect();
+                if (Input.GetKeyDown(KeyCode.Alpha1)) ChooseMode(GameMode.Traditional);
+                else if (Input.GetKeyDown(KeyCode.Alpha2)) ChooseMode(GameMode.Modern);
                 return;
             }
 
@@ -1025,15 +742,6 @@ public class JemparinganGame : MonoBehaviour
                     : "VIEWMODEL V1  |  ORIGINAL FRAMING");
             }
 
-            if (_mode == GameMode.Challenge && Input.GetKeyDown(KeyCode.C) && (_shots == 0 || _finished))
-            {
-                ReturnToChallengeSelect();
-                return;
-            }
-        }
-        if (_mode == GameMode.Challenge && _challengeInMissionSelect)
-        {
-            return;
         }
         if (UsesDesktopInput() && Input.GetKeyDown(KeyCode.R) && _arrows != null)
         {
@@ -1042,7 +750,7 @@ public class JemparinganGame : MonoBehaviour
             ResetRound();
             _awaitStringRelease = stringWasHeld;
         }
-        // During Challenge or Modern Arrow Cam, the real projectile continues
+        // During Modern Arrow Cam, the real projectile continues
         // its normal lifecycle. Pause only the player's draw/aim update.
         if (_arrowCam != null && _arrowCam.IsActive)
         {
@@ -1060,7 +768,7 @@ public class JemparinganGame : MonoBehaviour
         }
 
         if (useOutdoorEnvironment && UsesDesktopInput() &&
-            !IsChallengeMode() && !IsModernMode() && Input.GetKeyDown(KeyCode.T))
+            !IsModernMode() && Input.GetKeyDown(KeyCode.T))
         {
             _desktopTrainingEnabled = !_desktopTrainingEnabled;
             ShowFeedback(_desktopTrainingEnabled
@@ -1341,7 +1049,7 @@ public class JemparinganGame : MonoBehaviour
             }
             else
             {
-                // Original Traditional/Challenge aim is unchanged.
+                // Original Traditional aim is unchanged.
                 Transform sightTarget = _target != null
                     ? _target.transform : null;
                 float targetDist = sightTarget != null
@@ -1370,8 +1078,7 @@ public class JemparinganGame : MonoBehaviour
             UpdateBowStrings(pull);
             UpdateNockedArrow(pull, true);
             ShowPreview(bowOrigin + aim * 0.25f, launchAim, power);
-            UpdateLeadMarker(bowOrigin + aim * .25f, power);
-            int step = Mathf.RoundToInt(power * 10f);
+                int step = Mathf.RoundToInt(power * 10f);
             bool calm = Time.time <= _focusReadyUntil;
             // RASA must update even at constant draw power.
             if (step != _lastPowerStep || calm != _lastStableSignal)
@@ -1443,10 +1150,7 @@ public class JemparinganGame : MonoBehaviour
             if (_replayHoldStartedAt < 0f) _replayHoldStartedAt = Time.time;
             if (Time.time - _replayHoldStartedAt >= .70f)
             {
-                if (IsChallengeMode())
-                    StartChallengeMission(_activeChallengeMission);
-                else
-                    ResetRound();
+                ResetRound();
                 // A held replay gesture cannot immediately count as a shot.
                 _awaitStringRelease = true;
                 SetInfo("RELEASE STRING TO START");
@@ -1774,12 +1478,8 @@ public class JemparinganGame : MonoBehaviour
                 OnArrowImpact, OnArrowMiss,
                 useOutdoorEnvironment ? outdoorArrowLifetime : 1.6f);
         }
-        // Follow every real projectile in Challenge and Modern on desktop.
-        // Separate Inspector toggles allow testing each mode independently.
-        // Classic, Traditional and VR never switch cameras.
-        bool useArrowCam = (IsChallengeMode() && challengeEveryShotArrowCam &&
-            !_challengeInMissionSelect) ||
-            (IsModernMode() && modernEveryShotArrowCam);
+        // Follow Modern projectiles on desktop; Traditional stays in normal view.
+        bool useArrowCam = IsModernMode() && modernEveryShotArrowCam;
         if (useArrowCam && UsesDesktopInput() &&
             desktopInput != null && Camera.main != null)
         {
@@ -1807,16 +1507,13 @@ public class JemparinganGame : MonoBehaviour
         else if (_audio != null && _shotSound != null)
             _audio.PlayOneShot(_shotSound, .48f);
         ShowFeedback("ARROW RELEASED");
-        if (_mode == GameMode.Classic &&
-            (_shots == 4 || _shots == 8 ||
-            (useOutdoorEnvironment && _shots == 12))) UpdateLevel();
         if (_shots >= arrowsPerRound) _roundOver = true;
         UpdateHUD();
     }
 
     private bool IsDesktopTrainingAimActive()
     {
-        // Desktop Editor training only. Quest input and classic v0.9 shooting
+        // Desktop Editor training only. Quest input and Traditional shooting
         // retain the original assistance behavior and physics.
         return useOutdoorEnvironment && UsesDesktopInput() &&
             _desktopTrainingEnabled;
@@ -1850,7 +1547,7 @@ public class JemparinganGame : MonoBehaviour
             (0.5f * simulatedGravity * flightTime * flightTime)).normalized;
         float angularError = Vector3.Angle(aim, direction);
         if (angularError > 8f) return aim;
-        // Traditional and Challenge default to a subtle assist, without magnetic
+        // Traditional uses a subtle assist, without magnetic
         // ballistic snapping unless training is explicitly enabled with T.
         float limitedAssist = UsesTraditionalPresentation() ?
             Mathf.Min(aimAssist, .20f) : aimAssist;
@@ -1919,126 +1616,39 @@ public class JemparinganGame : MonoBehaviour
 
     private void OnArrowImpact(JemparinganArrow arrow, bool bullseye)
     {
-        if (IsChallengeMode())
-        {
-            JemparinganTarget.TraditionalZone zone = _target.LastTraditionalZone;
-            int points = JemparinganScoreRules.TraditionalPointsForZone(zone);
-            _hits++;
-            if (zone == JemparinganTarget.TraditionalZone.Molo) _moloHits++;
-            else if (zone == JemparinganTarget.TraditionalZone.Jangga) _janggaHits++;
-            else if (zone == JemparinganTarget.TraditionalZone.Awak) _awakHits++;
-            _score += points;
-            if (_score > _best) _best = _score;
-
-            var config = ActiveChallengeConfig();
-            bool isObjectiveHit = false;
-            if (_activeChallengeMission == JemparinganChallengeRules.MissionId.Precision)
-            {
-                if (zone == JemparinganTarget.TraditionalZone.Molo)
-                {
-                    _challengeObjectiveHits++;
-                    isObjectiveHit = true;
-                }
-            }
-            else // MovingTarget: any hit on bandulan counts
-            {
-                _challengeObjectiveHits++;
-                isObjectiveHit = true;
-            }
-
-            _audio.PlayOneShot(zone == JemparinganTarget.TraditionalZone.Molo ?
-                _bullseyeSound : _hitSound, .50f);
-            string zoneName = zone == JemparinganTarget.TraditionalZone.Molo ? "MOLO" :
-                zone == JemparinganTarget.TraditionalZone.Jangga ? "JANGGA" : "AWAK";
-
-            if (isObjectiveHit)
-            {
-                ShowImpactLabel("+" + points + "  " + zoneName + " [OBJ]",
-                    new Color(.98f, .81f, .40f));
-                ShowFeedback(zoneName + " HIT! (" + _challengeObjectiveHits + "/" + config.GoldThreshold + " GOLD)");
-            }
-            else
-            {
-                ShowImpactLabel("+" + points + "  " + zoneName,
-                    new Color(.40f, .94f, .75f));
-                ShowFeedback(zoneName + "  +" + points + " (NEED MOLO)");
-            }
-
-            UpdateHUD();
-            return;
-        }
-
-        if (IsTraditionalMode())
-        {
-            // Classification comes from the very hit-test that triggered this
-            // callback; an active shot cannot change modes mid-flight.
-            JemparinganTarget.TraditionalZone zone = _target.LastTraditionalZone;
-            int points = JemparinganScoreRules.TraditionalPointsForZone(zone);
-            _hits++;
-            if (zone == JemparinganTarget.TraditionalZone.Molo) _moloHits++;
-            else if (zone == JemparinganTarget.TraditionalZone.Jangga) _janggaHits++;
-            else if (zone == JemparinganTarget.TraditionalZone.Awak) _awakHits++;
-            _score += points;
-            if (_score > _best) _best = _score;
-            _audio.PlayOneShot(zone == JemparinganTarget.TraditionalZone.Molo ?
-                _bullseyeSound : _hitSound, .50f);
-            string zoneName = zone == JemparinganTarget.TraditionalZone.Molo ? "MOLO" :
-                zone == JemparinganTarget.TraditionalZone.Jangga ? "JANGGA" : "AWAK";
-            ShowImpactLabel("+" + points + "  " + zoneName,
-                zone == JemparinganTarget.TraditionalZone.Molo ?
-                new Color(.98f, .81f, .40f) : new Color(.40f, .94f, .75f));
-            ShowFeedback(zoneName + "  +" + points);
-            UpdateHUD();
-            return;
-        }
+        if (!IsTraditionalMode()) return;
+        // Score the zone classified by the existing target collision.
+        JemparinganTarget.TraditionalZone zone = _target.LastTraditionalZone;
+        int points = JemparinganScoreRules.TraditionalPointsForZone(zone);
         _hits++;
-        _combo++;
-        if (bullseye) _bullseyes++;
-        if (_combo > _bestCombo) _bestCombo = _combo;
-        if (arrow.StableRelease)
-        {
-            _rasaHits++;
-            _rasaBonus += 3;
-        }
-        int pts = JemparinganScoreRules.PointsForHit(bullseye, arrow.StableRelease, _combo);
-        _score += pts;
+        if (zone == JemparinganTarget.TraditionalZone.Molo) _moloHits++;
+        else if (zone == JemparinganTarget.TraditionalZone.Jangga) _janggaHits++;
+        else if (zone == JemparinganTarget.TraditionalZone.Awak) _awakHits++;
+        _score += points;
         if (_score > _best) _best = _score;
-        _audio.PlayOneShot(bullseye ? _bullseyeSound : _hitSound, bullseye ? 0.54f : 0.45f);
-        ShowImpactLabel("+" + pts + (bullseye ? "  CENTER" : "  HIT"),
-            bullseye ? new Color(.98f, .81f, .40f) : new Color(.40f, .94f, .75f));
-        ShowFeedback((bullseye ? "BULLSEYE" : "HIT!") + "  +" + pts + (arrow.StableRelease ? "  STEADY" : "") + (_combo >= 3 ? "  COMBO" : ""),
-            bullseye ? new Color(.98f, .81f, .40f) : new Color(.40f, .94f, .75f));
+        _audio.PlayOneShot(zone == JemparinganTarget.TraditionalZone.Molo ?
+            _bullseyeSound : _hitSound, .50f);
+        string zoneName = zone == JemparinganTarget.TraditionalZone.Molo ? "MOLO" :
+            zone == JemparinganTarget.TraditionalZone.Jangga ? "JANGGA" : "AWAK";
+        ShowImpactLabel("+" + points + "  " + zoneName,
+            zone == JemparinganTarget.TraditionalZone.Molo ?
+            new Color(.98f, .81f, .40f) : new Color(.40f, .94f, .75f));
+        ShowFeedback(zoneName + "  +" + points);
         UpdateHUD();
     }
 
     private void OnArrowMiss(JemparinganArrow arrow)
     {
-        _combo = 0;
         if (_missSound != null) _audio.PlayOneShot(_missSound, 0.16f);
         ShowFeedback("MISS  •  TRY AGAIN", new Color(.98f, .55f, .46f));
         UpdateHUD();
     }
 
-    private void UpdateLevel()
-    {
-        int level = JemparinganScoreRules.StageIndex(_shots);
-        _target.SetSway(JemparinganScoreRules.SwayAmountForStage(level),
-            JemparinganScoreRules.SwaySpeedForStage(level));
-        ShowFeedback(JemparinganScoreRules.StageTitle(_shots));
-        // The outdoor phase row and status already communicate the new
-        // stage: avoid a second banner duplicating the same information.
-        if (_stageBanner != null && !useOutdoorEnvironment)
-        {
-            _stageBanner.text = JemparinganScoreRules.StageTitle(_shots);
-            _stageBannerUntil = Time.time + 1.25f;
-        }
-        if (_audio != null && _stageSound != null) _audio.PlayOneShot(_stageSound, .23f);
-        UpdateHUD();
-    }
+
 
     private void FinishRound()
     {
-        // Called when the final projectile is no longer in flight.
+        // Wait until the final projectile resolves before showing results.
         _roundOver = false;
         _finished = true;
         bool newRecord = _score > _previousBest;
@@ -2048,14 +1658,12 @@ public class JemparinganGame : MonoBehaviour
             PlayerPrefs.Save();
         }
         _best = Mathf.Max(_previousBest, _score);
-        _scoreLabel.text = useOutdoorEnvironment
-            ? "COMPLETE  |  SCORE " + _score + "  |  " + _hits + " HITS"
-            : "COMPLETE  •  " + _score + " POINTS  •  " + _hits + "/" + _shots + " HITS";
-        if (_phaseLabel != null)
-            _phaseLabel.text = "ROUND COMPLETE";
+        _scoreLabel.text = "COMPLETE  |  SCORE " + _score + "  |  " + _hits + " HITS";
+        if (_phaseLabel != null) _phaseLabel.text = "ROUND COMPLETE";
         if (_feedbackLabel != null) _feedbackLabel.text = "";
         _feedbackUntil = 0f;
-        SetInfo(UsesDesktopInput() ? "PRESS R OR HOLD LEFT MOUSE TO RESTART" : "RELEASE STRING, THEN HOLD TO RESTART");
+        SetInfo(UsesDesktopInput() ? "PRESS R OR HOLD LEFT MOUSE TO RESTART"
+            : "RELEASE STRING, THEN HOLD TO RESTART");
         _bow.gameObject.SetActive(false);
         HideTraditionalArms();
         HideModernHands();
@@ -2070,101 +1678,33 @@ public class JemparinganGame : MonoBehaviour
         _replayArmed = false;
         _replayHoldStartedAt = -1f;
 
-        if (_resultsPanel != null)
+        if (_resultsPanel == null) return;
+        if (IsModernMode())
         {
-            if (IsModernMode())
-            {
-                // Desktop uses the interactive results overlay; non-desktop
-                // keeps the existing world-space result presentation.
-                _resultsTitle.text = "COMPLETE";
-                _resultsDetails.text = "SCORE " + _score +
-                    "  |  BEST " + _best +
-                    "\nACCURACY " +
-                    JemparinganScoreRules.AccuracyPercent(_hits, _shots) + "%";
-                _resultsHint.text = UsesDesktopInput()
-                    ? "" : "RELEASE + HOLD TO RETRY";
-                _resultsPanel.SetActive(!UsesDesktopInput());
-                _scoreLabel.text = UsesDesktopInput()
-                    ? "" : "SCORE " + _score;
-                if (_phaseLabel != null)
-                    _phaseLabel.text = UsesDesktopInput() ? "" : "COMPLETE";
-            }
-            else if (IsChallengeMode())
-            {
-                var config = ActiveChallengeConfig();
-                var medal = config.Evaluate(_challengeObjectiveHits);
-                _lastChallengeMedal = medal;
-                JemparinganChallengeRules.SaveBestMedalIfHigher(_activeChallengeMission, medal);
-
-                string scoreKey = BestKey();
-                int oldScore = PlayerPrefs.GetInt(scoreKey, 0);
-                if (_score > oldScore)
-                {
-                    PlayerPrefs.SetInt(scoreKey, _score);
-                    PlayerPrefs.Save();
-                }
-                _best = Mathf.Max(oldScore, _score);
-
-                _scoreLabel.text = config.Name.ToUpper() + "  |  " +
-                    JemparinganChallengeRules.MedalTitle(medal) + "  |  " +
-                    _challengeObjectiveHits + "/" + config.ArrowCount + " " + config.ObjectiveUnit.ToUpper();
-
-                if (_phaseLabel != null)
-                    _phaseLabel.text = "CHALLENGE COMPLETE";
-
-                _resultsTitle.text = config.Name.ToUpper() + "  •  " + JemparinganChallengeRules.MedalTitle(medal);
-                int accuracy = JemparinganScoreRules.AccuracyPercent(_hits, _shots);
-                var bestMedal = JemparinganChallengeRules.LoadBestMedal(_activeChallengeMission);
-                _resultsDetails.text = "MEDAL: " + (medal == JemparinganChallengeRules.Medal.None ? "NONE" : medal.ToString().ToUpper()) +
-                    "  |  BEST: " + (bestMedal == JemparinganChallengeRules.Medal.None ? "NONE" : bestMedal.ToString().ToUpper()) +
-                    "\n" + config.ObjectiveLabel.ToUpper() + ": " + _challengeObjectiveHits + "/" + config.ArrowCount +
-                    "\nACCURACY: " + accuracy + "%  |  SCORE: " + _score;
-                _resultsHint.text = "R: RETRY  |  C: MISSIONS  |  M: MODES";
-                _resultsPanel.SetActive(true);
-            }
-            else
-            {
-                _resultsTitle.text = GetRoundTitle();
-                int accuracy = JemparinganScoreRules.AccuracyPercent(_hits, _shots);
-                _resultsDetails.text = IsTraditionalMode()
-                    ? "SCORE " + _score + "  |  ACCURACY " + accuracy + "%" +
-                        "\nMOLO " + _moloHits + "  |  JANGGA " + _janggaHits +
-                        "\nAWAK " + _awakHits + "  |  BEST " + _best
-                    : useOutdoorEnvironment
-                    ? "SCORE " + _score + "  |  ACCURACY " + accuracy + "%" +
-                        "\nBULLSEYES " + _bullseyes + "  |  COMBO " + _bestCombo +
-                        "\nRASA BONUS +" + _rasaBonus
-                    : "SCORE  " + _score + "    ACCURACY  " + accuracy + "%" +
-                        "\nBULLSEYES  " + _bullseyes + "    BEST COMBO  " + _bestCombo +
-                        "\nRASA BONUS  +" + _rasaBonus + "  (" + _rasaHits + " HITS)";
-                _resultsHint.text = IsTraditionalMode() && UsesDesktopInput()
-                    ? (newRecord ? "NEW BEST  |  R: RETRY  |  M: MODES"
-                        : "R: RETRY  |  M: MODES")
-                    : useOutdoorEnvironment && UsesDesktopInput()
-                    ? (newRecord ? "NEW RECORD!  |  R: RESTART" : "R: RESTART  |  HOLD LEFT 0.7s")
-                    : (newRecord
-                        ? "NEW RECORD!  •  " + (UsesDesktopInput() ? "R TO RESTART" : "RELEASE + HOLD STRING")
-                        : (UsesDesktopInput()
-                            ? "R TO RESTART / HOLD LEFT 0.7s"
-                            : "RELEASE, THEN HOLD STRING 0.7s"));
-                _resultsPanel.SetActive(true);
-            }
+            // Modern desktop uses its IMGUI results screen.
+            _resultsTitle.text = "COMPLETE";
+            _resultsDetails.text = "SCORE " + _score +
+                "  |  BEST " + _best +
+                "\nACCURACY " +
+                JemparinganScoreRules.AccuracyPercent(_hits, _shots) + "%";
+            _resultsHint.text = UsesDesktopInput() ? "" : "RELEASE + HOLD TO RETRY";
+            _resultsPanel.SetActive(!UsesDesktopInput());
+            _scoreLabel.text = UsesDesktopInput() ? "" : "SCORE " + _score;
+            if (_phaseLabel != null)
+                _phaseLabel.text = UsesDesktopInput() ? "" : "COMPLETE";
+            return;
         }
-    }
 
-    // These titles are original game feedback, not historical Jemparingan ranks.
-    // Evaluate both precision and composure; every player receives a positive result.
-    private string GetRoundTitle()
-    {
-        if (IsChallengeMode())
-        {
-            var config = ActiveChallengeConfig();
-            var medal = config.Evaluate(_challengeObjectiveHits);
-            return config.Name.ToUpper() + "  •  " + JemparinganChallengeRules.MedalTitle(medal);
-        }
-        return IsTraditionalMode()
-            ? "TRADITIONAL  •  COMPLETE"
-            : JemparinganScoreRules.ResultTitle(_hits, _rasaHits);
+        int accuracy = JemparinganScoreRules.AccuracyPercent(_hits, _shots);
+        _resultsTitle.text = "TRADITIONAL  •  COMPLETE";
+        _resultsDetails.text = "SCORE " + _score + "  |  ACCURACY " + accuracy + "%" +
+            "\nMOLO " + _moloHits + "  |  JANGGA " + _janggaHits +
+            "\nAWAK " + _awakHits + "  |  BEST " + _best;
+        _resultsHint.text = UsesDesktopInput()
+            ? (newRecord ? "NEW BEST  |  R: RETRY  |  M: MODES"
+                : "R: RETRY  |  M: MODES")
+            : "RELEASE + HOLD TO RETRY";
+        _resultsPanel.SetActive(true);
     }
 
     private void ShowImpactLabel(string message, Color color)
@@ -2193,7 +1733,7 @@ public class JemparinganGame : MonoBehaviour
 
     private void ResetRound()
     {
-        // A retry, mode switch or mission switch must never leave a cinematic
+        // A retry or mode switch must never leave a cinematic
         // camera on top of the main view or mouse-look locked.
         if (_arrowCam != null) _arrowCam.Stop();
         _restoreAfterArrowCam = false;
@@ -2214,13 +1754,12 @@ public class JemparinganGame : MonoBehaviour
         // already clear Modern input before switching gameplay.
         SetModernDesktopMouseControl(_modeChosen && IsModernMode());
         for (int i = 0; i < _arrows.Length; i++) _arrows[i].Cancel();
-        _shots = _hits = _score = _combo = _poolCursor = 0;
+        _shots = _hits = _score = _poolCursor = 0;
         _modernStage = 0;
         _modernStageIntroStartedAt = -1f;
         _modernStageIntroUntil = -1f;
-        _bullseyes = _bestCombo = _rasaHits = _rasaBonus = 0;
+        _bullseyes = 0;
         _moloHits = _janggaHits = _awakHits = 0;
-        _challengeObjectiveHits = 0;
         _previousBest = PlayerPrefs.GetInt(BestKey(), 0);
         _best = _previousBest;
         ClearDrawState();
@@ -2228,42 +1767,25 @@ public class JemparinganGame : MonoBehaviour
         _replayHoldStartedAt = -1f;
         _stageBannerUntil = 0f;
         if (_stageBanner != null) _stageBanner.text = "";
-        if (_introPanel != null) _introPanel.SetActive(!_challengeInMissionSelect);
+        if (_introPanel != null) _introPanel.SetActive(true);
         if (_resultsPanel != null) _resultsPanel.SetActive(false);
         _roundOver = _finished = false;
         _ready = true;
 
-        if (IsChallengeMode())
-        {
-            var config = ActiveChallengeConfig();
-            _target.SetSway(config.TargetSway, config.TargetSpeed, true);
-        }
-        else if (IsModernMode())
-        {
-            _target.SetSway(0f, 0f, true);
-            if (_modernTargets != null)
-                foreach (JemparinganModernTarget target in _modernTargets)
-                    if (target != null)
-                    {
-                        target.SetLateralMotion(false);
-                        target.ResetReaction();
-                    }
-        }
-        else
-        {
-            _target.SetSway(IsTraditionalMode() ? 0f :
-                    JemparinganScoreRules.SwayAmountForStage(0),
-                IsTraditionalMode() ? 0f :
-                    JemparinganScoreRules.SwaySpeedForStage(0), true);
-        }
+        _target.SetSway(0f, 0f, true);
+        if (IsModernMode() && _modernTargets != null)
+            foreach (JemparinganModernTarget target in _modernTargets)
+                if (target != null)
+                {
+                    target.SetLateralMotion(false);
+                    target.ResetReaction();
+                }
         _target.ResetReaction();
         UpdateNockedArrow(0f, true);
         HidePreview();
         if (_impactLabel != null) _impactLabel.text = "";
         _impactLabelUntil = 0f;
-        ShowFeedback(IsModernMode() ? "LEVEL 1" :
-            (IsChallengeMode() ? ActiveChallengeConfig().Name.ToUpper() + "  •  FOCUS" :
-            (IsTraditionalMode() ? "TRADITIONAL  •  FOCUS" : "ROUND I  •  CALM")));
+        ShowFeedback(IsModernMode() ? "LEVEL 1" : "TRADITIONAL  •  FOCUS");
         UpdateIntroMode();
         UpdateHUD();
         // Apply after ResetRound's intro/result/pip state changes.
@@ -2276,36 +1798,24 @@ public class JemparinganGame : MonoBehaviour
         if (_titleLabel != null && useOutdoorEnvironment)
             _titleLabel.text = IsModernMode()
                 ? (UsesDesktopInput() ? "" : "MODERN ARCHERY")
-                : "JEMPARINGAN  |  RASA";
+                : "JEMPARINGAN  |  TRADITIONAL";
         if (_introGoalLabel == null || _introTitleLabel == null) return;
         if (IsModernMode())
         {
             _introTitleLabel.text = "MODERN ARCHERY";
-            // The shared intro already says HOLD LEFT MOUSE TO START.
             _introGoalLabel.text = "";
-            return;
         }
-        if (IsChallengeMode())
+        else
         {
-            var config = ActiveChallengeConfig();
-            _introTitleLabel.text = "CHALLENGE  /  " + config.Name.ToUpper();
-            _introGoalLabel.text = config.ArrowCount + " ARROWS  |  " + config.GetThresholdsText().ToUpper();
-            return;
+            _introTitleLabel.text = "JEMPARINGAN  /  TRADITIONAL";
+            _introGoalLabel.text = "12 ARROWS  |  MOLO 3  JANGGA 2  AWAK 1";
         }
-        _introTitleLabel.text = IsTraditionalMode() ?
-            "JEMPARINGAN  /  TRADITIONAL" : "JEMPARINGAN  /  RASA";
-        _introGoalLabel.text = IsTraditionalMode() ?
-            "12 ARROWS  |  MOLO 3  JANGGA 2  AWAK 1" :
-            arrowsPerRound + " ARROWS  |  " +
-                JemparinganScoreRules.OutdoorRoundCount + " ROUNDS  |  RASA +3";
     }
 
     private void UpdateHUD()
     {
         if (IsModernMode())
         {
-            // Desktop uses the smaller IMGUI HUD; hide duplicate world
-            // text rather than displaying the same numbers twice.
             if (_scoreLabel != null)
                 _scoreLabel.text = UsesDesktopInput() ? "" :
                     "SCORE " + _score + "  |  ARROWS " +
@@ -2315,37 +1825,13 @@ public class JemparinganGame : MonoBehaviour
                     (modernProgressiveStages
                         ? "LEVEL " + (_modernStage + 1) + "/3" : "MODERN");
         }
-        else if (IsChallengeMode())
-        {
-            var config = ActiveChallengeConfig();
-            var medal = config.Evaluate(_challengeObjectiveHits);
-            int arrowsLeft = Mathf.Max(0, arrowsPerRound - _shots);
-            string medalStr = medal == JemparinganChallengeRules.Medal.None ? "NONE" : medal.ToString().ToUpper();
-            if (_scoreLabel != null)
-                _scoreLabel.text = config.Name.ToUpper() + "  |  " + config.ObjectiveLabel.ToUpper() + ": " +
-                    _challengeObjectiveHits + "  |  " + arrowsLeft + " ARROWS";
-            if (_phaseLabel != null && !_finished)
-                _phaseLabel.text = "MEDAL: " + medalStr + "  (" + config.GetProgressHint(_challengeObjectiveHits).ToUpper() + ")";
-        }
-        else if (IsTraditionalMode())
+        else
         {
             if (_scoreLabel != null)
                 _scoreLabel.text = "SCORE " + _score + "  |  HITS " + _hits +
                     "  |  ARROWS " + _shots + "/" + arrowsPerRound;
             if (_phaseLabel != null && !_finished)
                 _phaseLabel.text = "TRADITIONAL  •  MATARAM-INSPIRED";
-        }
-        else
-        {
-            if (_scoreLabel != null)
-                _scoreLabel.text = useOutdoorEnvironment
-                    ? "SCORE " + _score + "  |  HITS " + _hits +
-                        "  |  ARROWS " + _shots + "/" + arrowsPerRound
-                    : "SCORE " + _score + "  •  HITS " + _hits + "/" + _shots +
-                        "  •  COMBO " + _combo + "  •  BEST " + _best;
-            if (_phaseLabel != null && !_finished)
-                _phaseLabel.text = JemparinganScoreRules.StageTitle(
-                    useOutdoorEnvironment ? _shots : Mathf.Min(_shots, 11));
         }
         UpdateShotPips();
     }
@@ -2365,11 +1851,7 @@ public class JemparinganGame : MonoBehaviour
             pip.transform.localPosition = new Vector3(x, 0f, 0f);
             JemparinganArt.Tone tone = i < _shots ?
                 JemparinganArt.Tone.Gold : JemparinganArt.Tone.Paper;
-            int activeStage = Mathf.Min(_shots / JemparinganScoreRules.ArrowsPerStage,
-                (arrowsPerRound - 1) / JemparinganScoreRules.ArrowsPerStage);
-            bool inStage = IsTraditionalMode() || IsChallengeMode() || IsModernMode() ||
-                i / JemparinganScoreRules.ArrowsPerStage == activeStage;
-            if (!_finished && i >= _shots && inStage) tone = JemparinganArt.Tone.Jade;
+            if (!_finished && i >= _shots) tone = JemparinganArt.Tone.Jade;
             pip.sharedMaterial = JemparinganArt.Material(tone);
         }
     }
@@ -2387,11 +1869,7 @@ public class JemparinganGame : MonoBehaviour
             if (value.StartsWith("READY") || value.StartsWith("Hold left mouse"))
                 value = IsModernMode()
                     ? "RINGS: GOLD 10  RED 8  BLUE 6  BLACK 4  WHITE 2"
-                    : IsChallengeMode()
-                    ? ActiveChallengeConfig().GetThresholdsText().ToUpper()
-                    : (IsTraditionalMode()
-                        ? "RED 3  |  YELLOW 2  |  WHITE 1"
-                        : "LMB DRAW  |  RMB AIM  |  SHIFT FINE");
+                    : "RED 3  |  YELLOW 2  |  WHITE 1";
             else if (value.StartsWith("Hand tracking"))
                 value = "HAND TRACKING LOST";
             else if (value.StartsWith("Hold the bow"))
@@ -2515,7 +1993,6 @@ public class JemparinganGame : MonoBehaviour
     {
         if (_previewDots == null) return;
         for (int i = 0; i < _previewDots.Length; i++) _previewDots[i].gameObject.SetActive(false);
-        if (_leadMarker != null) _leadMarker.gameObject.SetActive(false);
     }
 
     private bool BuildScene()
@@ -2524,11 +2001,9 @@ public class JemparinganGame : MonoBehaviour
         if (camera == null) { Debug.LogError("Jemparingan: MainCamera missing."); return false; }
         _playerCamera = camera;
         _playerBaseFov = camera.fieldOfView;
-        // Existing Playable v5 scenes still serialize 12 shots. Upgrade only
-        // outdoor gameplay at runtime so no scene regeneration or overwriting
-        // user-customized environment assets is required. Legacy stays at 12.
+        // Allocate enough pooled projectiles for either Traditional or Modern.
         if (useOutdoorEnvironment)
-            arrowsPerRound = JemparinganScoreRules.OutdoorArrowCount;
+            arrowsPerRound = Mathf.Max(12, modernArrowCount);
         Vector3 forward = Vector3.ProjectOnPlane(camera.transform.forward, Vector3.up).normalized;
         if (forward.sqrMagnitude < 0.1f) forward = Vector3.forward;
         Quaternion facing = Quaternion.LookRotation(forward);
@@ -2571,7 +2046,6 @@ public class JemparinganGame : MonoBehaviour
         BuildPool();
         BuildPreview();
         BuildDesktopPracticeSight(camera);
-        BuildLeadMarker(root);
 
         var hud = new GameObject("Jemparingan HUD").transform;
         _worldSpaceHudRoot = hud.gameObject;
@@ -2640,8 +2114,7 @@ public class JemparinganGame : MonoBehaviour
         return true;
     }
 
-    // Outdoor TextMesh sizing is shared by Classic, Traditional, Challenge
-    // and non-desktop. No 3D contrast-background mesh is constructed.
+    // Traditional and non-desktop HUD text; no opaque background meshes.
     private void StyleOutdoorHud(Transform hud, Transform help)
     {
         _titleLabel.text = "JEMPARINGAN  |  RASA";
@@ -2671,8 +2144,7 @@ public class JemparinganGame : MonoBehaviour
             if (label.name == "Intro title")
                 label.text = "JEMPARINGAN  /  RASA";
             else if (label.name == "Intro goal")
-                label.text = arrowsPerRound + " ARROWS  |  " +
-                    JemparinganScoreRules.OutdoorRoundCount + " ROUNDS  |  RASA +3";
+                label.text = "12 ARROWS  |  MOLO 3  JANGGA 2  AWAK 1";
             else if (label.name == "Intro start" && UsesDesktopInput())
                 label.text = "HOLD LEFT TO START";
         }
@@ -2689,9 +2161,7 @@ public class JemparinganGame : MonoBehaviour
         _introTitleLabel = JemparinganArt.Label("Intro title", intro.transform, new Vector3(0f, .16f, -.025f),
             "J E M P A R I N G A N   /   R A S A", .0045f, new Color(.98f, .82f, .51f));
         _introGoalLabel = JemparinganArt.Label("Intro goal", intro.transform, new Vector3(0f, .015f, -.025f),
-            arrowsPerRound + " ARROWS   •   " +
-                Mathf.CeilToInt(arrowsPerRound / (float)JemparinganScoreRules.ArrowsPerStage) +
-                " ROUNDS   •   RASA +3 WHEN STEADY", .0035f, Color.white);
+            "12 ARROWS  |  MOLO 3  JANGGA 2  AWAK 1", .0035f, Color.white);
         JemparinganArt.Label("Intro start", intro.transform, new Vector3(0f, -.14f, -.025f),
             UsesDesktopInput() ? "HOLD LEFT MOUSE TO START" : "PULL STRING TO START",
             .0037f, new Color(.56f, .94f, .76f));
@@ -2831,6 +2301,8 @@ public class JemparinganGame : MonoBehaviour
             JemparinganArt.Tone.Indigo, Quaternion.Euler(90f, 0f, 0f));
     }
 
+
+
     private void BuildBandulan(Transform root)
     {
         JemparinganArt.Beam("Suspension cord", root, new Vector3(0, .69f, 0), new Vector3(0, .12f, 0), .005f, JemparinganArt.Tone.Paper);
@@ -2839,24 +2311,6 @@ public class JemparinganGame : MonoBehaviour
         targetGO.transform.SetParent(root, false);
         targetGO.transform.localPosition = new Vector3(0f, -.13f, 0f);
         _target = targetGO.AddComponent<JemparinganTarget>();
-        var classic = new GameObject("Classic bandulan visuals");
-        classic.transform.SetParent(targetGO.transform, false);
-        _classicBandulanVisual = classic;
-        var main = JemparinganArt.Part("Bandulan lacquer red", PrimitiveType.Cylinder, classic.transform,
-            Vector3.zero, new Vector3(.048f, .24f, .048f), JemparinganArt.Tone.Red);
-        _classicBandulanBody = main.GetComponent<Renderer>();
-        _target.SetBody(_classicBandulanBody);
-        JemparinganArt.Part("Bandulan golden cap", PrimitiveType.Cylinder, classic.transform,
-            Vector3.up * .23f, new Vector3(.054f, .018f, .054f), JemparinganArt.Tone.Gold);
-        JemparinganArt.Part("Bandulan golden tip", PrimitiveType.Sphere, classic.transform,
-            Vector3.down * .24f, new Vector3(.055f, .04f, .055f), JemparinganArt.Tone.Gold);
-        for (int i = -1; i <= 1; i++)
-        {
-            JemparinganArt.Part("Thin gold binding", PrimitiveType.Cylinder, classic.transform,
-                new Vector3(0, i * .13f, 0), new Vector3(.052f, .007f, .052f), JemparinganArt.Tone.Brass);
-        }
-
-        if (!useOutdoorEnvironment) return;
         var traditional = new GameObject("Traditional bandulan visuals");
         traditional.transform.SetParent(targetGO.transform, false);
         _traditionalBandulanVisual = traditional;
@@ -2882,7 +2336,8 @@ public class JemparinganGame : MonoBehaviour
             JemparinganArt.Tone.Red);
         _target.SetTraditionalZoneRenderers(molo.GetComponent<Renderer>(),
             jangga.GetComponent<Renderer>(), _traditionalBandulanBody);
-        traditional.SetActive(false);
+        _target.SetBody(_traditionalBandulanBody, JemparinganArt.Tone.BandulanWhite);
+        traditional.SetActive(true);
     }
 
     // The legs stay in world space at the seated shooting spot. They should
@@ -2994,7 +2449,7 @@ public class JemparinganGame : MonoBehaviour
                 HideModernHands();
             return;
         }
-        // Traditional/Challenge still use their original left-grip rig.
+        // Traditional retains its original left-grip rig.
         HideModernHands();
         if (_traditionalArcher != null)
             _traditionalArcher.Present();
@@ -3153,32 +2608,9 @@ public class JemparinganGame : MonoBehaviour
         }
     }
 
-    private void BuildLeadMarker(Transform root)
-    {
-        _leadMarker = JemparinganArt.Part("Lead cue | Stages II-IV", PrimitiveType.Sphere,
-            root, Vector3.zero, Vector3.one * .023f, JemparinganArt.Tone.Jade).transform;
-        _leadMarker.gameObject.SetActive(false);
-    }
 
-    private void UpdateLeadMarker(Vector3 arrowOrigin, float power)
-    {
-        if (_leadMarker == null || _target == null) return;
-        bool visible = _mode == GameMode.Classic && _shots >= 4 &&
-            !_roundOver && power >= .35f;
-        if (!visible)
-        {
-            _leadMarker.gameObject.SetActive(false);
-            return;
-        }
-        float speed = Mathf.Lerp(minimumArrowSpeed, maximumArrowSpeed, power);
-        float travelTime = Vector3.Distance(_target.transform.position, arrowOrigin) /
-            Mathf.Max(.01f, speed);
-        // A small lead guide, not auto-aim: players can always ignore this hint.
-        // Keep it slightly toward the viewer so it stays legible over the bandulan.
-        _leadMarker.position = _target.PredictCenter(travelTime) -
-            _target.transform.forward * .10f;
-        _leadMarker.gameObject.SetActive(true);
-    }
+
+
 
     private void BuildDesktopPracticeSight(Camera camera)
     {

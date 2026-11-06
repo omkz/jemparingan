@@ -124,7 +124,7 @@ public static class JemparinganEnvironmentPreviewBuilder
         // works when the user closes/reopens Unity. No reflection at runtime.
         var serialized = new SerializedObject(gameplay);
         serialized.FindProperty("useOutdoorEnvironment").boolValue = true;
-        serialized.FindProperty("arrowsPerRound").intValue = JemparinganScoreRules.OutdoorArrowCount;
+        serialized.FindProperty("arrowsPerRound").intValue = 12;
         serialized.FindProperty("outdoorTargetAnchor").objectReferenceValue = targetAnchor;
         serialized.FindProperty("outdoorArrowLifetime").floatValue = 3.0f;
         serialized.FindProperty("minimumArrowSpeed").floatValue = 20f;
