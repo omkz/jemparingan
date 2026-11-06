@@ -535,7 +535,7 @@ public class JemparinganGame : MonoBehaviour
     {
         if (useOutdoorEnvironment)
         {
-            // Keep first-person VR hints short enough to fit the readable lower panel.
+            // Keep first-person VR hints short enough for unobstructed floating text.
             if (value.StartsWith("SIAP") || value.StartsWith("Tahan klik kiri"))
                 value = "KIRI: TARIK / LEPAS   |   KANAN: BIDIK";
             else if (value.StartsWith("Tangan belum"))
@@ -629,9 +629,9 @@ public class JemparinganGame : MonoBehaviour
         var hud = new GameObject("Jemparingan HUD").transform;
         if (useOutdoorEnvironment)
         {
-            // Place all outdoor HUD copy in the upper RIGHT of the viewpoint.
+            // Keep the lightweight, text-only outdoor HUD in the upper right.
             // Bow remains left; the bandulan/aiming lane stays clear in the center.
-            // Keep this world-space board ~2.35m out, without ScreenSpaceOverlay.
+            // Keep world-space text ~2.35m out, without ScreenSpaceOverlay.
             hud.SetParent(camera.transform, false);
             hud.localPosition = new Vector3(1.25f, 0.10f, 2.35f);
             hud.localRotation = Quaternion.Euler(0f, 25f, 0f);
@@ -647,7 +647,7 @@ public class JemparinganGame : MonoBehaviour
         var help = new GameObject("Jemparingan Instructions").transform;
         if (useOutdoorEnvironment)
         {
-            // Instructions sit below the right-hand HUD and session cards,
+            // Instructions sit below the right-hand HUD,
             // not across the bow or in front of the target.
             help.SetParent(camera.transform, false);
             help.localPosition = new Vector3(1.25f, -0.60f, 2.35f);
