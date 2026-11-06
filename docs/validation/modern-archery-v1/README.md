@@ -6,6 +6,55 @@ first-person camera/input, procedural environment, arrow pool and
 gravity-based projectile. No external assets, scene regeneration, or
 separate physics system are required.
 
+## CURRENT: Modern breathing bow sway (no wind drift yet)
+
+The first-person Modern bow now has an optional, *very subtle* idle
+breathing sway. It is **viewmodel-only** and does **not** move the main
+camera, aim direction, real arrow launch origin, projectile velocity,
+gravity, wind or the target's hit plane.
+
+- Enabled by `modernSubtleBreathingSway = true` for **Modern desktop
+  V2 with reference framing only**. Inspector defaults:
+  `modernIdleSwayDegrees = 0.28` degrees and
+  `modernBreathingCycleSeconds = 4.5` seconds.
+- At idle, slow deterministic sinusoidal pitch/roll (with a tiny
+  vertical translation of at most 2.4 mm) looks like breathing and
+  arm drift, not random shaking. No Animator, GameObjects, physics
+  bodies, particles or per-frame allocations were added.
+- As LMB raises/draws the bow, sway amplitude gradually falls.
+  At draw power >=90%, or when precision aim is requested, sway
+  is **exactly zero**, guaranteeing stable physical optical-sight
+  calibration at settled full draw. No active wind drift yet.
+- On release, amplitude fades in smoothly as the bow returns toward
+  the idle pose. The existing short release recoil remains separate.
+- Changing game mode/retrying resets the fade weight. V toggles the
+  old/new viewmodel framing and restores the initial weight.
+- To A/B test, uncheck `modernSubtleBreathingSway` in the Inspector
+  or set `modernIdleSwayDegrees = 0`. This has no effect on
+  Traditional, Challenge, Classic, Quest or Modern V1.
+- **Wind is intentionally not implemented in this change.** It is
+  left as a separate future mechanic after baseline aim is tested.
+
+### Unity Play Mode checks (not yet performed)
+
+1. Enter Modern without holding LMB. Watch the grip/tip for gentle,
+   slow breathing motion with no visual jitter.
+2. Hold LMB and draw slowly. As the bow raises the sway fades to
+   zero, and at full draw the optical + holds perfectly still relative
+   to the reference aiming axis.
+3. Fire at bullseye and outer rings. Shots must land where they did
+   before; projectile launch and modern ballistic zeroing are unchanged.
+4. Repeat at different Game View aspect ratios and FPS. The idle
+   motion should stay small and smooth without obscuring the sight.
+5. Disable `modernSubtleBreathingSway` to verify an exact visual A/B.
+   Switch to the other modes and press V, R, M to ensure no sway leaks.
+6. If performance matters, use the Unity Profiler/WebGL build;
+   a pair of sine calls each active frame should be minor but no
+   measured FPS claim is made here.
+
+**Verification status:** source checks only; Unity Editor build and
+visual playtesting still needed.
+
 ## CURRENT: lightweight Modern release and impact feel
 
 This pass adds subtle shot feedback **without changing controls, camera
