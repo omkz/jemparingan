@@ -28,6 +28,12 @@ public class JemparinganGame : MonoBehaviour
     private JemparinganModernTarget[] _modernTargets;
     // Reuse the outdoor scene's 16-shot arrow and HUD pool.
     [SerializeField, Range(6, 16)] private int modernArrowCount = 12;
+    [Header("Modern progressive target challenge (3 stages)")]
+    [SerializeField] private bool modernProgressiveStages = true;
+    [SerializeField, Range(0f, .45f)] private float modernMovingTargetTravel = .26f;
+    [SerializeField, Range(.3f, 1.8f)] private float modernMovingTargetSpeed = .85f;
+    private int _modernStage;
+    private readonly int[] _modernStageObjectiveHits = new int[3];
 
     [Header("Modern first-person rig v2 (desktop visual only)")]
     [SerializeField] private bool modernViewmodelRigV2 = true;
@@ -530,22 +536,128 @@ public class JemparinganGame : MonoBehaviour
             ReturnToModeSelect();
     }
 
+    // Three chapters across the existing arrow budget. Default 12 gives
+    // exactly four arrows per stage. Customized Inspector arrow counts are
+    // divided as evenly as possible, without changing their total.
+    private int ModernStageStart(int stage)
+    {
+        return Mathf.CeilToInt(Mathf.Clamp(stage, 0, 3) *
+            arrowsPerRound / 3f);
+    }
+
+    private int ModernStageEnd(int stage)
+    {
+        return ModernStageStart(stage + 1);
+    }
+
+    private int ModernStageLength(int stage)
+    {
+        return ModernStageEnd(stage) - ModernStageStart(stage);
+    }
+
+    private int ModernStageGoal(int stage)
+    {
+        // Precision = 75% general hits; Accuracy = 50% red/gold;
+        // Moving = 50% shots landing on the moving middle board.
+        float fraction = stage == 0 ? .75f : .5f;
+        return Mathf.Max(1, Mathf.CeilToInt(ModernStageLength(stage) *
+            fraction));
+    }
+
+    private bool ModernStageGoalMet(int stage)
+    {
+        return _modernStageObjectiveHits[stage] >= ModernStageGoal(stage);
+    }
+
+    private static string ModernStageTitle(int stage)
+    {
+        return stage == 0 ? "PRECISION" :
+            stage == 1 ? "ACCURACY" : "MOVING TARGET";
+    }
+
+    private string ModernStageGoalText(int stage)
+    {
+        string goal = stage == 0 ? "HIT ANY TARGET" :
+            stage == 1 ? "HIT RED / GOLD (8+)" :
+            "HIT MOVING TARGET 2";
+        return "GOAL: " + goal + "  " +
+            _modernStageObjectiveHits[stage] + "/" +
+            ModernStageGoal(stage);
+    }
+
+    private bool AnyArrowFlying()
+    {
+        if (_arrows == null) return false;
+        for (int i = 0; i < _arrows.Length; i++)
+            if (_arrows[i] != null && _arrows[i].IsFlying)
+                return true;
+        return false;
+    }
+
+    private void AdvanceModernStage()
+    {
+        if (_modernStage >= 2) return;
+        int completed = _modernStage;
+        _modernStage++;
+        // If a player starts a new draw while an old projectile is
+        // finishing, release must not accidentally create a new shot.
+        ClearDrawState();
+        _awaitStringRelease = UsesDesktopInput() && Input.GetMouseButton(0);
+        if (_modernTargets != null && _modernTargets.Length > 1 &&
+            _modernTargets[1] != null)
+            _modernTargets[1].SetLateralMotion(_modernStage == 2,
+                modernMovingTargetTravel, modernMovingTargetSpeed);
+        ShowFeedback("STAGE " + (_modernStage + 1) + "  |  " +
+            ModernStageTitle(_modernStage) + "  |  " +
+            (ModernStageGoalMet(completed) ? "PREVIOUS GOAL CLEARED"
+                : "KEEP IMPROVING"),
+            new Color(.48f, .92f, .84f));
+        if (_stageBanner != null)
+        {
+            _stageBanner.text = "STAGE " + (_modernStage + 1) +
+                "  •  " + ModernStageTitle(_modernStage);
+            _stageBannerUntil = Time.time + 1.5f;
+        }
+        if (_audio != null && _stageSound != null)
+            _audio.PlayOneShot(_stageSound, .23f);
+        UpdateHUD();
+    }
+
     private void DrawModernInGameHUD()
     {
-        Rect hud = new Rect(16f, 16f, 314f, 140f);
+        Rect hud = new Rect(16f, 16f, 328f,
+            modernProgressiveStages ? 183f : 140f);
         GUI.Box(hud, "");
         GUIStyle title = new GUIStyle(GUI.skin.label);
         title.fontStyle = FontStyle.Bold;
         title.fontSize = 15;
-        GUI.Label(new Rect(hud.x + 12f, hud.y + 9f, 285f, 24f),
+        GUI.Label(new Rect(hud.x + 12f, hud.y + 9f, 305f, 24f),
             "MODERN ARCHERY  |  3 TARGETS", title);
-        GUI.Label(new Rect(hud.x + 12f, hud.y + 36f, 285f, 21f),
+        GUI.Label(new Rect(hud.x + 12f, hud.y + 36f, 305f, 21f),
             "Score: " + _score + "   Best: " + Mathf.Max(_previousBest, _score));
-        GUI.Label(new Rect(hud.x + 12f, hud.y + 59f, 285f, 21f),
+        GUI.Label(new Rect(hud.x + 12f, hud.y + 59f, 305f, 21f),
             "Arrows: " + Mathf.Max(0, arrowsPerRound - _shots) +
             " / " + arrowsPerRound + "   Hits: " + _hits);
-        GUI.Label(new Rect(hud.x + 12f, hud.y + 82f, 285f, 21f),
-            "Rings: 10  /  8  /  6  /  4  /  2");
+        float aimY = 103f;
+        if (modernProgressiveStages)
+        {
+            GUI.Label(new Rect(hud.x + 12f, hud.y + 82f, 305f, 21f),
+                "STAGE " + (_modernStage + 1) + "/3  " +
+                ModernStageTitle(_modernStage) + "  |  SHOT " +
+                Mathf.Clamp(_shots - ModernStageStart(_modernStage),
+                    0, ModernStageLength(_modernStage)) + "/" +
+                ModernStageLength(_modernStage));
+            GUI.Label(new Rect(hud.x + 12f, hud.y + 105f, 305f, 21f),
+                ModernStageGoalText(_modernStage));
+            GUI.Label(new Rect(hud.x + 12f, hud.y + 128f, 305f, 21f),
+                "Rings: 10 / 8 / 6 / 4 / 2");
+            aimY = 151f;
+        }
+        else
+        {
+            GUI.Label(new Rect(hud.x + 12f, hud.y + 82f, 305f, 21f),
+                "Rings: 10  /  8  /  6  /  4  /  2");
+        }
         bool precision = ModernPrecisionAimRequested();
         string aimState = precision ? "FULL DRAW - MOVE MOUSE TO AIM" :
             (!modernViewmodelRigV2 || !modernUseReferenceFraming)
@@ -553,7 +665,7 @@ public class JemparinganGame : MonoBehaviour
                 : Input.GetMouseButton(0)
                     ? "DRAWING - KEEP LMB HELD TO AIM"
                     : "READY - HOLD LMB TO DRAW AND AIM";
-        GUI.Label(new Rect(hud.x + 12f, hud.y + 103f, 300f, 21f), aimState);
+        GUI.Label(new Rect(hud.x + 12f, hud.y + aimY, 305f, 21f), aimState);
         if (precision && modernDebugCameraCrosshair)
             DrawModernDebugCrosshair();
         GUI.Label(new Rect(16f, Screen.height - 34f,
@@ -589,8 +701,9 @@ public class JemparinganGame : MonoBehaviour
     private void DrawModernResultsGUI()
     {
         float width = Mathf.Min(440f, Screen.width - 24f);
+        float height = modernProgressiveStages ? 328f : 258f;
         Rect panel = new Rect((Screen.width - width) * .5f,
-            (Screen.height - 258f) * .5f, width, 258f);
+            (Screen.height - height) * .5f, width, height);
         GUI.Box(panel, "");
         GUIStyle header = new GUIStyle(GUI.skin.label);
         header.fontSize = 21;
@@ -607,15 +720,29 @@ public class JemparinganGame : MonoBehaviour
             GUI.skin.box);
         GUI.Label(new Rect(panel.x + 12f, panel.y + 134f, width - 24f, 24f),
             "BULLSEYES  " + _bullseyes, GUI.skin.box);
+        if (modernProgressiveStages)
+        {
+            GUIStyle stageStyle = new GUIStyle(GUI.skin.label);
+            stageStyle.alignment = TextAnchor.MiddleCenter;
+            for (int stage = 0; stage < 3; stage++)
+                GUI.Label(new Rect(panel.x + 12f, panel.y + 168f +
+                    stage * 21f, width - 24f, 21f),
+                    ModernStageTitle(stage) + "  " +
+                    _modernStageObjectiveHits[stage] + "/" +
+                    ModernStageGoal(stage) +
+                    (ModernStageGoalMet(stage) ? "  CLEAR" : "  BELOW GOAL"),
+                    stageStyle);
+        }
         float buttonWidth = (width - 36f) * .5f;
-        if (GUI.Button(new Rect(panel.x + 12f, panel.y + 190f,
+        float buttonY = modernProgressiveStages ? 260f : 190f;
+        if (GUI.Button(new Rect(panel.x + 12f, panel.y + buttonY,
             buttonWidth, 44f), "RETRY (R)"))
         {
             ResetRound();
             // The UI click is not a bow draw or another projectile.
             _awaitStringRelease = UsesDesktopInput() && Input.GetMouseButton(0);
         }
-        if (GUI.Button(new Rect(panel.x + 24f + buttonWidth, panel.y + 190f,
+        if (GUI.Button(new Rect(panel.x + 24f + buttonWidth, panel.y + buttonY,
             buttonWidth, 44f), "MODES (M)"))
             ReturnToModeSelect();
     }
@@ -920,6 +1047,16 @@ public class JemparinganGame : MonoBehaviour
                 _outdoorFeedbackPanel.SetActive(false);
         }
         UpdateImpactLabel();
+        // Stage changes wait for the outgoing arrow to resolve, so the
+        // departing shot is scored with the stage in which it was fired.
+        // Do not accept a premature follow-up shot during this boundary.
+        if (IsModernMode() && modernProgressiveStages && !_roundOver &&
+            _modernStage < 2 &&
+            _shots >= ModernStageEnd(_modernStage))
+        {
+            if (AnyArrowFlying()) return;
+            AdvanceModernStage();
+        }
         if (_roundOver)
         {
             bool anyFlying = false;
@@ -1728,6 +1865,14 @@ public class JemparinganGame : MonoBehaviour
         JemparinganModernTarget target, int points)
     {
         if (!IsModernMode()) return;
+        if (modernProgressiveStages)
+        {
+            bool objectiveHit = _modernStage == 0 ||
+                (_modernStage == 1 && points >= 8) ||
+                (_modernStage == 2 && target.TargetNumber == 2);
+            if (objectiveHit)
+                _modernStageObjectiveHits[_modernStage]++;
+        }
         _hits++;
         _score += points;
         if (points == 10) _bullseyes++;
@@ -1907,7 +2052,13 @@ public class JemparinganGame : MonoBehaviour
                 _resultsDetails.text = "SCORE " + _score +
                     "  |  BEST " + _best +
                     "\nHITS " + _hits + "/" + _shots +
-                    "  |  BULLSEYES " + _bullseyes;
+                    "  |  BULLSEYES " + _bullseyes +
+                    (modernProgressiveStages
+                        ? "\nSTAGES CLEAR " +
+                            (ModernStageGoalMet(0) ? 1 : 0) +
+                            (ModernStageGoalMet(1) ? " + 1" : "") +
+                            (ModernStageGoalMet(2) ? " + 1" : "")
+                        : "");
                 _resultsHint.text = UsesDesktopInput()
                     ? "R: RETRY  |  M: MODES"
                     : "RELEASE AND HOLD STRING TO RETRY";
@@ -2041,6 +2192,9 @@ public class JemparinganGame : MonoBehaviour
         SetModernDesktopMouseControl(_modeChosen && IsModernMode());
         for (int i = 0; i < _arrows.Length; i++) _arrows[i].Cancel();
         _shots = _hits = _score = _combo = _poolCursor = 0;
+        _modernStage = 0;
+        for (int stage = 0; stage < _modernStageObjectiveHits.Length; stage++)
+            _modernStageObjectiveHits[stage] = 0;
         _bullseyes = _bestCombo = _rasaHits = _rasaBonus = 0;
         _moloHits = _janggaHits = _awakHits = 0;
         _challengeObjectiveHits = 0;
@@ -2066,7 +2220,11 @@ public class JemparinganGame : MonoBehaviour
             _target.SetSway(0f, 0f, true);
             if (_modernTargets != null)
                 foreach (JemparinganModernTarget target in _modernTargets)
-                    if (target != null) target.ResetReaction();
+                    if (target != null)
+                    {
+                        target.SetLateralMotion(false);
+                        target.ResetReaction();
+                    }
         }
         else
         {
@@ -2080,7 +2238,9 @@ public class JemparinganGame : MonoBehaviour
         HidePreview();
         if (_impactLabel != null) _impactLabel.text = "";
         _impactLabelUntil = 0f;
-        ShowFeedback(IsModernMode() ? "MODERN ARCHERY  •  RING TARGETS" :
+        ShowFeedback(IsModernMode() ? (modernProgressiveStages
+            ? "STAGE 1  |  PRECISION  |  HIT ANY TARGET"
+            : "MODERN ARCHERY  •  RING TARGETS") :
             (IsChallengeMode() ? ActiveChallengeConfig().Name.ToUpper() + "  •  FOCUS" :
             (IsTraditionalMode() ? "TRADITIONAL  •  FOCUS" : "ROUND I  •  CALM")));
         UpdateIntroMode();
@@ -2098,7 +2258,9 @@ public class JemparinganGame : MonoBehaviour
         {
             _introTitleLabel.text = "MODERN ARCHERY  /  THREE TARGET RANGE";
             _introGoalLabel.text = arrowsPerRound +
-                " ARROWS  |  RINGS: 10 / 8 / 6 / 4 / 2";
+                (modernProgressiveStages
+                    ? " ARROWS  |  PRECISION > ACCURACY > MOVING"
+                    : " ARROWS  |  RINGS: 10 / 8 / 6 / 4 / 2");
             return;
         }
         if (IsChallengeMode())
@@ -2125,7 +2287,12 @@ public class JemparinganGame : MonoBehaviour
                     "  |  HITS " + _hits + "  |  ARROWS " +
                     _shots + "/" + arrowsPerRound;
             if (_phaseLabel != null && !_finished)
-                _phaseLabel.text = "3 TARGETS  •  RINGS 10 / 8 / 6 / 4 / 2";
+                _phaseLabel.text = modernProgressiveStages
+                    ? "STAGE " + (_modernStage + 1) + "/3  •  " +
+                        ModernStageTitle(_modernStage) + "  •  " +
+                        _modernStageObjectiveHits[_modernStage] + "/" +
+                        ModernStageGoal(_modernStage)
+                    : "3 TARGETS  •  RINGS 10 / 8 / 6 / 4 / 2";
         }
         else if (IsChallengeMode())
         {
