@@ -172,6 +172,30 @@ public sealed class JemparinganModernBowSight : MonoBehaviour
         renderer.receiveShadows = false;
     }
 
+    // Only a previously calibrated, actively visible reticle can be used
+    // as a trustworthy shot ray. Returns the actual camera-to-PLUS direction
+    // AFTER the bow viewmodel has been positioned for this frame.
+    public bool HasCalibration
+    {
+        get { return _hasCalibration; }
+    }
+
+    public bool TryGetCalibratedRay(Camera camera, out Vector3 rayDirection)
+    {
+        rayDirection = Vector3.forward;
+        if (!_hasCalibration || _aperture == null || _sightRoot == null ||
+            camera == null || !_sightRoot.gameObject.activeInHierarchy)
+            return false;
+
+        Vector3 fromEye = _aperture.position - camera.transform.position;
+        float depth = Vector3.Dot(fromEye, camera.transform.forward);
+        if (depth <= camera.nearClipPlane + .02f)
+            return false;
+
+        rayDirection = fromEye.normalized;
+        return true;
+    }
+
     public void ResetCalibration()
     {
         _hasCalibration = false;
