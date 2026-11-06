@@ -606,7 +606,8 @@ public class JemparinganGame : MonoBehaviour
             if (renderer != null) renderer.enabled = visible;
     }
 
-    // Modern desktop uses a minimal IMGUI. Traditional and VR keep world-space text.
+    // Both outdoor desktop modes use the same minimal IMGUI.
+    // Non-desktop Quest paths keep their world-space labels.
     // Decorative background boards are no longer constructed anywhere.
     private void SyncWorldSpaceHudVisibility()
     {
@@ -1779,7 +1780,9 @@ public class JemparinganGame : MonoBehaviour
 
     private void ShowImpactLabel(string message, Color color)
     {
-        if (_impactLabel == null) return;
+        // Both desktop modes rely on the compact score HUD and impact VFX,
+        // not floating text in front of the target.
+        if (_impactLabel == null || UsesSharedDesktopBow()) return;
         _impactLabel.text = message;
         _impactLabel.color = color;
         _impactLabelStart = Time.time;
