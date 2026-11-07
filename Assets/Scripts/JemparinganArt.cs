@@ -5,7 +5,7 @@ using UnityEngine;
 // Reuse the same material instances to keep SRP batching effective.
 public static class JemparinganArt
 {
-    public enum Tone { DarkWood, Wood, LightWood, Gold, Brass, Red, Scarlet, Jade, Paper, Indigo, Shadow, BowTeak, BowEdge, BowLeather, BowStitch, BowBrass, BowIvory, BandulanWhite, BandulanYellow, TraditionalCloth, TraditionalTrim, TraditionalSkin }
+    public enum Tone { DarkWood, Wood, LightWood, Gold, Brass, Red, Scarlet, Jade, Paper, Indigo, Shadow, BowTeak, BowEdge, BowLeather, BowStitch, BowBrass, BowIvory, BandulanWhite, BandulanYellow, TraditionalCloth, TraditionalTrim, TraditionalSkin, ArrowSteel }
     private static readonly Dictionary<Tone, Material> Materials = new Dictionary<Tone, Material>();
 
     public static Material Material(Tone tone)
@@ -41,14 +41,23 @@ public static class JemparinganArt
             case Tone.TraditionalCloth: col = RGB(64, 57, 80); break;
             case Tone.TraditionalTrim: col = RGB(168, 124, 73); break;
             case Tone.TraditionalSkin: col = RGB(164, 119, 91); break;
+            case Tone.ArrowSteel: col = RGB(91, 101, 108); break;
             default: col = RGB(23, 30, 43); break;
         }
         if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", col);
         else if (mat.HasProperty("_Color")) mat.SetColor("_Color", col);
+        // Small, shared URP material differences: matte teak/leather and
+        // skin, slightly smoother brass. No textures or expensive shaders.
         if (mat.HasProperty("_Smoothness"))
             mat.SetFloat("_Smoothness", tone == Tone.BowLeather ||
-                tone == Tone.BowStitch ? 0.09f :
-                tone == Tone.TraditionalSkin || tone == Tone.TraditionalCloth ? .035f : .22f);
+                tone == Tone.BowStitch ? .09f :
+                tone == Tone.TraditionalSkin || tone == Tone.TraditionalCloth ? .035f :
+                tone == Tone.BowTeak || tone == Tone.BowEdge ? .13f :
+                tone == Tone.BowBrass ? .32f :
+                tone == Tone.ArrowSteel ? .46f : .22f);
+        if (mat.HasProperty("_Metallic"))
+            mat.SetFloat("_Metallic", tone == Tone.BowBrass ? .18f :
+                tone == Tone.ArrowSteel ? .65f : 0f);
         Materials[tone] = mat;
         return mat;
     }

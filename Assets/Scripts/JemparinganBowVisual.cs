@@ -7,8 +7,10 @@ using UnityEngine.Rendering;
 // Generated meshes belong to the bow root and are destroyed with it.
 public sealed class JemparinganBowVisual : MonoBehaviour
 {
-    private const int LimbSteps = 14;
-    private const int RingSides = 8;
+    // More cross-sections improve the VR close-up silhouette while keeping
+    // the bow under ~1k triangles. Generated once; never rebuilt per frame.
+    private const int LimbSteps = 20;
+    private const int RingSides = 12;
     private const float InnerY = 0.075f;
     private const float TipY = 0.65f;
     private readonly List<Mesh> _generatedMeshes = new List<Mesh>();
@@ -29,22 +31,29 @@ public sealed class JemparinganBowVisual : MonoBehaviour
     private static Vector3 LimbPoint(float t, int sign)
     {
         t = Mathf.Clamp01(t);
-        // Smooth arc in X for a visible first-person outline and a mild bend
-        // toward +Z at the tips. Symmetry keeps the bow balanced for this pass.
-        float x = 0.015f + 0.11f * Mathf.Sin(Mathf.PI * 0.90f * t);
+        // A gently recurved belly, with the original tip and grip anchors.
+        // Extra terms are zero at both ends so existing string endpoints
+        // and aiming geometry stay exactly where they were.
+        float belly = Mathf.Sin(Mathf.PI * t);
+        float x = 0.015f + 0.11f * Mathf.Sin(Mathf.PI * 0.90f * t)
+            + 0.014f * belly * belly;
         float y = sign * Mathf.Lerp(InnerY, TipY, t);
-        float z = 0.020f + 0.075f * t * t;
+        float z = 0.020f + 0.075f * t * t
+            - 0.010f * Mathf.Sin(Mathf.PI * 2f * t) * belly;
         return new Vector3(x, y, z);
     }
 
     private static float HalfWidth(float t)
     {
-        return Mathf.Lerp(0.024f, 0.009f, Mathf.Pow(t, 0.82f));
+        return Mathf.Lerp(.024f, .009f,
+            Mathf.SmoothStep(0f, 1f, Mathf.Pow(t, .9f))) +
+            .001f * Mathf.Sin(Mathf.PI * t);
     }
 
     private static float HalfDepth(float t)
     {
-        return Mathf.Lerp(0.016f, 0.008f, t);
+        return Mathf.Lerp(.016f, .008f,
+            Mathf.SmoothStep(0f, 1f, t));
     }
 
     private void BuildLimb(Transform bow, int sign)
@@ -166,23 +175,49 @@ public sealed class JemparinganBowVisual : MonoBehaviour
             bow, Vector3.zero, new Vector3(.030f, .075f, .029f),
             JemparinganArt.Tone.BowLeather);
 
-        for (int i = 0; i < 7; i++)
-        {
-            float y = -.062f + i * .0205f;
-            JemparinganArt.Part("Fine leather grip wrap " + (i + 1),
-                PrimitiveType.Cylinder, bow,
-                new Vector3(0f, y, 0f), new Vector3(.031f, .0032f, .030f),
-                JemparinganArt.Tone.BowStitch);
-            JemparinganArt.Beam("Front diagonal stitch " + (i + 1), bow,
-                new Vector3(-.019f, y - .007f, -.0312f),
-                new Vector3(.019f, y + .007f, -.0312f),
-                .0021f, JemparinganArt.Tone.BowStitch);
-        }
+        // One stitched helix replaces 14 separate ring and beam objects.
+        // It follows the leather surface without adding runtime updates.
+        AddMesh("Single stitched leather spiral", bow, BuildGripWrapMesh(),
+            JemparinganArt.Tone.BowStitch);
 
         foreach (float y in new[] {-.090f, .090f})
             JemparinganArt.Part("Muted brass grip collar", PrimitiveType.Cylinder,
                 bow, new Vector3(0f, y, 0f), new Vector3(.028f, .006f, .027f),
                 JemparinganArt.Tone.BowBrass);
+    }
+
+    private Mesh BuildGripWrapMesh()
+    {
+        // Unity's primitive cylinder has radius 0.5 before scaling.
+        // The existing leather handle is .030 x .075 x .029; keep the
+        // contact surface and original transform untouched.
+        const int segments = 120;
+        const float turns = 7f;
+        const float radiusX = .01565f;
+        const float radiusZ = .01515f;
+        const float stripeHalfWidth = .00145f;
+        var vertices = new List<Vector3>((segments + 1) * 2);
+        var uv = new List<Vector2>((segments + 1) * 2);
+        var triangles = new List<int>(segments * 6);
+        for (int i = 0; i <= segments; i++)
+        {
+            float t = i / (float)segments;
+            float angle = t * turns * Mathf.PI * 2f;
+            float x = Mathf.Sin(angle) * radiusX;
+            float z = -Mathf.Cos(angle) * radiusZ;
+            float y = Mathf.Lerp(-.066f, .066f, t);
+            vertices.Add(new Vector3(x, y - stripeHalfWidth, z));
+            vertices.Add(new Vector3(x, y + stripeHalfWidth, z));
+            uv.Add(new Vector2(0f, t * turns));
+            uv.Add(new Vector2(1f, t * turns));
+            if (i == segments) continue;
+            int n = i * 2;
+            // Up then circumferential travel: outward-facing normals.
+            Triangle(triangles, n, n + 1, n + 2);
+            Triangle(triangles, n + 1, n + 3, n + 2);
+        }
+        return NewMesh("Leather wrap | single curved ribbon", vertices,
+            uv, triangles);
     }
 
     private void BuildTips(Transform bow)

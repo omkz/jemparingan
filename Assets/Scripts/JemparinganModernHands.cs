@@ -2,14 +2,15 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-// Modern-only, lightweight LEFT-HAND first-person bow grip.
-// Built from scratch (never reusing JemparinganTraditionalArcher).
-// Deliberately no right-hand meshes, draw animations, or per-frame work.
-// Does not affect the existing bowstring, nock, shot, camera or scoring.
+// Shared desktop Traditional/Modern LEFT-HAND first-person grip.
+// Quest tracking is a separate input/visual path: this is not a VR hand rig.
+// Keep the grip contact, bowstring, nock, shot, camera and scoring unchanged.
 public sealed class JemparinganModernHands : MonoBehaviour
 {
-    private const int Sides = 9;
-    private const int SleeveRings = 11;
+    // Slightly rounder close-up silhouette, still tiny procedural geometry.
+    // Static finger meshes are built once; only the existing sleeve deforms.
+    private const int Sides = 12;
+    private const int SleeveRings = 13;
     private const float ReleaseFollowSeconds = .17f;
 
     // Hand, fingers, and sleeve remain children of the cosmetic bow.
@@ -55,7 +56,7 @@ public sealed class JemparinganModernHands : MonoBehaviour
                 new Vector3(-.040f, -.032f, -.037f),
                 new Vector3(-.027f, -.007f, -.030f),
                 new Vector3(-.025f, .022f, -.028f) },
-            new[] { .019f, .024f, .028f, .031f, .024f }, .87f);
+            new[] { .019f, .024f, .029f, .030f, .023f }, .87f);
 
         // Fingertips do not all end at the same place: the middle finger
         // reaches furthest, ring shorter, and little finger shortest.
@@ -75,12 +76,15 @@ public sealed class JemparinganModernHands : MonoBehaviour
             AddSkinnedTube("Curved grip finger " + finger, knuckle,
                 JemparinganArt.Tone.TraditionalSkin, new[] {
                     Vector3.zero,
-                    new Vector3(.018f * extension, .002f, -.006f),
-                    new Vector3(.047f * extension, .000f, -.005f),
-                    new Vector3(.066f * extension, -.003f, .012f),
-                    new Vector3(.061f * extension, -.009f, .031f),
+                    new Vector3(.014f * extension, .002f, -.006f),
+                    new Vector3(.039f * extension, .001f, -.008f),
+                    new Vector3(.059f * extension, -.001f, .002f),
+                    new Vector3(.067f * extension, -.003f, .014f),
+                    new Vector3(.062f * extension, -.009f, .031f),
                     new Vector3(.041f * extension, -.013f, .049f) },
-                new[] { .0105f, .011f, .0096f, .0084f, .0072f, .0054f },
+                // Fuller knuckles, gradual fingertip taper, same contact tip.
+                new[] { .0105f, .0115f, .0107f, .0094f, .0082f,
+                    .0068f, .0043f },
                 .91f);
         }
 
@@ -92,10 +96,11 @@ public sealed class JemparinganModernHands : MonoBehaviour
         AddSkinnedTube("Left curved thumb", _thumb,
             JemparinganArt.Tone.TraditionalSkin, new[] {
                 Vector3.zero,
-                new Vector3(.006f, -.012f, .011f),
-                new Vector3(.024f, -.011f, .029f),
+                new Vector3(.004f, -.009f, .009f),
+                new Vector3(.016f, -.014f, .019f),
+                new Vector3(.031f, -.007f, .037f),
                 new Vector3(.037f, .003f, .047f) },
-            new[] { .014f, .013f, .010f, .006f }, .88f);
+            new[] { .014f, .014f, .0115f, .009f, .0055f }, .88f);
 
         // Keep the navy cuff inserted into the skin, matching the sleeve
         // end so there is no floating wrist or exposed sleeve cap.
@@ -204,8 +209,8 @@ public sealed class JemparinganModernHands : MonoBehaviour
         renderer.receiveShadows = false;
     }
 
-    // Called after the Modern cosmetic bow has been posed, and after
-    // the gameplay string/nock has updated. Only LEFT-HAND animation here.
+    // Called after the shared desktop cosmetic bow has been posed and
+    // the gameplay string/nock updated. Only LEFT-HAND animation here.
     // Input, projectile launch, bow pose and optical sight are untouched.
     public void Present(Camera camera, bool drawing,
         float drawPower, float raisedPose)
