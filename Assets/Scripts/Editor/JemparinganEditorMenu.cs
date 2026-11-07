@@ -126,6 +126,26 @@ public static class JemparinganEditorMenu
             Check("Traditional red zone", head, ref total, ref failed);
             Check("Traditional yellow zone", neck, ref total, ref failed);
             Check("Traditional white zone", body, ref total, ref failed);
+            bool offsetImpact = target.TestShot(new Vector3(.025f, .145f, -.2f),
+                new Vector3(.025f, .145f, .2f), out bullseye);
+            Check("Traditional hit feedback uses actual impact point",
+                offsetImpact &&
+                Mathf.Abs(target.LastImpactLocal.x - .025f) < .0001f &&
+                Mathf.Abs(target.LastImpactLocal.y - .145f) < .0001f,
+                ref total, ref failed);
+            bool farMiss = !target.TestShot(new Vector3(.19f, 0f, -.2f),
+                new Vector3(.19f, 0f, .2f), out bullseye);
+            Check("Traditional missed shot clears cached impact point",
+                farMiss && target.LastImpactLocal == Vector3.zero,
+                ref total, ref failed);
+            Check("Traditional hit FX intensity follows zone score",
+                JemparinganTarget.ImpactStrength(JemparinganTarget.TraditionalZone.Molo) >
+                JemparinganTarget.ImpactStrength(JemparinganTarget.TraditionalZone.Jangga) &&
+                JemparinganTarget.ImpactStrength(JemparinganTarget.TraditionalZone.Jangga) >
+                JemparinganTarget.ImpactStrength(JemparinganTarget.TraditionalZone.Awak) &&
+                JemparinganTarget.ImpactStrength(JemparinganTarget.TraditionalZone.Awak) > 0f &&
+                JemparinganTarget.ImpactStrength(JemparinganTarget.TraditionalZone.None) == 0f,
+                ref total, ref failed);
             bool nearNeckBottom = target.TestShot(new Vector3(0f, .055f, -.2f),
                 new Vector3(0f, .055f, .2f), out bullseye) &&
                 target.LastTraditionalZone == JemparinganTarget.TraditionalZone.Jangga;
