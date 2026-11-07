@@ -2033,24 +2033,7 @@ public class JemparinganGame : MonoBehaviour
         // Nock at local Z=0, together with the bowstring bead. The shaft
         // extends forward along +Z; the whole arrow follows the drawn string.
         // Render only, with no projectile script or collision detection.
-        JemparinganArt.Part("Bamboo arrow shaft", PrimitiveType.Cylinder, root,
-            new Vector3(0f, 0f, .42f), new Vector3(.011f, .42f, .011f),
-            JemparinganArt.Tone.BowEdge, Quaternion.Euler(90f, 0f, 0f));
-        JemparinganArt.Part("Visible shaft highlight", PrimitiveType.Cube, root,
-            new Vector3(0f, .009f, .43f), new Vector3(.004f, .003f, .69f),
-            JemparinganArt.Tone.BowIvory);
-        JemparinganArt.Part("Metal arrow tip", PrimitiveType.Cylinder, root,
-            new Vector3(0f, 0f, .88f), new Vector3(.020f, .058f, .020f),
-            JemparinganArt.Tone.BowBrass, Quaternion.Euler(90f, 0f, 0f));
-        JemparinganArt.Part("Arrow nock", PrimitiveType.Sphere, root,
-            Vector3.zero, new Vector3(.016f, .016f, .025f),
-            JemparinganArt.Tone.BowIvory);
-        foreach (float x in new[] {-.026f, .026f})
-        {
-            JemparinganArt.Part("Red fletching", PrimitiveType.Cube, root,
-                new Vector3(x, 0f, .10f), new Vector3(.037f, .0035f, .135f),
-                JemparinganArt.Tone.Red, Quaternion.Euler(0f, x < 0f ? -16f : 16f, 0f));
-        }
+        JemparinganArrowVisual.Build(transform, root, false);
         UpdateNockedArrow(0f, true);
     }
 
@@ -2700,31 +2683,8 @@ public class JemparinganGame : MonoBehaviour
         {
             var obj = new GameObject("Arrow_" + (i + 1));
             obj.transform.SetParent(poolRoot, false);
-            JemparinganArt.Part("Bamboo shaft", PrimitiveType.Cylinder, obj.transform,
-                new Vector3(0, 0, .02f),
-                new Vector3(useOutdoorEnvironment ? .012f : .008f, .28f,
-                    useOutdoorEnvironment ? .012f : .008f),
-                JemparinganArt.Tone.LightWood,
-                Quaternion.Euler(90f, 0f, 0f));
-            JemparinganArt.Part("Metal tip", PrimitiveType.Cylinder, obj.transform,
-                new Vector3(0, 0, .35f),
-                new Vector3(useOutdoorEnvironment ? .021f : .017f, .035f,
-                    useOutdoorEnvironment ? .021f : .017f),
-                JemparinganArt.Tone.Gold,
-                Quaternion.Euler(90f, 0f, 0f));
-            if (useOutdoorEnvironment)
-            {
-                // Short ivory highlight and fletching read clearly on a moving
-                // arrow without adding a light, particle system or physics.
-                JemparinganArt.Part("Flying shaft highlight", PrimitiveType.Cube,
-                    obj.transform, new Vector3(0f, .012f, -.02f),
-                    new Vector3(.004f, .003f, .36f),
-                    JemparinganArt.Tone.BowIvory);
-            }
-            for (int f = -1; f <= 1; f += 2)
-                JemparinganArt.Part("Feather", PrimitiveType.Cube, obj.transform,
-                    new Vector3(f * .022f, 0, -.20f), new Vector3(.035f, .004f, .11f), JemparinganArt.Tone.Red,
-                    Quaternion.Euler(0, f * 22f, 0));
+            JemparinganArrowVisual.Build(transform, obj.transform, true,
+                useOutdoorEnvironment);
             // One subtle trail per pooled arrow; never instantiated per shot.
             var trail = obj.AddComponent<TrailRenderer>();
             // Slightly longer, wider flight streak only for the distant
