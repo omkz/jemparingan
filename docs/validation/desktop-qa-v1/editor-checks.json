@@ -1,0 +1,61 @@
+{
+  "entries": [
+    {
+      "timestampUtc": "2026-11-07T18:10:18.054317Z",
+      "message": "Joglo Polish QA: joinery triangles=144/144, joined renderers=1/1, colliders=0/0, polished materials=141, old wood/roof materials=0, shadow-free sun=True, sky=True (active=Assets/Jemparingan/EnvironmentPreview/GoldenHourSky_JogloPolish_v01.mat, expected=Assets/Jemparingan/EnvironmentPreview/GoldenHourSky_JogloPolish_v01.mat), saved scene joinery=True, scene file=/home/omz/Downloads/Jemparingan/Assets/Jemparingan/Scenes/JemparinganPlayableEnvironment_v05.unity | PASS. Visual and FPS tests remain."
+    },
+    {
+      "timestampUtc": "2026-11-07T18:10:18.09377Z",
+      "message": "Traditional hitbox checks passed (molo, jangga, awak, miss)."
+    },
+    {
+      "timestampUtc": "2026-11-07T18:10:18.221551Z",
+      "message": "Jemparingan gameplay QA v0.9 PASSED (38 deterministic rule/hitbox checks). Still requires full Play Mode testing."
+    },
+    {
+      "timestampUtc": "2026-11-07T18:10:35.1138Z",
+      "message": "Landscape polish v1: 960 rice clumps, 123 foliage accents, 7 distant mountain facets; visual-only, static combined meshes, no extra colliders or lights."
+    },
+    {
+      "timestampUtc": "2026-11-07T19:16:29.026235Z",
+      "message": "Pipeline: this build does not include the Pipeline (Project Settings > Pipeline > Runtime), so its assemblies and settings are excluded from it."
+    },
+    {
+      "timestampUtc": "2026-11-07T19:17:54.104913Z",
+      "message": "Landscape polish v1: 960 rice clumps, 123 foliage accents, 7 distant mountain facets; visual-only, static combined meshes, no extra colliders or lights."
+    },
+    {
+      "timestampUtc": "2026-11-07T19:21:00.535363Z",
+      "message": "Joglo Polish QA: joinery triangles=144/144, joined renderers=1/1, colliders=0/0, polished materials=141, old wood/roof materials=0, shadow-free sun=True, sky=True (active=Assets/Jemparingan/EnvironmentPreview/GoldenHourSky_JogloPolish_v01.mat, expected=Assets/Jemparingan/EnvironmentPreview/GoldenHourSky_JogloPolish_v01.mat), saved scene joinery=True, scene file=/home/omz/Downloads/Jemparingan/Assets/Jemparingan/Scenes/JemparinganPlayableEnvironment_v05.unity | PASS. Visual and FPS tests remain."
+    }
+  ],
+  "groundTruth": {
+    "sampledUtc": "2026-11-07T19:21:00.571105Z",
+    "ageMs": 2,
+    "compilationFailed": false,
+    "compiling": false,
+    "consoleErrors": 0,
+    "consoleWarnings": 0,
+    "consoleLogs": 2,
+    "seeded": true
+  },
+  "postFixChecks": [
+    {
+      "seq": 2450,
+      "message": "Traditional hitbox checks passed (molo, jangga, awak, miss)."
+    },
+    {
+      "seq": 2451,
+      "message": "Jemparingan gameplay QA v0.9 PASSED (38 deterministic rule/hitbox checks). Still requires full Play Mode testing."
+    }
+  ],
+  "finalGroundTruth": {
+    "compilationFailed": false,
+    "compiling": false,
+    "consoleErrors": 0,
+    "consoleWarnings": 0,
+    "cursor": 2452,
+    "playMode": "stopped",
+    "activeBuildTarget": "WebGL"
+  }
+}

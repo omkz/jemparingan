@@ -51,6 +51,7 @@ public class JemparinganTarget : MonoBehaviour
     private Transform _fxRoot;
     private Transform[] _sparks;
     private Renderer[] _sparkRenderers;
+    private Vector2[] _sparkDirections;
     private float _flashUntil;
     private float _hitAt = -1f;
     private bool _bullseye;
@@ -75,6 +76,9 @@ public class JemparinganTarget : MonoBehaviour
         _traditionalMolo = molo;
         _traditionalJangga = jangga;
         _traditionalAwak = awak;
+        // Prepare the pooled visual burst at build time instead of creating
+        // eight primitives on the first scoring hit.
+        if (_sparks == null) CreateBurst();
     }
 
 
@@ -313,10 +317,15 @@ public class JemparinganTarget : MonoBehaviour
         _fxRoot.localPosition = new Vector3(0f, 0f, -0.075f);
         _sparks = new Transform[SparkCount];
         _sparkRenderers = new Renderer[SparkCount];
+        _sparkDirections = new Vector2[SparkCount];
         for (int i = 0; i < SparkCount; i++)
         {
             var spark = JemparinganArt.Part("Spark " + i, PrimitiveType.Sphere, _fxRoot,
-                Vector3.zero, Vector3.one * 0.016f, JemparinganArt.Tone.Gold);
+                Vector3.zero, Vector3.one * .016f, JemparinganArt.Tone.Gold);
+            float angle = i * (Mathf.PI * 2f / SparkCount);
+            _sparkDirections[i] = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+            spark.transform.localRotation = Quaternion.Euler(
+                0f, 0f, i * (360f / SparkCount) - 90f);
             _sparks[i] = spark.transform;
             _sparkRenderers[i] = spark.GetComponent<Renderer>();
         }
@@ -325,16 +334,25 @@ public class JemparinganTarget : MonoBehaviour
 
     private void AnimateBurst(float progress)
     {
-        // Full gold burst for Molo; shorter, softer sparks for other zones.
-        // The original eight pooled sparks are reused without allocation.
-        float radius = Mathf.Lerp(.018f, .15f * _impactStrength, progress);
-        float size = Mathf.Lerp(.018f, .002f, progress) *
-            Mathf.Lerp(.75f, 1.15f, _impactStrength);
+        // Radial, tapering streaks are more legible than round dots. Burst
+        // length still scales by scoring zone (Molo > Jangga > Awak).
+        // Only pre-existing transforms change; no particles or allocations.
+        float t = Mathf.Clamp01(progress);
+        float spread = 1f - (1f - t) * (1f - t);
+        float radius = Mathf.Lerp(.018f, .15f * _impactStrength, spread);
+        float strength = Mathf.Lerp(.75f, 1.15f, _impactStrength);
+        float width = Mathf.Lerp(.009f, .0016f, t) * strength;
+        float length = Mathf.Lerp(.031f, .002f, t * t) * strength;
         for (int i = 0; i < _sparks.Length; i++)
         {
-            float angle = (i / (float)SparkCount) * Mathf.PI * 2f;
-            _sparks[i].localPosition = new Vector3(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius, 0f);
-            _sparks[i].localScale = Vector3.one * size;
+            Vector2 direction = _sparkDirections[i];
+            // Slight deterministic variation prevents an artificial starburst.
+            float variation = .86f + .07f * (i % 3);
+            _sparks[i].localPosition = new Vector3(
+                direction.x * radius * variation,
+                direction.y * radius * variation, 0f);
+            _sparks[i].localScale = new Vector3(
+                width, length * variation, width * .7f);
         }
     }
 
