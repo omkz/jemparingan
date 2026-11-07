@@ -11,6 +11,7 @@ public sealed class JemparinganModernTarget : MonoBehaviour
     private Transform _face, _burstRoot;
     private Transform[] _sparks;
     private Renderer[] _sparkRenderers;
+    private Vector2[] _sparkDirections;
     private TextMesh _scorePopup;
     private float _impactAt = -1f;
     private float _impactStrength = 1f;
@@ -72,11 +73,16 @@ public sealed class JemparinganModernTarget : MonoBehaviour
         _burstRoot.SetParent(transform, false);
         _sparks = new Transform[SparkCount];
         _sparkRenderers = new Renderer[SparkCount];
+        _sparkDirections = new Vector2[SparkCount];
         for (int i = 0; i < SparkCount; i++)
         {
             _sparks[i] = JemparinganArt.Part("Impact spark " + i,
                 PrimitiveType.Sphere, _burstRoot, Vector3.zero,
                 Vector3.one * .02f, JemparinganArt.Tone.Gold).transform;
+            float angle = i * (Mathf.PI * 2f / SparkCount);
+            _sparkDirections[i] = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+            _sparks[i].localRotation = Quaternion.Euler(
+                0f, 0f, i * (360f / SparkCount) - 90f);
             _sparkRenderers[i] = _sparks[i].GetComponent<Renderer>();
         }
         _burstRoot.gameObject.SetActive(false);
@@ -215,16 +221,22 @@ public sealed class JemparinganModernTarget : MonoBehaviour
     private void AnimateImpact(float progress)
     {
         if (_burstRoot == null || _sparks == null) return;
-        float radius = Mathf.Lerp(.025f, .17f, progress) *
-            _impactStrength;
-        float size = Mathf.Lerp(.024f, .002f, progress) *
-            _impactStrength;
+        // Fast opening, gentle settling. Slender, radial impact streaks
+        // remain in the existing eight pooled sphere renderers.
+        float t = Mathf.Clamp01(progress);
+        float spread = 1f - (1f - t) * (1f - t);
+        float radius = Mathf.Lerp(.025f, .17f, spread) * _impactStrength;
+        float width = Mathf.Lerp(.011f, .0016f, t) * _impactStrength;
+        float length = Mathf.Lerp(.038f, .002f, t * t) * _impactStrength;
         for (int i = 0; i < _sparks.Length; i++)
         {
-            float angle = i * (Mathf.PI * 2f / SparkCount);
+            Vector2 direction = _sparkDirections[i];
+            float variation = .86f + .07f * (i % 3);
             _sparks[i].localPosition = new Vector3(
-                Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius, 0f);
-            _sparks[i].localScale = Vector3.one * size;
+                direction.x * radius * variation,
+                direction.y * radius * variation, 0f);
+            _sparks[i].localScale = new Vector3(
+                width, length * variation, width * .7f);
         }
         if (_impactMarker != null)
             _impactMarker.transform.localScale = new Vector3(
