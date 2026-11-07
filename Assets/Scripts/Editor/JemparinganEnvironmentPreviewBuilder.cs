@@ -18,6 +18,9 @@ public static class JemparinganEnvironmentPreviewBuilder
     private const string MaterialFolder = AssetRoot + "/Materials";
     private const string MeshFolder = AssetRoot + "/Meshes";
     private const string TargetName = "Preview Bandulan | movable target";
+    private const string PendopoName =
+        "01 | Joglo pendopo - saka guru, tumpang sari, brunjung";
+    private const string JoineryName = "G | Joglo polish v1 - joined timber details";
     // A little deeper inside the pavilion makes the overhead joglo/eaves visible
     // while still preserving a clear view of the bandulan and distant landscape.
     private const float SeatZ = 1.25f;
@@ -33,6 +36,199 @@ public static class JemparinganEnvironmentPreviewBuilder
     public static void CreatePlayablePreview()
     {
         CreateEnvironment(true);
+    }
+
+
+    // Unlike the scene-generation commands, this updates the CURRENT v2/v5
+    // scene in place. No new scene, no overwrite, no gameplay objects touched.
+    [MenuItem("Tools/Jemparingan/Environment/Apply Joglo + Lighting Polish v1")]
+    public static void ApplyJogloPolish()
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode)
+        {
+            Debug.LogWarning("Stop Play Mode before applying Joglo Polish.");
+            return;
+        }
+        Scene scene = SceneManager.GetActiveScene();
+        if (!scene.IsValid() || !scene.isLoaded ||
+            (scene.path != ScenePath && scene.path != PlayableScenePath))
+        {
+            Debug.LogError("Open the existing Joglo Preview v2 or Playable Environment v5 scene first.");
+            return;
+        }
+
+        Transform pendopo = null;
+        Light sun = null;
+        foreach (GameObject root in scene.GetRootGameObjects())
+        {
+            if (root.name == PendopoName) pendopo = root.transform;
+            if (root.name == "Sun | warm afternoon - preview only")
+                sun = root.GetComponent<Light>();
+        }
+        if (pendopo == null)
+        {
+            Debug.LogError("The existing joglo root is missing. Nothing changed.");
+            return;
+        }
+        EnsureFolder(AssetRoot);
+        EnsureFolder(MaterialFolder);
+        EnsureFolder(MeshFolder);
+        Materials.Clear();
+
+        int replaced = RemapJogloMaterials(pendopo);
+        bool added = AddJogloJoinery(pendopo, true);
+        if (sun != null)
+        {
+            Undo.RecordObject(sun, "Polish joglo afternoon sunlight");
+            Undo.RecordObject(sun.transform, "Polish joglo sunlight direction");
+            ConfigureSun(sun);
+        }
+        ConfigureAtmosphere();
+        CreateGoldenHourSkybox();
+        AssetDatabase.SaveAssets();
+        EditorSceneManager.MarkSceneDirty(scene);
+        Debug.Log("Joglo Polish v1 applied to the open scene: material changes=" +
+            replaced + ", joined timber mesh added=" + added +
+            ". No scene regenerated; review Game view, then save with Ctrl+S.");
+    }
+
+    [MenuItem("Tools/Jemparingan/Environment/Validate Joglo Polish v1")]
+    public static void ValidateJogloPolish()
+    {
+        Scene scene = SceneManager.GetActiveScene();
+        if (!scene.IsValid() || !scene.isLoaded ||
+            (scene.path != ScenePath && scene.path != PlayableScenePath))
+        {
+            Debug.LogError("Open the saved Joglo Preview or Playable v5 scene to validate polish.");
+            return;
+        }
+        Transform pendopo = null;
+        foreach (GameObject root in scene.GetRootGameObjects())
+            if (root.name == PendopoName) pendopo = root.transform;
+        if (pendopo == null)
+        {
+            Debug.LogError("Joglo polish QA: pendopo root not found.");
+            return;
+        }
+        Transform details = pendopo.Find(JoineryName);
+        MeshFilter filter = details != null
+            ? details.GetComponentInChildren<MeshFilter>(true) : null;
+        MeshRenderer detailRenderer = details != null
+            ? details.GetComponentInChildren<MeshRenderer>(true) : null;
+        int triangles = filter != null && filter.sharedMesh != null
+            ? filter.sharedMesh.triangles.Length / 3 : 0;
+        int joinedRenderers = details != null
+            ? details.GetComponentsInChildren<MeshRenderer>(true).Length : 0;
+        int colliders = details != null
+            ? details.GetComponentsInChildren<Collider>(true).Length : -1;
+        bool jointMesh = triangles == 144 && joinedRenderers == 1 &&
+            detailRenderer != null && colliders == 0 &&
+            detailRenderer.shadowCastingMode == ShadowCastingMode.Off;
+        int polished = 0, oldFinish = 0;
+        foreach (MeshRenderer renderer in
+            pendopo.GetComponentsInChildren<MeshRenderer>(true))
+        {
+            if (renderer.sharedMaterial == null) continue;
+            string name = renderer.sharedMaterial.name;
+            if (name.EndsWith("_JogloPolish_v01", StringComparison.Ordinal))
+                polished++;
+            if (name == "Jemparingan_Preview_Teak" ||
+                name == "Jemparingan_Preview_Dark_Teak" ||
+                name == "Jemparingan_Preview_Clay_Roof")
+                oldFinish++;
+        }
+        bool sunOK = RenderSettings.sun != null &&
+            RenderSettings.sun.shadows == LightShadows.None;
+        bool skyOK = RenderSettings.skybox != null &&
+            RenderSettings.skybox.name.Contains("Joglo Polish");
+        bool passed = jointMesh && polished > 0 && oldFinish == 0 &&
+            sunOK && skyOK;
+        string report = "Joglo Polish QA: joinery triangles=" + triangles +
+            "/144, joined renderers=" + joinedRenderers +
+            "/1, colliders=" + colliders +
+            "/0, polished materials=" + polished +
+            ", old wood/roof materials=" + oldFinish +
+            ", shadow-free sun=" + sunOK + ", sky=" + skyOK;
+        if (passed) Debug.Log(report + " | PASS. Visual and FPS tests remain.");
+        else Debug.LogError(report + " | FAIL. Apply Joglo + Lighting Polish v1.");
+    }
+
+    // Optional Play Mode QA for the automatically created landscape overlay.
+    // The overlay is generated by JemparinganLandscapePolish after scene load.
+    [MenuItem("Tools/Jemparingan/Environment/Validate Landscape Polish v1")]
+    public static void ValidateLandscapePolish()
+    {
+        if (!EditorApplication.isPlaying)
+        {
+            Debug.LogWarning("Landscape Polish QA runs in Play Mode; the visuals are built automatically.");
+            return;
+        }
+
+        Scene scene = SceneManager.GetActiveScene();
+        Transform landscape = null, horizon = null;
+        foreach (GameObject root in scene.GetRootGameObjects())
+        {
+            if (root.name == "03 | Rice fields, bamboo and trees")
+                landscape = root.transform;
+            if (root.name == "04 | Distant mountains and clouds")
+                horizon = root.transform;
+        }
+        if (landscape == null || horizon == null)
+        {
+            Debug.LogError("Landscape Polish QA: v5 environment roots are not present.");
+            return;
+        }
+
+        Transform fields = landscape.Find(JemparinganLandscapePolish.FieldDetailName);
+        Transform mountains = horizon.Find(JemparinganLandscapePolish.HorizonDetailName);
+        if (fields == null || mountains == null)
+        {
+            Debug.LogError("Landscape Polish QA: overlay is missing. Open Playable v5 and enter Play Mode.");
+            return;
+        }
+
+        int fieldRenderers = fields.GetComponentsInChildren<MeshRenderer>(true).Length;
+        int ridgeRenderers = mountains.GetComponentsInChildren<MeshRenderer>(true).Length;
+        int triangles = 0;
+        float closestRiceX = float.MaxValue;
+        bool shadowsOff = true;
+        foreach (Transform group in new[] { fields, mountains })
+        {
+            foreach (MeshRenderer renderer in group.GetComponentsInChildren<MeshRenderer>(true))
+                shadowsOff &= renderer.shadowCastingMode == ShadowCastingMode.Off &&
+                    !renderer.receiveShadows;
+            foreach (MeshFilter filter in group.GetComponentsInChildren<MeshFilter>(true))
+            {
+                if (filter.sharedMesh == null) continue;
+                triangles += filter.sharedMesh.triangles.Length / 3;
+                if (!filter.name.StartsWith("Batched rice blades | ", StringComparison.Ordinal))
+                    continue;
+                foreach (Vector3 vertex in filter.sharedMesh.vertices)
+                    closestRiceX = Mathf.Min(closestRiceX, Mathf.Abs(vertex.x));
+            }
+        }
+
+        int extraColliders = fields.GetComponentsInChildren<Collider>(true).Length +
+            mountains.GetComponentsInChildren<Collider>(true).Length;
+        int extraLights = fields.GetComponentsInChildren<Light>(true).Length +
+            mountains.GetComponentsInChildren<Light>(true).Length;
+        int extraCameras = fields.GetComponentsInChildren<Camera>(true).Length +
+            mountains.GetComponentsInChildren<Camera>(true).Length;
+        int owners = fields.GetComponentsInChildren<JemparinganLandscapeMeshLifetime>(true).Length +
+            mountains.GetComponentsInChildren<JemparinganLandscapeMeshLifetime>(true).Length;
+
+        bool passed = fieldRenderers == 4 && ridgeRenderers == 1 &&
+            triangles >= 7400 && triangles <= 8800 &&
+            closestRiceX >= 5f && shadowsOff && owners == 2 &&
+            extraColliders == 0 && extraLights == 0 && extraCameras == 0;
+        string report = "Landscape Polish QA: renderers=" + fieldRenderers +
+            "+ " + ridgeRenderers + ", triangles=" + triangles +
+            ", closest rice |x|=" + closestRiceX.ToString("F2") +
+            "m, mesh owners=" + owners + ", colliders=" + extraColliders +
+            ", lights=" + extraLights + ", cameras=" + extraCameras +
+            ", shadows off=" + shadowsOff;
+        if (passed) Debug.Log(report + " | PASS. Visual and FPS checks still required.");
+        else Debug.LogError(report + " | FAIL. Inspect generated landscape groups.");
     }
 
     private static void CreateEnvironment(bool playable)
@@ -69,7 +265,7 @@ public static class JemparinganEnvironmentPreviewBuilder
             CreateLight();
             CreateGoldenHourSkybox();
 
-            var pendopo = Group("01 | Joglo pendopo - saka guru, tumpang sari, brunjung", null);
+            var pendopo = Group(PendopoName, null);
             BuildPendopo(pendopo);
             var courtyard = Group("02 | Archery courtyard and 30m lane", null);
             BuildCourtyard(courtyard);
@@ -124,7 +320,7 @@ public static class JemparinganEnvironmentPreviewBuilder
         // works when the user closes/reopens Unity. No reflection at runtime.
         var serialized = new SerializedObject(gameplay);
         serialized.FindProperty("useOutdoorEnvironment").boolValue = true;
-        serialized.FindProperty("arrowsPerRound").intValue = JemparinganScoreRules.OutdoorArrowCount;
+        serialized.FindProperty("arrowsPerRound").intValue = 12;
         serialized.FindProperty("outdoorTargetAnchor").objectReferenceValue = targetAnchor;
         serialized.FindProperty("outdoorArrowLifetime").floatValue = 3.0f;
         serialized.FindProperty("minimumArrowSpeed").floatValue = 20f;
@@ -309,14 +505,16 @@ public static class JemparinganEnvironmentPreviewBuilder
         RenderSettings.skybox = null;
         RenderSettings.fog = true;
         RenderSettings.fogMode = FogMode.Linear;
-        RenderSettings.fogColor = new Color(0.74f, 0.78f, 0.72f);
-        RenderSettings.fogStartDistance = 75f;
-        RenderSettings.fogEndDistance = 210f;
+        // Golden-hour warmth at the wood faces, cooler open-air sky.
+        // No extra dynamic lights, post processing or realtime shadows.
+        RenderSettings.fogColor = new Color(.72f, .75f, .71f);
+        RenderSettings.fogStartDistance = 78f;
+        RenderSettings.fogEndDistance = 205f;
         RenderSettings.ambientMode = AmbientMode.Trilight;
-        RenderSettings.ambientSkyColor = new Color(0.72f, 0.79f, 0.90f);
-        RenderSettings.ambientEquatorColor = new Color(0.92f, 0.78f, 0.63f);
-        RenderSettings.ambientGroundColor = new Color(0.35f, 0.38f, 0.30f);
-        RenderSettings.ambientIntensity = 0.95f;
+        RenderSettings.ambientSkyColor = new Color(.73f, .78f, .87f);
+        RenderSettings.ambientEquatorColor = new Color(.88f, .75f, .62f);
+        RenderSettings.ambientGroundColor = new Color(.36f, .36f, .32f);
+        RenderSettings.ambientIntensity = .95f;
     }
 
     private static void CreateCamera()
@@ -341,18 +539,24 @@ public static class JemparinganEnvironmentPreviewBuilder
     {
         var go = new GameObject("Sun | warm afternoon - preview only");
         var light = go.AddComponent<Light>();
+        ConfigureSun(light);
+    }
+
+    private static void ConfigureSun(Light light)
+    {
         light.type = LightType.Directional;
-        light.color = new Color(1.0f, 0.84f, 0.66f);
-        light.intensity = 1.32f;
-        // No realtime shadows during initial scene layout validation.
+        light.color = new Color(1f, .87f, .72f);
+        light.intensity = 1.28f;
+        // No realtime shadows; Quest budgets matter more than dramatic beams.
         light.shadows = LightShadows.None;
-        go.transform.rotation = Quaternion.Euler(48f, -40f, 0f);
+        light.transform.rotation = Quaternion.Euler(46f, -37f, 0f);
         RenderSettings.sun = light;
     }
 
     private static void CreateGoldenHourSkybox()
     {
-        const string skyPath = AssetRoot + "/GoldenHourSky_v03.mat";
+        // Versioned asset: leave the original v3 skybox untouched.
+        const string skyPath = AssetRoot + "/GoldenHourSky_JogloPolish_v01.mat";
         Material sky = AssetDatabase.LoadAssetAtPath<Material>(skyPath);
         if (sky == null)
         {
@@ -364,12 +568,12 @@ public static class JemparinganEnvironmentPreviewBuilder
                 return;
             }
 
-            sky = new Material(shader) { name = "Jemparingan Golden Hour Sky v3" };
-            sky.SetColor("_SkyTint", new Color(.53f, .64f, .83f));
-            sky.SetColor("_GroundColor", new Color(.62f, .53f, .43f));
-            sky.SetFloat("_AtmosphereThickness", 1.15f);
-            sky.SetFloat("_Exposure", 1.10f);
-            sky.SetFloat("_SunSize", 0.035f);
+            sky = new Material(shader) { name = "Jemparingan Golden Hour | Joglo Polish v1" };
+            sky.SetColor("_SkyTint", new Color(.58f, .68f, .82f));
+            sky.SetColor("_GroundColor", new Color(.60f, .52f, .43f));
+            sky.SetFloat("_AtmosphereThickness", 1.12f);
+            sky.SetFloat("_Exposure", 1.08f);
+            sky.SetFloat("_SunSize", .035f);
             sky.SetFloat("_SunSizeConvergence", 4f);
             AssetDatabase.CreateAsset(sky, skyPath);
         }
@@ -382,11 +586,13 @@ public static class JemparinganEnvironmentPreviewBuilder
     // reconstruction or a final Blender art asset.
     private static void BuildPendopo(Transform parent)
     {
-        Material stone = Mat("Stone", 139, 137, 124);
-        Material teak = Mat("Teak", 113, 72, 46);
-        Material darkWood = Mat("Dark_Teak", 73, 44, 35);
-        Material trim = Mat("Amber_Trim", 174, 127, 73);
-        Material roof = Mat("Clay_Roof", 99, 58, 48);
+        // Versioned finish assets keep existing v5 scene materials intact
+        // until the explicit Apply menu is used.
+        Material stone = PolishMat("Stone", 145, 137, 124, .12f);
+        Material teak = PolishMat("Teak", 123, 82, 55, .16f);
+        Material darkWood = PolishMat("Dark_Teak", 76, 46, 36, .10f);
+        Material trim = PolishMat("Amber_Trim", 159, 116, 70, .18f);
+        Material roof = PolishMat("Clay_Roof", 109, 66, 52, .11f);
         Material mat = Mat("Woven_Mat", 173, 142, 93);
 
         var floor = Group("A | Floor, umpak, front step", parent);
@@ -452,6 +658,7 @@ public static class JemparinganEnvironmentPreviewBuilder
         RoofLayer("Brunjung high roof", roofPanels, 2.28f, 0.68f, 4.96f, 6.62f, roof);
         Block("Molo | ridge cap", roofPanels, new Vector3(0f, 6.65f, 0f),
             new Vector3(1.55f, 0.13f, 0.28f), darkWood);
+        AddJogloJoinery(parent, false);
     }
 
     private static void BuildTumpangSari(Transform parent, Material darkWood,
@@ -909,6 +1116,132 @@ public static class JemparinganEnvironmentPreviewBuilder
         renderer.sharedMaterial = material;
         renderer.shadowCastingMode = ShadowCastingMode.Off;
         renderer.receiveShadows = false;
+    }
+
+
+    private static Material PolishMat(string name, byte r, byte g, byte b,
+        float smoothness)
+    {
+        // New material path; never recolor or alter a historical v5 asset.
+        Material material = Mat(name + "_JogloPolish_v01", r, g, b);
+        if (material.HasProperty("_Smoothness") &&
+            !Mathf.Approximately(material.GetFloat("_Smoothness"), smoothness))
+        {
+            material.SetFloat("_Smoothness", smoothness);
+            EditorUtility.SetDirty(material);
+        }
+        return material;
+    }
+
+    private static int RemapJogloMaterials(Transform pendopo)
+    {
+        Material stone = PolishMat("Stone", 145, 137, 124, .12f);
+        Material teak = PolishMat("Teak", 123, 82, 55, .16f);
+        Material darkWood = PolishMat("Dark_Teak", 76, 46, 36, .10f);
+        Material trim = PolishMat("Amber_Trim", 159, 116, 70, .18f);
+        Material roof = PolishMat("Clay_Roof", 109, 66, 52, .11f);
+        int changed = 0;
+        foreach (MeshRenderer renderer in
+            pendopo.GetComponentsInChildren<MeshRenderer>(true))
+        {
+            Material old = renderer.sharedMaterial;
+            if (old == null) continue;
+            Material next = null;
+            switch (old.name)
+            {
+                case "Jemparingan_Preview_Stone": next = stone; break;
+                case "Jemparingan_Preview_Teak": next = teak; break;
+                case "Jemparingan_Preview_Dark_Teak": next = darkWood; break;
+                case "Jemparingan_Preview_Amber_Trim": next = trim; break;
+                case "Jemparingan_Preview_Clay_Roof": next = roof; break;
+            }
+            if (next == null || next == old) continue;
+            Undo.RecordObject(renderer, "Polish joglo timber and roof materials");
+            renderer.sharedMaterial = next;
+            changed++;
+        }
+        return changed;
+    }
+
+    private static bool AddJogloJoinery(Transform pendopo, bool registerUndo)
+    {
+        // Idempotent: no doubled details on a second menu invocation.
+        if (pendopo.Find(JoineryName) != null) return false;
+        const string meshPath = MeshFolder + "/Joglo_Joinery_Polish_v01.asset";
+        Mesh joined = AssetDatabase.LoadAssetAtPath<Mesh>(meshPath);
+        if (joined == null)
+        {
+            GameObject temp = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            try
+            {
+                Mesh cube = temp.GetComponent<MeshFilter>().sharedMesh;
+                var instances = new List<CombineInstance>();
+                foreach (float x in new[] {-1.72f, 1.72f})
+                foreach (float z in new[] {-1.72f, 1.72f})
+                {
+                    // 8 compact timber knee braces, attached above eye level
+                    // and away from the clear central shooting corridor.
+                    float sx = Mathf.Sign(x), sz = Mathf.Sign(z);
+                    AddJoinedBeam(instances, cube,
+                        new Vector3(x, 3.67f, z),
+                        new Vector3(x - sx * .47f, 4.27f, z),
+                        .085f, .075f);
+                    AddJoinedBeam(instances, cube,
+                        new Vector3(x, 3.67f, z),
+                        new Vector3(x, 4.27f, z - sz * .47f),
+                        .085f, .075f);
+                }
+                // Four quiet eave lines define the joglo silhouette;
+                // combined geometry stays one renderer and material slot.
+                foreach (float side in new[] {-1f, 1f})
+                {
+                    AddJoinedBlock(instances, cube,
+                        new Vector3(0f, 3.65f, side * 4.39f),
+                        new Vector3(8.12f, .042f, .045f), Quaternion.identity);
+                    AddJoinedBlock(instances, cube,
+                        new Vector3(side * 4.39f, 3.65f, 0f),
+                        new Vector3(.045f, .042f, 8.12f), Quaternion.identity);
+                }
+                joined = new Mesh { name = "Joglo polish | 8 braces + 4 eave inlays" };
+                joined.CombineMeshes(instances.ToArray(), true, true);
+                joined.RecalculateBounds();
+                AssetDatabase.CreateAsset(joined, meshPath);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(temp);
+            }
+        }
+
+        Transform group = Group(JoineryName, pendopo);
+        if (registerUndo)
+            Undo.RegisterCreatedObjectUndo(group.gameObject, "Add joglo joint details");
+        var visual = new GameObject("One joined mesh | no colliders or realtime shadows");
+        visual.transform.SetParent(group, false);
+        visual.AddComponent<MeshFilter>().sharedMesh = joined;
+        var renderer = visual.AddComponent<MeshRenderer>();
+        renderer.sharedMaterial = PolishMat("Wood_Joinery", 130, 89, 60, .12f);
+        renderer.shadowCastingMode = ShadowCastingMode.Off;
+        renderer.receiveShadows = false;
+        return true;
+    }
+
+    private static void AddJoinedBeam(List<CombineInstance> parts, Mesh cube,
+        Vector3 from, Vector3 to, float width, float depth)
+    {
+        Vector3 delta = to - from;
+        AddJoinedBlock(parts, cube, (from + to) * .5f,
+            new Vector3(width, delta.magnitude, depth),
+            Quaternion.FromToRotation(Vector3.up, delta.normalized));
+    }
+
+    private static void AddJoinedBlock(List<CombineInstance> parts, Mesh cube,
+        Vector3 position, Vector3 scale, Quaternion rotation)
+    {
+        parts.Add(new CombineInstance {
+            mesh = cube,
+            transform = Matrix4x4.TRS(position, rotation, scale)
+        });
     }
 
     private static Material Mat(string name, byte r, byte g, byte b)

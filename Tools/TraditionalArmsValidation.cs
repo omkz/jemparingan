@@ -48,14 +48,8 @@ public static class TraditionalArmsValidation
             visibleForearmLength=forearmLength,rightPresentationRenderers=rightRenderers,
             targetSway=((JemparinganTarget)Get("_target")).swayAmount,
             targetSpeed=((JemparinganTarget)Get("_target")).swaySpeed,
-            classicTarget=((GameObject)Get("_classicBandulanVisual")).activeSelf,
-            traditionalTarget=((GameObject)Get("_traditionalBandulanVisual")).activeSelf,
-            challengeInMissionSelect=(bool)Get("_challengeInMissionSelect"),
-            challengeMission=Get("_activeChallengeMission").ToString(),
-            challengeObjectiveHits=(int)Get("_challengeObjectiveHits"),
-            lastMedal=Get("_lastChallengeMedal").ToString() };
-        bool inMission = !((bool)Get("_challengeInMissionSelect"));
-        if(visible && inMission && (leftError>.0001f || arrowNockError>.0001f ||
+            traditionalTarget=((GameObject)Get("_traditionalBandulanVisual")).activeSelf };
+        if(visible && (leftError>.0001f || arrowNockError>.0001f ||
             forearmLength<.20f || forearmLength>.45f || rightRenderers!=0))
             throw new Exception("First-person presentation regression: "+result);
         Debug.Log("Traditional arm visual QA: mode="+Get("_mode")+" shots="+Get("_shots")+
@@ -69,18 +63,8 @@ public static class TraditionalArmsValidation
         Call("ChooseMode", Enum.Parse(typeof(JemparinganGame.GameMode),mode));
         await Task.Delay(120); return Snapshot();
     }
-    public static async Task<object> StartMission(string mission)
-    {
-        Time.timeScale=1f;
-        Call("StartChallengeMission", Enum.Parse(typeof(JemparinganChallengeRules.MissionId),mission));
-        await Task.Delay(120); return Snapshot();
-    }
-    public static async Task<object> ReturnToMissions()
-    {
-        Time.timeScale=1f;
-        Call("ReturnToChallengeSelect");
-        await Task.Delay(120); return Snapshot();
-    }
+
+
     public static async Task<object> ReturnToMainModes()
     {
         Time.timeScale=1f;

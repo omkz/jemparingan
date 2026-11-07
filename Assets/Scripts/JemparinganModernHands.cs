@@ -2,15 +2,32 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-// Modern-only, lightweight LEFT-HAND first-person bow grip.
-// Built from scratch (never reusing JemparinganTraditionalArcher).
-// Deliberately no right-hand meshes, draw animations, or per-frame work.
-// Does not affect the existing bowstring, nock, shot, camera or scoring.
+// Shared desktop Traditional/Modern LEFT-HAND first-person grip.
+// Quest tracking is a separate input/visual path: this is not a VR hand rig.
+// Keep the grip contact, bowstring, nock, shot, camera and scoring unchanged.
 public sealed class JemparinganModernHands : MonoBehaviour
 {
-    private const int Sides = 9;
-    private const int SleeveRings = 11;
+    // First-person polish: a more natural palm/knuckle profile, gathered fabric
+    // and a properly seated wrist cuff. Only the left hand is visible.
+    // Static finger meshes are built once; only the existing sleeve deforms.
+    private const int Sides = 12;
+    private const int SleeveRings = 13;
     private const float ReleaseFollowSeconds = .17f;
+    // Trig for the twelve sides is constant: cache it once instead of
+    // evaluating sine/cosine 156 times per visible sleeve update.
+    private static readonly Vector2[] SleeveSection = MakeRingDirections(1);
+    private static readonly Vector2[] SleevePleats = MakeRingDirections(3);
+
+    private static Vector2[] MakeRingDirections(int harmonic)
+    {
+        var directions = new Vector2[Sides];
+        for (int side = 0; side < Sides; side++)
+        {
+            float angle = harmonic * (2f * Mathf.PI * side / Sides);
+            directions[side] = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+        }
+        return directions;
+    }
 
     // Hand, fingers, and sleeve remain children of the cosmetic bow.
     // These are prebuilt meshes; animation only rotates tiny grip joints.
@@ -49,13 +66,14 @@ public sealed class JemparinganModernHands : MonoBehaviour
         // sized fingers curl around its right edge toward the front (+Z).
         // Keep the grip contact itself at local (0,0,0) while animating.
         AddSkinnedTube("Left tapered wrist into palm", _leftPalm,
-            JemparinganArt.Tone.TraditionalSkin, new[] {
+            JemparinganArt.Tone.HandSkin, new[] {
                 new Vector3(-.064f, -.080f, -.044f),
                 new Vector3(-.056f, -.057f, -.042f),
-                new Vector3(-.040f, -.032f, -.037f),
+                new Vector3(-.041f, -.034f, -.038f),
                 new Vector3(-.027f, -.007f, -.030f),
                 new Vector3(-.025f, .022f, -.028f) },
-            new[] { .019f, .024f, .028f, .031f, .024f }, .87f);
+            // Slightly wider across the knuckles, slimmer at the wrist.
+            new[] { .019f, .023f, .031f, .032f, .023f }, .87f);
 
         // Fingertips do not all end at the same place: the middle finger
         // reaches furthest, ring shorter, and little finger shortest.
@@ -73,14 +91,19 @@ public sealed class JemparinganModernHands : MonoBehaviour
             _gripFingers[finger] = knuckle;
 
             AddSkinnedTube("Curved grip finger " + finger, knuckle,
-                JemparinganArt.Tone.TraditionalSkin, new[] {
+                JemparinganArt.Tone.HandSkin, new[] {
                     Vector3.zero,
-                    new Vector3(.018f * extension, .002f, -.006f),
-                    new Vector3(.047f * extension, .000f, -.005f),
-                    new Vector3(.066f * extension, -.003f, .012f),
-                    new Vector3(.061f * extension, -.009f, .031f),
+                    new Vector3(.014f * extension, .002f, -.006f),
+                    new Vector3(.027f * extension, .003f, -.009f),
+                    new Vector3(.039f * extension, .001f, -.008f),
+                    new Vector3(.059f * extension, -.001f, .002f),
+                    new Vector3(.067f * extension, -.003f, .014f),
+                    new Vector3(.062f * extension, -.009f, .031f),
                     new Vector3(.041f * extension, -.013f, .049f) },
-                new[] { .0105f, .011f, .0096f, .0084f, .0072f, .0054f },
+                // A soft first knuckle and cleaner final taper. Contact points
+                // and the existing animation pivots stay exactly the same.
+                new[] { .0105f, .0119f, .0120f, .0109f, .0094f,
+                    .0082f, .0068f, .0043f },
                 .91f);
         }
 
@@ -90,21 +113,25 @@ public sealed class JemparinganModernHands : MonoBehaviour
         _thumb.SetParent(_leftPalm, false);
         _thumb.localPosition = new Vector3(-.030f, -.024f, -.030f);
         AddSkinnedTube("Left curved thumb", _thumb,
-            JemparinganArt.Tone.TraditionalSkin, new[] {
+            JemparinganArt.Tone.HandSkin, new[] {
                 Vector3.zero,
-                new Vector3(.006f, -.012f, .011f),
-                new Vector3(.024f, -.011f, .029f),
+                new Vector3(.004f, -.009f, .009f),
+                new Vector3(.016f, -.014f, .019f),
+                new Vector3(.031f, -.007f, .037f),
                 new Vector3(.037f, .003f, .047f) },
-            new[] { .014f, .013f, .010f, .006f }, .88f);
+            new[] { .014f, .014f, .0115f, .009f, .0055f }, .88f);
 
-        // Keep the navy cuff inserted into the skin, matching the sleeve
-        // end so there is no floating wrist or exposed sleeve cap.
-        AddSkinnedTube("Left wrist cuff | joins sleeve", _leftPalm,
+        // A narrow, gently rolled navy cuff covers the deforming sleeve's
+        // wrist end, with its inner edge buried under the hand. Same renderer
+        // and cloth material as before; no extra lace/trim objects.
+        AddSkinnedTube("Left wrist cuff | rolled fabric lip", _leftPalm,
             JemparinganArt.Tone.Indigo, new[] {
-                new Vector3(-.072f, -.103f, -.050f),
+                new Vector3(-.074f, -.108f, -.052f),
+                new Vector3(-.071f, -.101f, -.050f),
+                new Vector3(-.067f, -.091f, -.047f),
                 new Vector3(-.064f, -.083f, -.044f),
                 new Vector3(-.055f, -.068f, -.042f) },
-            new[] { .026f, .025f, .021f }, .94f);
+            new[] { .025f, .029f, .028f, .025f, .021f }, .94f);
     }
 
     private void AddSkinnedTube(string name, Transform parent,
@@ -204,8 +231,8 @@ public sealed class JemparinganModernHands : MonoBehaviour
         renderer.receiveShadows = false;
     }
 
-    // Called after the Modern cosmetic bow has been posed, and after
-    // the gameplay string/nock has updated. Only LEFT-HAND animation here.
+    // Called after the shared desktop cosmetic bow has been posed and
+    // the gameplay string/nock updated. Only LEFT-HAND animation here.
     // Input, projectile launch, bow pose and optical sight are untouched.
     public void Present(Camera camera, bool drawing,
         float drawPower, float raisedPose)
@@ -288,13 +315,25 @@ public sealed class JemparinganModernHands : MonoBehaviour
                 across = Vector3.Cross(tangent, Vector3.up);
             across.Normalize();
             Vector3 normal = Vector3.Cross(tangent, across).normalized;
-            float radius = Mathf.Lerp(startRadius, endRadius, t) / scale;
+            // Fabric eases into the cuff rather than forming a straight
+            // tapered cylinder. Folds vanish at both ends, so they cannot
+            // open a gap or move the wrist/grip contact point.
+            float smoothT = t * t * (3f - 2f * t);
+            float radius = Mathf.Lerp(startRadius, endRadius, smoothT) / scale;
+            float foldWeight = Mathf.Sin(Mathf.PI * t);
+            float gather = 1f + .045f * foldWeight *
+                Mathf.Sin(t * 3f * Mathf.PI);
+            float wrinkleAngle = t * 5f;
+            float wrinkleCos = Mathf.Cos(wrinkleAngle);
+            float wrinkleSin = Mathf.Sin(wrinkleAngle);
             for (int j = 0; j < Sides; j++)
             {
-                float a = j * Mathf.PI * 2f / Sides;
-                vertices[ring * Sides + j] = point + radius *
-                    (across * Mathf.Cos(a) +
-                     normal * Mathf.Sin(a));
+                Vector2 section = SleeveSection[j];
+                Vector2 pleat = SleevePleats[j];
+                float wrinkle = 1f + .027f * foldWeight *
+                    (pleat.x * wrinkleCos - pleat.y * wrinkleSin);
+                vertices[ring * Sides + j] = point + radius * gather * wrinkle *
+                    (across * section.x + normal * section.y);
             }
         }
         sleeve.vertices = vertices;
