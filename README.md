@@ -21,7 +21,7 @@ The scenic-only preview lives in `Assets/Jemparingan/Scenes/JemparinganEnvironme
 
 ## Validation
 
-In Unity Edit Mode, use **Tools > Jemparingan > Run Target Hitbox Checks**, then **Tools > Jemparingan > Run Gameplay QA (Traditional + Modern)**. In Play Mode, check Traditional sight alignment and the no-snap miss case, shared bow/hand pose and recoil, minimal unobstructed HUD, Traditional hit zones, stage boundaries at shots 4 and 8, 12-shot results, Modern stages, arrow camera, input and replay. These checks supplement—not replace—real Unity compilation and headset testing.
+In Unity Edit Mode, use **Tools > Jemparingan > Run Target Hitbox Checks**, then **Tools > Jemparingan > Run Gameplay QA (Traditional + Modern)**. In Play Mode, check Traditional sight alignment and the no-snap miss case, shared bow/hand pose and recoil, minimal unobstructed HUD, Traditional hit zones, stage boundaries at shots 4 and 8, 12-shot results showing Molo/Jangga/Awak totals, Modern stages, arrow camera, input and replay. These checks supplement—not replace—real Unity compilation and headset testing.
 
 See [Traditional Mode v1](docs/TRADITIONAL_MODE_V1.md) and [Environment v3–v5](docs/ENVIRONMENT_V3_V5.md) for design context.
 
