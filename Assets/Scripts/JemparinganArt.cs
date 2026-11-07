@@ -5,7 +5,7 @@ using UnityEngine;
 // Reuse the same material instances to keep SRP batching effective.
 public static class JemparinganArt
 {
-    public enum Tone { DarkWood, Wood, LightWood, Gold, Brass, Red, Scarlet, Jade, Paper, Indigo, Shadow, BowTeak, BowEdge, BowLeather, BowStitch, BowBrass, BowIvory, BandulanWhite, BandulanYellow, TraditionalCloth, TraditionalTrim, TraditionalSkin, ArrowSteel }
+    public enum Tone { DarkWood, Wood, LightWood, Gold, Brass, Red, Scarlet, Jade, Paper, Indigo, Shadow, BowTeak, BowEdge, BowLeather, BowStitch, BowBrass, BowIvory, BandulanWhite, BandulanYellow, TraditionalCloth, TraditionalTrim, TraditionalSkin, ArrowSteel, HandSkin }
     private static readonly Dictionary<Tone, Material> Materials = new Dictionary<Tone, Material>();
 
     public static Material Material(Tone tone)
@@ -42,6 +42,9 @@ public static class JemparinganArt
             case Tone.TraditionalTrim: col = RGB(168, 124, 73); break;
             case Tone.TraditionalSkin: col = RGB(164, 119, 91); break;
             case Tone.ArrowSteel: col = RGB(91, 101, 108); break;
+            // Slightly warmer/readable first-person skin, separate from the
+            // legacy Traditional body materials and existing enum values.
+            case Tone.HandSkin: col = RGB(176, 128, 99); break;
             default: col = RGB(23, 30, 43); break;
         }
         if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", col);
@@ -52,6 +55,7 @@ public static class JemparinganArt
             mat.SetFloat("_Smoothness", tone == Tone.BowLeather ||
                 tone == Tone.BowStitch ? .09f :
                 tone == Tone.TraditionalSkin || tone == Tone.TraditionalCloth ? .035f :
+                tone == Tone.HandSkin ? .065f :
                 tone == Tone.BowTeak || tone == Tone.BowEdge ? .13f :
                 tone == Tone.BowBrass ? .32f :
                 tone == Tone.ArrowSteel ? .46f : .22f);
