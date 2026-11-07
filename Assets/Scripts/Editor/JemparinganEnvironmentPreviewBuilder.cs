@@ -91,6 +91,67 @@ public static class JemparinganEnvironmentPreviewBuilder
             ". No scene regenerated; review Game view, then save with Ctrl+S.");
     }
 
+    [MenuItem("Tools/Jemparingan/Environment/Validate Joglo Polish v1")]
+    public static void ValidateJogloPolish()
+    {
+        Scene scene = SceneManager.GetActiveScene();
+        if (!scene.IsValid() || !scene.isLoaded ||
+            (scene.path != ScenePath && scene.path != PlayableScenePath))
+        {
+            Debug.LogError("Open the saved Joglo Preview or Playable v5 scene to validate polish.");
+            return;
+        }
+        Transform pendopo = null;
+        foreach (GameObject root in scene.GetRootGameObjects())
+            if (root.name == PendopoName) pendopo = root.transform;
+        if (pendopo == null)
+        {
+            Debug.LogError("Joglo polish QA: pendopo root not found.");
+            return;
+        }
+        Transform details = pendopo.Find(JoineryName);
+        MeshFilter filter = details != null
+            ? details.GetComponentInChildren<MeshFilter>(true) : null;
+        MeshRenderer detailRenderer = details != null
+            ? details.GetComponentInChildren<MeshRenderer>(true) : null;
+        int triangles = filter != null && filter.sharedMesh != null
+            ? filter.sharedMesh.triangles.Length / 3 : 0;
+        int joinedRenderers = details != null
+            ? details.GetComponentsInChildren<MeshRenderer>(true).Length : 0;
+        int colliders = details != null
+            ? details.GetComponentsInChildren<Collider>(true).Length : -1;
+        bool jointMesh = triangles == 144 && joinedRenderers == 1 &&
+            detailRenderer != null && colliders == 0 &&
+            detailRenderer.shadowCastingMode == ShadowCastingMode.Off;
+        int polished = 0, oldFinish = 0;
+        foreach (MeshRenderer renderer in
+            pendopo.GetComponentsInChildren<MeshRenderer>(true))
+        {
+            if (renderer.sharedMaterial == null) continue;
+            string name = renderer.sharedMaterial.name;
+            if (name.EndsWith("_JogloPolish_v01", StringComparison.Ordinal))
+                polished++;
+            if (name == "Jemparingan_Preview_Teak" ||
+                name == "Jemparingan_Preview_Dark_Teak" ||
+                name == "Jemparingan_Preview_Clay_Roof")
+                oldFinish++;
+        }
+        bool sunOK = RenderSettings.sun != null &&
+            RenderSettings.sun.shadows == LightShadows.None;
+        bool skyOK = RenderSettings.skybox != null &&
+            RenderSettings.skybox.name.Contains("Joglo Polish");
+        bool passed = jointMesh && polished > 0 && oldFinish == 0 &&
+            sunOK && skyOK;
+        string report = "Joglo Polish QA: joinery triangles=" + triangles +
+            "/144, joined renderers=" + joinedRenderers +
+            "/1, colliders=" + colliders +
+            "/0, polished materials=" + polished +
+            ", old wood/roof materials=" + oldFinish +
+            ", shadow-free sun=" + sunOK + ", sky=" + skyOK;
+        if (passed) Debug.Log(report + " | PASS. Visual and FPS tests remain.");
+        else Debug.LogError(report + " | FAIL. Apply Joglo + Lighting Polish v1.");
+    }
+
     private static void CreateEnvironment(bool playable)
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode)
