@@ -568,7 +568,7 @@ public class JemparinganGame : MonoBehaviour
         DrawModernPanelRect(new Rect(panel.x, panel.y, panelWidth,
             4f), ModernStageAccent(_stage));
         GUI.Label(new Rect(x, panel.y + 13f, contentWidth, 28f),
-            traditional ? "TRADITIONAL COMPLETE" : "COMPLETE", heading);
+            traditional ? "TRADITIONAL" : "COMPLETE", heading);
         GUI.Label(new Rect(x, panel.y + 48f, contentWidth, 53f),
             _score.ToString(), scoreStyle);
         GUI.Label(new Rect(x, panel.y + 107f, contentWidth, 21f),
