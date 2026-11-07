@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -19,6 +20,7 @@ public sealed class JemparinganModernBowSight : MonoBehaviour
     private Transform _supportRod;
     private Transform _mount;
     private Mesh _lensMesh;
+    private Mesh _metalMesh;
     private Material _lensMaterial;
     private bool _hasCalibration;
 
@@ -47,40 +49,114 @@ public sealed class JemparinganModernBowSight : MonoBehaviour
         _aperture.localRotation = Quaternion.identity;
         _aperture.localPosition = RestingPin;
 
-        // Compact, smooth rim. It is genuinely part of the 3D bow and
-        // follows its cant rather than being drawn at a fixed screen pixel.
-        for (int i = 0; i < RimSegments; i++)
-        {
-            float a = Mathf.PI * 2f * i / RimSegments;
-            float b = Mathf.PI * 2f * (i + 1) / RimSegments;
-            Vector3 from = new Vector3(
-                Mathf.Cos(a) * RimRadius, Mathf.Sin(a) * RimRadius, 0f);
-            Vector3 to = new Vector3(
-                Mathf.Cos(b) * RimRadius, Mathf.Sin(b) * RimRadius, 0f);
-            JemparinganArt.Beam("Thin optical rim " + i, _aperture,
-                from, to, .0013f, JemparinganArt.Tone.BowBrass);
-        }
-
+        // Previously 24 individual cylinders formed the rim and two more
+        // the reticle. Build one lightweight mesh with two shared material
+        // slots instead: a clean brass ring and fine dark crosshair.
+        // The reticle center, aperture transform and calibration stay fixed.
+        BuildMetalRimAndReticle();
         BuildGlassLens();
 
-        // A thin PLUS on the viewer-facing surface of the glass.
-        // Unlike the previous single pin, both reticle axes are visible.
-        const float line = .0112f;
-        const float viewerZ = -.0040f;
-        JemparinganArt.Beam("Optical reticle + horizontal", _aperture,
-            new Vector3(-line, 0f, viewerZ),
-            new Vector3(line, 0f, viewerZ),
-            .00078f, JemparinganArt.Tone.DarkWood);
-        JemparinganArt.Beam("Optical reticle + vertical", _aperture,
-            new Vector3(0f, -line, viewerZ),
-            new Vector3(0f, line, viewerZ),
-            .00078f, JemparinganArt.Tone.DarkWood);
+        // A tiny contrasting center bead remains a single reusable visual.
         JemparinganArt.Part("Small central reticle bead", PrimitiveType.Sphere,
-            _aperture, new Vector3(0f, 0f, viewerZ - .0005f),
+            _aperture, new Vector3(0f, 0f, -.0045f),
             Vector3.one * .0017f, JemparinganArt.Tone.Scarlet);
 
         PlaceSupport();
         _sightRoot.gameObject.SetActive(false);
+    }
+
+    // Submeshes keep the same existing brass and dark-wood URP materials.
+    // A shallow solid rim catches light without a forest of separate
+    // cylinder renderers. The glass stays behind the viewer-facing plus.
+    private void BuildMetalRimAndReticle()
+    {
+        const float innerRadius = RimRadius - .0010f;
+        const float outerRadius = RimRadius + .0010f;
+        const float frontZ = -.0013f;
+        const float backZ = .0015f;
+        const float reticleZ = -.004f;
+        const float reticleLength = .0108f;
+        const float reticleHalfWidth = .00048f;
+
+        var vertices = new List<Vector3>(RimSegments * 12 + 8);
+        var rimTriangles = new List<int>(RimSegments * 18);
+        var crossTriangles = new List<int>(12);
+        for (int i = 0; i < RimSegments; i++)
+        {
+            float a = Mathf.PI * 2f * i / RimSegments;
+            float b = Mathf.PI * 2f * (i + 1) / RimSegments;
+            float cosA = Mathf.Cos(a), sinA = Mathf.Sin(a);
+            float cosB = Mathf.Cos(b), sinB = Mathf.Sin(b);
+            Vector3 fiA = new Vector3(
+                cosA * innerRadius, sinA * innerRadius, frontZ);
+            Vector3 fiB = new Vector3(
+                cosB * innerRadius, sinB * innerRadius, frontZ);
+            Vector3 foA = new Vector3(
+                cosA * outerRadius, sinA * outerRadius, frontZ);
+            Vector3 foB = new Vector3(
+                cosB * outerRadius, sinB * outerRadius, frontZ);
+            Vector3 boA = new Vector3(
+                cosA * outerRadius, sinA * outerRadius, backZ);
+            Vector3 boB = new Vector3(
+                cosB * outerRadius, sinB * outerRadius, backZ);
+            Vector3 biA = new Vector3(
+                cosA * innerRadius, sinA * innerRadius, backZ);
+            Vector3 biB = new Vector3(
+                cosB * innerRadius, sinB * innerRadius, backZ);
+            // Front faces toward the shooter (-Z), with a back and
+            // outward edge for depth when the bow tilts.
+            AddQuad(vertices, rimTriangles, fiA, fiB, foB, foA);
+            AddQuad(vertices, rimTriangles, boA, boB, biB, biA);
+            AddQuad(vertices, rimTriangles, foA, foB, boB, boA);
+        }
+
+        AddQuad(vertices, crossTriangles,
+            new Vector3(-reticleLength, -reticleHalfWidth, reticleZ),
+            new Vector3(-reticleLength, reticleHalfWidth, reticleZ),
+            new Vector3(reticleLength, reticleHalfWidth, reticleZ),
+            new Vector3(reticleLength, -reticleHalfWidth, reticleZ));
+        AddQuad(vertices, crossTriangles,
+            new Vector3(-reticleHalfWidth, -reticleLength, reticleZ),
+            new Vector3(-reticleHalfWidth, reticleLength, reticleZ),
+            new Vector3(reticleHalfWidth, reticleLength, reticleZ),
+            new Vector3(reticleHalfWidth, -reticleLength, reticleZ));
+
+        _metalMesh = new Mesh
+            { name = "Modern sight | batched brass rim and fine plus" };
+        _metalMesh.SetVertices(vertices);
+        _metalMesh.subMeshCount = 2;
+        _metalMesh.SetTriangles(rimTriangles, 0);
+        _metalMesh.SetTriangles(crossTriangles, 1);
+        _metalMesh.RecalculateNormals();
+        _metalMesh.RecalculateBounds();
+
+        var group = new GameObject("Optical rim and plus | one renderer");
+        group.transform.SetParent(_aperture, false);
+        group.AddComponent<MeshFilter>().sharedMesh = _metalMesh;
+        var renderer = group.AddComponent<MeshRenderer>();
+        renderer.sharedMaterials = new[]
+        {
+            JemparinganArt.Material(JemparinganArt.Tone.BowBrass),
+            JemparinganArt.Material(JemparinganArt.Tone.DarkWood)
+        };
+        renderer.shadowCastingMode = ShadowCastingMode.Off;
+        renderer.receiveShadows = false;
+    }
+
+    private static void AddQuad(List<Vector3> vertices, List<int> triangles,
+        Vector3 a, Vector3 b, Vector3 c, Vector3 d)
+    {
+        int first = vertices.Count;
+        vertices.Add(a);
+        vertices.Add(b);
+        vertices.Add(c);
+        vertices.Add(d);
+        triangles.Add(first);
+        triangles.Add(first + 1);
+        triangles.Add(first + 2);
+        triangles.Add(first);
+        triangles.Add(first + 2);
+        triangles.Add(first + 3);
     }
 
     private void BuildGlassLens()
@@ -256,6 +332,7 @@ public sealed class JemparinganModernBowSight : MonoBehaviour
     private void OnDestroy()
     {
         if (_lensMesh != null) Destroy(_lensMesh);
+        if (_metalMesh != null) Destroy(_metalMesh);
         if (_lensMaterial != null) Destroy(_lensMaterial);
     }
 }
