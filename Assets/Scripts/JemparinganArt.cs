@@ -45,10 +45,16 @@ public static class JemparinganArt
         }
         if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", col);
         else if (mat.HasProperty("_Color")) mat.SetColor("_Color", col);
+        // Small, shared URP material differences: matte teak/leather and
+        // skin, slightly smoother brass. No textures or expensive shaders.
         if (mat.HasProperty("_Smoothness"))
             mat.SetFloat("_Smoothness", tone == Tone.BowLeather ||
-                tone == Tone.BowStitch ? 0.09f :
-                tone == Tone.TraditionalSkin || tone == Tone.TraditionalCloth ? .035f : .22f);
+                tone == Tone.BowStitch ? .09f :
+                tone == Tone.TraditionalSkin || tone == Tone.TraditionalCloth ? .035f :
+                tone == Tone.BowTeak || tone == Tone.BowEdge ? .13f :
+                tone == Tone.BowBrass ? .32f : .22f);
+        if (mat.HasProperty("_Metallic"))
+            mat.SetFloat("_Metallic", tone == Tone.BowBrass ? .18f : 0f);
         Materials[tone] = mat;
         return mat;
     }
