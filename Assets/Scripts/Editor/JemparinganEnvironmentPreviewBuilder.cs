@@ -85,6 +85,7 @@ public static class JemparinganEnvironmentPreviewBuilder
         }
         ConfigureAtmosphere();
         CreateGoldenHourSkybox();
+        AssetDatabase.SaveAssets();
         EditorSceneManager.MarkSceneDirty(scene);
         Debug.Log("Joglo Polish v1 applied to the open scene: material changes=" +
             replaced + ", joined timber mesh added=" + added +
@@ -1113,7 +1114,7 @@ public static class JemparinganEnvironmentPreviewBuilder
                         .085f, .075f);
                 }
                 // Four quiet eave lines define the joglo silhouette;
-                // combined geometry stays one renderer/material draw.
+                // combined geometry stays one renderer and material slot.
                 foreach (float side in new[] {-1f, 1f})
                 {
                     AddJoinedBlock(instances, cube,
