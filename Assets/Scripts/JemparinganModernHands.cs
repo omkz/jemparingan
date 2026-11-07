@@ -150,6 +150,21 @@ public sealed class JemparinganModernHands : MonoBehaviour
                 new[] { .011f, .0105f, .0092f, .0072f, .0045f },
                 .90f);
         }
+        // Ring and little fingers curl into the palm rather than the
+        // string, so the hand has all five digits without blocking aim.
+        for (int finger = 2; finger < 4; finger++)
+        {
+            float y = -.030f - (finger - 2) * .018f;
+            float shortening = finger == 2 ? 1f : .82f;
+            AddSkinnedTube("Right curled finger " + finger, _rightPalm,
+                JemparinganArt.Tone.TraditionalSkin, new[] {
+                    new Vector3(.056f, y, -.028f),
+                    new Vector3(.047f, y, -.012f),
+                    new Vector3(.038f * shortening, y - .005f, .002f),
+                    new Vector3(.047f, y - .013f, .013f),
+                    new Vector3(.057f, y - .018f, .010f) },
+                new[] { .010f, .010f, .009f, .007f, .004f }, .90f);
+        }
         AddSkinnedTube("Right opposing thumb", _rightPalm,
             JemparinganArt.Tone.TraditionalSkin, new[] {
                 new Vector3(.068f, -.041f, -.024f),
@@ -157,6 +172,13 @@ public sealed class JemparinganModernHands : MonoBehaviour
                 new Vector3(.037f, -.025f, .004f),
                 new Vector3(.015f, -.016f, .016f) },
             new[] { .014f, .013f, .010f, .005f }, .90f);
+
+        AddSkinnedTube("Right indigo wrist cuff", _rightPalm,
+            JemparinganArt.Tone.Indigo, new[] {
+                new Vector3(.094f, -.071f, -.054f),
+                new Vector3(.087f, -.062f, -.050f),
+                new Vector3(.077f, -.051f, -.046f) },
+            new[] { .028f, .027f, .023f }, .94f);
 
         Transform sleeve = new GameObject(
             "Right forearm | from bottom-right").transform;
