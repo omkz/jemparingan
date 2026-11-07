@@ -118,6 +118,58 @@ public static class JemparinganModernAim
         return true;
     }
 
+    // Share Modern's ballistic zeroing with Traditional's narrow bandulan.
+    // The visible sight ray determines the exact point on the target plane:
+    // never snap towards molo, jangga, awak or the moving target center.
+    public static bool TryZeroToBandulanSightRay(Camera camera,
+        Vector3 sightRayDirection, Vector3 origin,
+        float speed, float gravity, float maxFlightSeconds,
+        Transform bandulan, out Vector3 direction,
+        out bool reticleOnBandulan)
+    {
+        direction = camera != null ? camera.transform.forward : Vector3.forward;
+        reticleOnBandulan = false;
+        if (camera == null || bandulan == null || speed < .1f)
+            return false;
+
+        Vector3 rayOrigin = camera.transform.position;
+        Vector3 rayDirection = sightRayDirection.sqrMagnitude > .000001f
+            ? sightRayDirection.normalized : camera.transform.forward.normalized;
+        Vector3 normal = bandulan.forward;
+        float denominator = Vector3.Dot(rayDirection, normal);
+        if (Mathf.Abs(denominator) < .0001f) return false;
+        float distance = Vector3.Dot(bandulan.position - rayOrigin, normal) /
+            denominator;
+        if (distance <= .05f) return false;
+        Vector3 selectedPoint = rayOrigin + rayDirection * distance;
+        Vector3 localHit = bandulan.InverseTransformPoint(selectedPoint);
+        reticleOnBandulan = Mathf.Abs(localHit.x) <= .07f &&
+            localHit.y >= JemparinganTarget.TraditionalBottom &&
+            localHit.y <= JemparinganTarget.TraditionalTop;
+
+        Vector3 rootGoal = selectedPoint;
+        Vector3 velocity = Vector3.zero;
+        float flightTime = 0f;
+        for (int iteration = 0; iteration < 4; iteration++)
+        {
+            if (!TryLowArcVelocity(origin, rootGoal, speed, gravity,
+                out velocity, out flightTime) ||
+                flightTime > maxFlightSeconds)
+                return false;
+            Vector3 impactVelocity = velocity + Vector3.down *
+                (gravity * flightTime);
+            if (impactVelocity.sqrMagnitude < .0001f) return false;
+            rootGoal = selectedPoint -
+                impactVelocity.normalized * ArrowTipOffset;
+        }
+        if (!TryLowArcVelocity(origin, rootGoal, speed, gravity,
+            out velocity, out flightTime) ||
+            flightTime > maxFlightSeconds)
+            return false;
+        direction = velocity.normalized;
+        return true;
+    }
+
     // Solve |delta/t + up*(gravity*t/2)| = fixed launch speed.
     // u=t^2 gives (g^2/4)*u^2 + (g*delta.y-speed^2)*u +
     // |delta|^2 = 0. Choose the shorter flight (low, direct arc).

@@ -28,14 +28,21 @@ public class JemparinganGame : MonoBehaviour
     private JemparinganModernTarget[] _modernTargets;
     // Reuse the outdoor scene's 16-shot arrow and HUD pool.
     [SerializeField, Range(6, 16)] private int modernArrowCount = 12;
-    [Header("Modern progressive target challenge (3 stages)")]
+    [Header("Shared three-level progression")]
+    // Traditional keeps one bandulan. Level 3 adds a slight deterministic
+    // variation to the pendulum rhythm, not random motion.
+    [SerializeField, Range(.02f, .20f)] private float traditionalLevel2Sway = .08f;
+    [SerializeField, Range(.3f, 1.5f)] private float traditionalLevel2Speed = .75f;
+    [SerializeField, Range(.08f, .30f)] private float traditionalLevel3Sway = .16f;
+    [SerializeField, Range(.8f, 2.5f)] private float traditionalLevel3Speed = 1.12f;
+    [Header("Modern progressive targets")]
     [SerializeField] private bool modernProgressiveStages = true;
     [SerializeField, Range(0f, .45f)] private float modernMovingTargetTravel = .26f;
     [SerializeField, Range(.3f, 1.8f)] private float modernMovingTargetSpeed = .85f;
-    private int _modernStage;
+    private int _stage;
     // Desktop-only presentation timing. These do not gate aiming or shots.
-    private float _modernStageIntroStartedAt = -1f;
-    private float _modernStageIntroUntil = -1f;
+    private float _stageIntroStartedAt = -1f;
+    private float _stageIntroUntil = -1f;
 
     [Header("Modern first-person rig v2 (desktop visual only)")]
     [SerializeField] private bool modernViewmodelRigV2 = true;
@@ -115,6 +122,13 @@ public class JemparinganGame : MonoBehaviour
 
     private bool IsTraditionalMode() { return _mode == GameMode.Traditional; }
     private bool IsModernMode() { return useOutdoorEnvironment && _mode == GameMode.Modern; }
+    // Both desktop modes use the same first-person bow, hand rig, sight,
+    // input, audio and feedback. Their targets and score callbacks differ.
+    private bool UsesSharedDesktopBow()
+    {
+        return useOutdoorEnvironment && _modeChosen && UsesDesktopInput() &&
+            (IsTraditionalMode() || IsModernMode());
+    }
     private bool UsesTraditionalPresentation()
     {
         return IsTraditionalMode() || IsModernMode();
@@ -193,6 +207,10 @@ public class JemparinganGame : MonoBehaviour
     private int _shots, _hits, _score, _best, _poolCursor;
     private int _previousBest, _bullseyes;
     private int _moloHits, _janggaHits, _awakHits;
+    // Reuse the shared score HUD for a brief Traditional-only score pulse.
+    // No new text, UI object, or per-shot allocation is required.
+    private float _traditionalImpactAt = -1f;
+    private JemparinganTarget.TraditionalZone _traditionalImpactZone;
     private string _lastInfo = "";
     private int _lastPowerStep = -1;
     private bool _lastStableSignal;
@@ -219,8 +237,7 @@ public class JemparinganGame : MonoBehaviour
 
     private bool ModernPrecisionAimRequested()
     {
-        return _modeChosen && IsModernMode() && UsesDesktopInput() &&
-            modernViewmodelRigV2 && modernUseReferenceFraming &&
+        return UsesSharedDesktopBow() && modernViewmodelRigV2 && modernUseReferenceFraming &&
             !_finished && !_roundOver && !_awaitStringRelease &&
             (_arrowCam == null || !_arrowCam.IsActive) &&
             Input.GetMouseButton(0) &&
@@ -298,11 +315,8 @@ public class JemparinganGame : MonoBehaviour
             return;
         }
 
-        if (IsModernMode())
-        {
-            if (_finished) DrawModernResultsGUI();
-            else DrawModernInGameHUD();
-        }
+        if (_finished) DrawModernResultsGUI();
+        else DrawModernInGameHUD();
     }
 
     private void DrawMainModeSelectGUI()
@@ -322,7 +336,7 @@ public class JemparinganGame : MonoBehaviour
             "CHOOSE YOUR MODE", GUI.skin.box);
         float buttonWidth = (width - 45f) / 2f;
         if (GUI.Button(new Rect(panel.x + 15f, panel.y + 91f, buttonWidth, 103f),
-            "TRADITIONAL\n12 ARROWS  |  3-2-1 SCORING"))
+            "TRADITIONAL\n3 LEVELS  |  12 ARROWS\n3-2-1 SCORING"))
             ChooseMode(GameMode.Traditional);
         if (GUI.Button(new Rect(panel.x + 30f + buttonWidth, panel.y + 91f,
             buttonWidth, 103f),
@@ -337,18 +351,17 @@ public class JemparinganGame : MonoBehaviour
 
 
 
-    // Three chapters across the existing arrow budget. Default 12 gives
-    // exactly four arrows per stage. Customized Inspector arrow counts are
-    // divided as evenly as possible, without changing their total.
-    private int ModernStageStart(int stage)
+    // Shared three-level arrow budget: Traditional uses 12 (four per level),
+    // while Modern may use an Inspector-selected count.
+    private int StageStart(int stage)
     {
         return Mathf.CeilToInt(Mathf.Clamp(stage, 0, 3) *
             arrowsPerRound / 3f);
     }
 
-    private int ModernStageEnd(int stage)
+    private int StageEnd(int stage)
     {
-        return ModernStageStart(stage + 1);
+        return StageStart(stage + 1);
     }
 
     private bool AnyArrowFlying()
@@ -360,25 +373,44 @@ public class JemparinganGame : MonoBehaviour
         return false;
     }
 
-    private void AdvanceModernStage()
+    private bool UsesProgressiveStages()
     {
-        if (_modernStage >= 2) return;
-        _modernStage++;
+        return useOutdoorEnvironment && _modeChosen &&
+            (IsTraditionalMode() || (IsModernMode() && modernProgressiveStages));
+    }
+
+    private void AdvanceStage()
+    {
+        if (_stage >= 2) return;
+        _stage++;
         // If a player starts a new draw while an old projectile is
         // finishing, release must not accidentally create a new shot.
         ClearDrawState();
         _awaitStringRelease = UsesDesktopInput() && Input.GetMouseButton(0);
-        if (_modernTargets != null && _modernTargets.Length > 1 &&
-            _modernTargets[1] != null)
-            _modernTargets[1].SetLateralMotion(_modernStage == 2,
-                modernMovingTargetTravel, modernMovingTargetSpeed);
-        _modernStageIntroStartedAt = Time.time;
-        _modernStageIntroUntil = Time.time + 1.25f;
-        // Desktop IMGUI has its own concise stage card; don't duplicate
-        // it with the old world-space text at the center of the view.
+        if (IsModernMode())
+        {
+            // Preserve Modern's existing target behavior.
+            if (_modernTargets != null && _modernTargets.Length > 1 &&
+                _modernTargets[1] != null)
+                _modernTargets[1].SetLateralMotion(_stage == 2,
+                    modernMovingTargetTravel, modernMovingTargetSpeed);
+        }
+        else if (IsTraditionalMode() && _target != null)
+        {
+            // Phase and rope remain continuous; level 3 has a subtle
+            // deterministic rhythm shift in addition to the larger arc.
+            _target.SetSway(
+                _stage == 1 ? traditionalLevel2Sway : traditionalLevel3Sway,
+                _stage == 1 ? traditionalLevel2Speed : traditionalLevel3Speed,
+                false, _stage == 2 ? .08f : 0f);
+        }
+        _stageIntroStartedAt = Time.time;
+        _stageIntroUntil = Time.time + 1.25f;
+        // Both desktop modes use the same concise IMGUI stage transition.
+        // World-space banners remain only for non-desktop/Quest input.
         if (_stageBanner != null && !UsesDesktopInput())
         {
-            _stageBanner.text = "LEVEL " + (_modernStage + 1);
+            _stageBanner.text = "LEVEL " + (_stage + 1) + "/3";
             _stageBannerUntil = Time.time + 1.5f;
         }
         if (_audio != null && _stageSound != null)
@@ -426,8 +458,8 @@ public class JemparinganGame : MonoBehaviour
         float colWidth = innerWidth / 3f;
         Color white = new Color(.94f, .97f, .99f);
         Color muted = new Color(.66f, .78f, .82f);
-        Color accent = modernProgressiveStages ?
-            ModernStageAccent(_modernStage) : ModernStageAccent(0);
+        Color accent = UsesProgressiveStages() ?
+            ModernStageAccent(_stage) : ModernStageAccent(0);
         GUIStyle caption = ModernLabelStyle(11, FontStyle.Normal,
             TextAnchor.MiddleCenter, muted);
         GUIStyle number = ModernLabelStyle(25, FontStyle.Bold,
@@ -442,8 +474,8 @@ public class JemparinganGame : MonoBehaviour
             string heading = column == 0 ? "LEVEL" :
                 column == 1 ? "SCORE" : "ARROWS";
             string value = column == 0 ?
-                (modernProgressiveStages
-                    ? (_modernStage + 1) + "/3" : "RANGE") :
+                (UsesProgressiveStages()
+                    ? (_stage + 1) + "/3" : "RANGE") :
                 column == 1 ? _score.ToString() :
                 Mathf.Max(0, arrowsPerRound - _shots).ToString();
             GUI.Label(new Rect(columnX, panel.y + 9f,
@@ -452,15 +484,38 @@ public class JemparinganGame : MonoBehaviour
                 colWidth, 35f), value, number);
         }
 
+        // A short underline gives hit confirmation without text or an
+        // extra HUD widget. Zone color matches the existing bandulan FX.
+        if (IsTraditionalMode() && _traditionalImpactAt >= 0f)
+        {
+            float age = Time.time - _traditionalImpactAt;
+            if (age >= 0f && age < .46f)
+            {
+                Color impactTint = _traditionalImpactZone ==
+                    JemparinganTarget.TraditionalZone.Molo
+                    ? new Color(.99f, .80f, .34f) :
+                    _traditionalImpactZone ==
+                    JemparinganTarget.TraditionalZone.Jangga
+                        ? new Color(.97f, .78f, .45f)
+                        : new Color(.49f, .88f, .75f);
+                float fade = Mathf.Pow(1f - age / .46f, 2f);
+                DrawModernPanelRect(new Rect(
+                    panel.x + 12f + colWidth * 1.20f,
+                    panel.y + 67f, colWidth * .60f, 3f),
+                    new Color(impactTint.r, impactTint.g,
+                        impactTint.b, fade * .95f));
+            }
+        }
+
         // Three silent indicators communicate level progression with color.
-        if (modernProgressiveStages)
+        if (UsesProgressiveStages())
         {
             float gap = 5f, width = (innerWidth - 2f * gap) / 3f;
             for (int stage = 0; stage < 3; stage++)
             {
-                Color tint = stage == _modernStage ?
+                Color tint = stage == _stage ?
                     ModernStageAccent(stage) :
-                    stage < _modernStage
+                    stage < _stage
                         ? new Color(.31f, .57f, .50f, .75f)
                         : new Color(.31f, .40f, .47f, .60f);
                 DrawModernPanelRect(new Rect(panel.x + 12f +
@@ -475,17 +530,17 @@ public class JemparinganGame : MonoBehaviour
 
     private void DrawModernStageTransition()
     {
-        if (!modernProgressiveStages || _modernStageIntroStartedAt < 0f ||
-            Time.time >= _modernStageIntroUntil) return;
+        if (!UsesProgressiveStages() || _stageIntroStartedAt < 0f ||
+            Time.time >= _stageIntroUntil) return;
 
-        float fadeElapsed = Time.time - _modernStageIntroStartedAt;
+        float fadeElapsed = Time.time - _stageIntroStartedAt;
         float opacity = Mathf.Clamp01(fadeElapsed / .15f) *
-            Mathf.Clamp01((_modernStageIntroUntil - Time.time) / .28f);
+            Mathf.Clamp01((_stageIntroUntil - Time.time) / .28f);
         float bannerWidth = Mathf.Min(220f, Screen.width - 24f);
         if (bannerWidth < 160f) return;
         Rect banner = new Rect((Screen.width - bannerWidth) * .5f,
             Mathf.Max(24f, Screen.height * .12f), bannerWidth, 48f);
-        Color accent = ModernStageAccent(_modernStage);
+        Color accent = ModernStageAccent(_stage);
         DrawModernPanelRect(banner, new Color(.035f, .065f, .10f,
             .88f * opacity));
         DrawModernPanelRect(new Rect(banner.x, banner.y, 3f,
@@ -495,7 +550,7 @@ public class JemparinganGame : MonoBehaviour
             TextAnchor.MiddleCenter, new Color(.96f, .98f, 1f, opacity));
         GUI.Label(new Rect(banner.x + 8f, banner.y + 4f,
             bannerWidth - 16f, 40f),
-            "LEVEL " + (_modernStage + 1), heading);
+            "LEVEL " + (_stage + 1), heading);
     }
 
     private void DrawModernDebugCrosshair()
@@ -520,12 +575,14 @@ public class JemparinganGame : MonoBehaviour
         GUI.color = saved;
     }
 
-    // Results focus on performance, not explaining hidden level rules.
+    // Shared result layout; Traditional gets one compact scoring-zone row.
+    // Modern retains its original 250 px result card unchanged.
     private void DrawModernResultsGUI()
     {
         float panelWidth = Mathf.Min(390f, Screen.width - 24f);
         if (panelWidth < 240f) return;
-        float panelHeight = 250f;
+        bool traditional = IsTraditionalMode();
+        float panelHeight = traditional ? 290f : 250f;
         Rect panel = new Rect((Screen.width - panelWidth) * .5f,
             (Screen.height - panelHeight) * .5f,
             panelWidth, panelHeight);
@@ -540,9 +597,9 @@ public class JemparinganGame : MonoBehaviour
             TextAnchor.MiddleCenter, muted);
         DrawModernPanelRect(panel, new Color(.035f, .065f, .10f, .96f));
         DrawModernPanelRect(new Rect(panel.x, panel.y, panelWidth,
-            4f), ModernStageAccent(_modernStage));
+            4f), ModernStageAccent(_stage));
         GUI.Label(new Rect(x, panel.y + 13f, contentWidth, 28f),
-            "COMPLETE", heading);
+            traditional ? "TRADITIONAL" : "COMPLETE", heading);
         GUI.Label(new Rect(x, panel.y + 48f, contentWidth, 53f),
             _score.ToString(), scoreStyle);
         GUI.Label(new Rect(x, panel.y + 107f, contentWidth, 21f),
@@ -552,11 +609,20 @@ public class JemparinganGame : MonoBehaviour
         GUI.Label(new Rect(x, panel.y + 135f, contentWidth, 22f),
             "ACCURACY  " + accuracy + "%   •   HITS  " +
             _hits + "/" + _shots, statStyle);
+        if (traditional)
+        {
+            // A single row summarizes the three bandulan scoring zones;
+            // nothing extra appears while the player is aiming.
+            GUI.Label(new Rect(x, panel.y + 165f, contentWidth, 23f),
+                "MOLO " + _moloHits + "   •   JANGGA " + _janggaHits +
+                "   •   AWAK " + _awakHits, statStyle);
+        }
+        float buttonY = traditional ? 224f : 184f;
         float gap = 12f;
         float buttonWidth = (contentWidth - gap) * .5f;
         Color savedBackground = GUI.backgroundColor;
         GUI.backgroundColor = new Color(.46f, .83f, .71f);
-        if (GUI.Button(new Rect(x, panel.y + 184f,
+        if (GUI.Button(new Rect(x, panel.y + buttonY,
             buttonWidth, 44f), "RETRY"))
         {
             ResetRound();
@@ -564,7 +630,7 @@ public class JemparinganGame : MonoBehaviour
         }
         GUI.backgroundColor = new Color(.75f, .82f, .88f);
         if (GUI.Button(new Rect(x + buttonWidth + gap,
-            panel.y + 184f, buttonWidth, 44f), "MODES"))
+            panel.y + buttonY, buttonWidth, 44f), "MODES"))
             ReturnToModeSelect();
         GUI.backgroundColor = savedBackground;
     }
@@ -582,12 +648,14 @@ public class JemparinganGame : MonoBehaviour
             if (renderer != null) renderer.enabled = visible;
     }
 
-    // Modern desktop uses a minimal IMGUI. Traditional and VR keep world-space text.
+    // Both outdoor desktop modes use the same minimal IMGUI.
+    // Non-desktop Quest paths keep their world-space labels.
     // Decorative background boards are no longer constructed anywhere.
     private void SyncWorldSpaceHudVisibility()
     {
-        bool visible = !(useOutdoorEnvironment && UsesDesktopInput() &&
-            (!_modeChosen || IsModernMode()));
+        // The compact IMGUI HUD replaces all the first-person TextMesh panels
+        // on desktop in both modes; retain world-space UI on Quest only.
+        bool visible = !(useOutdoorEnvironment && UsesDesktopInput());
         if (_worldSpaceHudRoot != null &&
             _worldSpaceHudRoot.activeSelf != visible)
             _worldSpaceHudRoot.SetActive(visible);
@@ -656,6 +724,8 @@ public class JemparinganGame : MonoBehaviour
 
         arrowsPerRound = 12;
         _desktopTrainingEnabled = false;
+        SetModernDesktopMouseControl(UsesSharedDesktopBow());
+        SetSeatedBodyVisible(!UsesSharedDesktopBow());
         if (_traditionalBandulanVisual != null)
             _traditionalBandulanVisual.SetActive(true);
         _target.SetBody(_traditionalBandulanBody, JemparinganArt.Tone.BandulanWhite);
@@ -768,7 +838,7 @@ public class JemparinganGame : MonoBehaviour
         }
 
         if (useOutdoorEnvironment && UsesDesktopInput() &&
-            !IsModernMode() && Input.GetKeyDown(KeyCode.T))
+            !UsesSharedDesktopBow() && Input.GetKeyDown(KeyCode.T))
         {
             _desktopTrainingEnabled = !_desktopTrainingEnabled;
             ShowFeedback(_desktopTrainingEnabled
@@ -796,12 +866,11 @@ public class JemparinganGame : MonoBehaviour
         // Stage changes wait for the outgoing arrow to resolve, so the
         // departing shot is scored with the stage in which it was fired.
         // Do not accept a premature follow-up shot during this boundary.
-        if (IsModernMode() && modernProgressiveStages && !_roundOver &&
-            _modernStage < 2 &&
-            _shots >= ModernStageEnd(_modernStage))
+        if (UsesProgressiveStages() && !_roundOver &&
+            _stage < 2 && _shots >= StageEnd(_stage))
         {
             if (AnyArrowFlying()) return;
-            AdvanceModernStage();
+            AdvanceStage();
         }
         if (_roundOver)
         {
@@ -863,12 +932,12 @@ public class JemparinganGame : MonoBehaviour
             Vector3.Dot(pose.BowPosition - pose.StringPosition, aim),
             0f, maximumDraw);
         float power = Mathf.InverseLerp(minimumDraw, maximumDraw, distance);
-        _modernDrawPower = IsModernMode() ? power : 0f;
+        _modernDrawPower = UsesSharedDesktopBow() ? power : 0f;
         // A new draw takes priority over the previous arrow's recoil.
-        if (IsModernMode() && drawing) _modernReleaseFeedbackAt = -1f;
+        if (UsesSharedDesktopBow() && drawing) _modernReleaseFeedbackAt = -1f;
         // One short low-level creak per pull, not a continuously playing
         // sound or a per-frame AudioClip allocation.
-        if (IsModernMode() && modernLightweightGameFeel && UsesDesktopInput()
+        if (UsesSharedDesktopBow() && modernLightweightGameFeel
             && drawing && power >= .35f && !_modernDrawCuePlayed)
         {
             _modernDrawCuePlayed = true;
@@ -894,7 +963,7 @@ public class JemparinganGame : MonoBehaviour
             gameplayBowPosition = eye.position + aim * .70f
                 + eye.right * .15f - eye.up * .16f;
             visualBowPosition = gameplayBowPosition;
-            if (IsModernMode() && modernViewmodelRigV2)
+            if (UsesSharedDesktopBow() && modernViewmodelRigV2)
             {
                 // A game-first three-state pose, not a small static offset.
                 // Idle rests down/right. Aiming or starting the draw raises
@@ -904,7 +973,7 @@ public class JemparinganGame : MonoBehaviour
             }
         }
         float visualBowScale = 1f;
-        if (IsModernMode() && modernViewmodelRigV2 && UsesDesktopInput()
+        if (UsesSharedDesktopBow() && modernViewmodelRigV2
             && Camera.main != null)
         {
             // Approximate an independent viewmodel FOV without changing the
@@ -930,7 +999,7 @@ public class JemparinganGame : MonoBehaviour
         // Breathing is only a viewmodel pose, on top of the solved frame.
         // Never let the 3D optical + wander once the bow is almost drawn:
         // the established calibrated precision aim must remain trustworthy.
-        if (IsModernMode() && modernViewmodelRigV2 &&
+        if (UsesSharedDesktopBow() && modernViewmodelRigV2 &&
             modernUseReferenceFraming && UsesDesktopInput() &&
             modernSubtleBreathingSway)
             ApplyModernBreathingSway(drawing, power,
@@ -939,7 +1008,7 @@ public class JemparinganGame : MonoBehaviour
         // Unlike idle breathing (cosmetic only), full-draw aim wobble
         // genuinely shifts the visible +. Below, the projectile solver
         // receives that SAME eye-to-reticle ray. Never change the camera.
-        if (IsModernMode() && modernViewmodelRigV2 &&
+        if (UsesSharedDesktopBow() && modernViewmodelRigV2 &&
             modernUseReferenceFraming && UsesDesktopInput() &&
             modernUsePhysicalSight && modernAimWobble)
             ApplyModernOpticalAimWobble(drawing, power,
@@ -950,7 +1019,7 @@ public class JemparinganGame : MonoBehaviour
         // Very small, damped cosmetic release recoil. Applied ONLY to the
         // bow viewmodel after aim is resolved; it does not rotate the
         // camera, alter gameplayBowPosition, or modify projectile ballistics.
-        if (IsModernMode() && modernViewmodelRigV2 &&
+        if (UsesSharedDesktopBow() && modernViewmodelRigV2 &&
             modernLightweightGameFeel && _modernReleaseFeedbackAt >= 0f)
         {
             float elapsed = Time.time - _modernReleaseFeedbackAt;
@@ -1049,16 +1118,60 @@ public class JemparinganGame : MonoBehaviour
             }
             else
             {
-                // Original Traditional aim is unchanged.
-                Transform sightTarget = _target != null
-                    ? _target.transform : null;
-                float targetDist = sightTarget != null
-                    ? Vector3.Distance(Camera.main.transform.position,
-                        sightTarget.position) : 10f;
-                Vector3 sightFocus = Camera.main.transform.position +
-                    aim * targetDist;
-                Vector3 launchOrigin = bowOrigin + aim * .25f;
-                launchAim = (sightFocus - launchOrigin).normalized;
+                // Traditional shares the same calibrated physical sight and
+                // ballistic shot origin, but intersects its BANDULAN plane
+                // instead of Modern's circular target planes.
+                float releasePower = drawing ? power :
+                    Mathf.InverseLerp(minimumDraw, maximumDraw, _lastDraw);
+                float speed = Mathf.Lerp(minimumArrowSpeed, maximumArrowSpeed,
+                    releasePower);
+                Vector3 shotOrigin = gameplayBowPosition + aim * .25f;
+                Vector3 sightRay = aim;
+                if (modernAimWobble && modernViewmodelRigV2 &&
+                    modernUseReferenceFraming && modernUsePhysicalSight &&
+                    _modernPhysicalSight != null)
+                {
+                    if (drawing)
+                    {
+                        if (_modernPhysicalSight.TryGetCalibratedRay(
+                            Camera.main, out Vector3 calibratedRay))
+                        {
+                            _modernLastCalibratedAimRay = calibratedRay;
+                            _modernLastCalibratedAimRayValid = true;
+                            sightRay = calibratedRay;
+                        }
+                        else
+                            _modernLastCalibratedAimRayValid = false;
+                    }
+                    else if (_wasDrawing && _modernLastCalibratedAimRayValid)
+                        sightRay = _modernLastCalibratedAimRay;
+                }
+                else
+                    _modernLastCalibratedAimRayValid = false;
+
+                Vector3 correctedDirection;
+                bool sightOnBandulan;
+                if (_target != null &&
+                    JemparinganModernAim.TryZeroToBandulanSightRay(
+                        Camera.main, sightRay, shotOrigin, speed,
+                        simulatedGravity, outdoorArrowLifetime,
+                        _target.transform, out correctedDirection,
+                        out sightOnBandulan))
+                {
+                    launchAim = correctedDirection;
+                    _modernSightZeroed = sightOnBandulan;
+                }
+                else
+                {
+                    // Unreachable shots stay misses; never snap towards a
+                    // scoring zone or auto-correct the player's aim.
+                    float bandulanDistance = _target != null
+                        ? Vector3.Distance(Camera.main.transform.position,
+                            _target.transform.position) : 10f;
+                    Vector3 sightFocus =
+                        Camera.main.transform.position + sightRay * bandulanDistance;
+                    launchAim = (sightFocus - shotOrigin).normalized;
+                }
             }
         }
         UpdateDesktopPracticeSight(bowOrigin + aim * .25f,
@@ -1246,7 +1359,7 @@ public class JemparinganGame : MonoBehaviour
     private void UpdateFocusIndicator(float power)
     {
         if (_focusRoot == null || _focusRenderers == null) return;
-        bool visible = power >= .35f;
+        bool visible = power >= .35f && !UsesSharedDesktopBow();
         if (_focusRoot.gameObject.activeSelf != visible)
             _focusRoot.gameObject.SetActive(visible);
         if (!visible) { _lastFocusStep = -1; return; }
@@ -1478,15 +1591,15 @@ public class JemparinganGame : MonoBehaviour
                 OnArrowImpact, OnArrowMiss,
                 useOutdoorEnvironment ? outdoorArrowLifetime : 1.6f);
         }
-        // Follow Modern projectiles on desktop; Traditional stays in normal view.
-        bool useArrowCam = IsModernMode() && modernEveryShotArrowCam;
+        // Both desktop modes share the same cinematic projectile follow.
+        bool useArrowCam = UsesSharedDesktopBow() && modernEveryShotArrowCam;
         if (useArrowCam && UsesDesktopInput() &&
             desktopInput != null && Camera.main != null)
         {
             // Arrow Cam inherits MainCamera settings via CopyFrom. Restore
             // the original FOV before its snapshot so cinematic framing
             // stays identical to the pre-zoom gameplay baseline.
-            if (IsModernMode()) RestoreModernCameraFov();
+            if (UsesSharedDesktopBow()) RestoreModernCameraFov();
             if (_arrowCam == null)
                 _arrowCam = gameObject.AddComponent<JemparinganArrowFollowCamera>();
             // Do not steal an existing follow during an automated rapid-fire test.
@@ -1498,7 +1611,7 @@ public class JemparinganGame : MonoBehaviour
             }
         }
         _shots++;
-        if (IsModernMode() && modernLightweightGameFeel)
+        if (UsesSharedDesktopBow() && modernLightweightGameFeel)
         {
             _modernReleaseFeedbackAt = Time.time;
             if (_audio != null && _modernReleaseSound != null)
@@ -1525,7 +1638,7 @@ public class JemparinganGame : MonoBehaviour
     {
         // Ring scoring is based on where the actual flight intersects each
         // circle; the hidden bandulan must never magnetize Modern shots.
-        if (IsModernMode()) return aim;
+        if (IsModernMode() || UsesSharedDesktopBow()) return aim;
         if (_target == null || aimAssist <= 0f) return aim;
 
         if (IsDesktopTrainingAimActive())
@@ -1626,8 +1739,20 @@ public class JemparinganGame : MonoBehaviour
         else if (zone == JemparinganTarget.TraditionalZone.Awak) _awakHits++;
         _score += points;
         if (_score > _best) _best = _score;
-        _audio.PlayOneShot(zone == JemparinganTarget.TraditionalZone.Molo ?
-            _bullseyeSound : _hitSound, .50f);
+        _traditionalImpactAt = Time.time;
+        _traditionalImpactZone = zone;
+        // Emphasize a Molo hit using the existing procedural clips,
+        // without adding voices or overlapping new sound sources.
+        if (_audio != null)
+        {
+            float volume = zone == JemparinganTarget.TraditionalZone.Molo
+                ? .56f : zone == JemparinganTarget.TraditionalZone.Jangga
+                    ? .46f : .38f;
+            AudioClip impactSound = zone == JemparinganTarget.TraditionalZone.Molo
+                ? _bullseyeSound : _hitSound;
+            if (impactSound != null)
+                _audio.PlayOneShot(impactSound, volume);
+        }
         string zoneName = zone == JemparinganTarget.TraditionalZone.Molo ? "MOLO" :
             zone == JemparinganTarget.TraditionalZone.Jangga ? "JANGGA" : "AWAK";
         ShowImpactLabel("+" + points + "  " + zoneName,
@@ -1673,8 +1798,8 @@ public class JemparinganGame : MonoBehaviour
         if (_introPanel != null) _introPanel.SetActive(false);
         if (_stageBanner != null) _stageBanner.text = "";
         _stageBannerUntil = 0f;
-        _modernStageIntroStartedAt = -1f;
-        _modernStageIntroUntil = -1f;
+        _stageIntroStartedAt = -1f;
+        _stageIntroUntil = -1f;
         _replayArmed = false;
         _replayHoldStartedAt = -1f;
 
@@ -1704,12 +1829,14 @@ public class JemparinganGame : MonoBehaviour
             ? (newRecord ? "NEW BEST  |  R: RETRY  |  M: MODES"
                 : "R: RETRY  |  M: MODES")
             : "RELEASE + HOLD TO RETRY";
-        _resultsPanel.SetActive(true);
+        _resultsPanel.SetActive(!UsesDesktopInput());
     }
 
     private void ShowImpactLabel(string message, Color color)
     {
-        if (_impactLabel == null) return;
+        // Both desktop modes rely on the compact score HUD and impact VFX,
+        // not floating text in front of the target.
+        if (_impactLabel == null || UsesSharedDesktopBow()) return;
         _impactLabel.text = message;
         _impactLabel.color = color;
         _impactLabelStart = Time.time;
@@ -1752,14 +1879,16 @@ public class JemparinganGame : MonoBehaviour
         RestoreModernCameraFov();
         // Retry restores current mode's mouse scheme. Mode changes
         // already clear Modern input before switching gameplay.
-        SetModernDesktopMouseControl(_modeChosen && IsModernMode());
+        SetModernDesktopMouseControl(UsesSharedDesktopBow());
         for (int i = 0; i < _arrows.Length; i++) _arrows[i].Cancel();
         _shots = _hits = _score = _poolCursor = 0;
-        _modernStage = 0;
-        _modernStageIntroStartedAt = -1f;
-        _modernStageIntroUntil = -1f;
+        _stage = 0;
+        _stageIntroStartedAt = -1f;
+        _stageIntroUntil = -1f;
         _bullseyes = 0;
         _moloHits = _janggaHits = _awakHits = 0;
+        _traditionalImpactAt = -1f;
+        _traditionalImpactZone = JemparinganTarget.TraditionalZone.None;
         _previousBest = PlayerPrefs.GetInt(BestKey(), 0);
         _best = _previousBest;
         ClearDrawState();
@@ -1808,7 +1937,7 @@ public class JemparinganGame : MonoBehaviour
         else
         {
             _introTitleLabel.text = "JEMPARINGAN  /  TRADITIONAL";
-            _introGoalLabel.text = "12 ARROWS  |  MOLO 3  JANGGA 2  AWAK 1";
+            _introGoalLabel.text = "12 ARROWS  |  3 LEVELS  |  MOLO 3 / JANGGA 2 / AWAK 1";
         }
     }
 
@@ -1823,7 +1952,7 @@ public class JemparinganGame : MonoBehaviour
             if (_phaseLabel != null && !_finished)
                 _phaseLabel.text = UsesDesktopInput() ? "" :
                     (modernProgressiveStages
-                        ? "LEVEL " + (_modernStage + 1) + "/3" : "MODERN");
+                        ? "LEVEL " + (_stage + 1) + "/3" : "MODERN");
         }
         else
         {
@@ -1831,7 +1960,7 @@ public class JemparinganGame : MonoBehaviour
                 _scoreLabel.text = "SCORE " + _score + "  |  HITS " + _hits +
                     "  |  ARROWS " + _shots + "/" + arrowsPerRound;
             if (_phaseLabel != null && !_finished)
-                _phaseLabel.text = "TRADITIONAL  •  MATARAM-INSPIRED";
+                _phaseLabel.text = "TRADITIONAL  •  LEVEL " + (_stage + 1) + "/3";
         }
         UpdateShotPips();
     }
@@ -1857,9 +1986,9 @@ public class JemparinganGame : MonoBehaviour
     }
     private void SetInfo(string value)
     {
-        if (IsModernMode() && UsesDesktopInput())
+        if (UsesSharedDesktopBow())
         {
-            // Only the brief pre-shot intro provides instructions.
+            // No world-space instructions obstruct the bow or target.
             // Do not keep ring explanations across the aiming view.
             value = "";
         }
@@ -1880,9 +2009,9 @@ public class JemparinganGame : MonoBehaviour
     private void ShowFeedback(string msg, Color? feedbackColor = null)
     {
         if (_feedbackLabel == null) return;
-        if (IsModernMode() && UsesDesktopInput())
+        if (UsesSharedDesktopBow())
         {
-            // Modern already shows impact markers and a level transition.
+            // The compact HUD shows results without duplicate world text.
             // Avoid duplicate ARROW RELEASED, HIT, MISS and control notices.
             _feedbackLabel.text = "";
             _feedbackUntil = 0f;
@@ -2337,6 +2466,9 @@ public class JemparinganGame : MonoBehaviour
         _target.SetTraditionalZoneRenderers(molo.GetComponent<Renderer>(),
             jangga.GetComponent<Renderer>(), _traditionalBandulanBody);
         _target.SetBody(_traditionalBandulanBody, JemparinganArt.Tone.BandulanWhite);
+        // The existing suspension mesh follows the target's upper tip.
+        // No new suspension object or runtime component is created.
+        _target.AttachSuspension(_bandulanSuspension, new Vector3(0f, .69f, 0f));
         traditional.SetActive(true);
     }
 
@@ -2433,9 +2565,10 @@ public class JemparinganGame : MonoBehaviour
             HideModernHands();
             return;
         }
-        if (IsModernMode())
+        if (UsesSharedDesktopBow())
         {
-            // Explicitly NEVER use the old Traditional hand meshes for Modern.
+            // Both desktop modes share the new first-person hands without
+            // rendering the legacy Traditional hand rig.
             // The independent new rig follows grip, nock and current bow pose.
             HideTraditionalArms();
             bool show = modernUseNewHands && UsesDesktopInput() &&
@@ -2476,8 +2609,8 @@ public class JemparinganGame : MonoBehaviour
     private void PresentModernPhysicalSight()
     {
         if (_modernPhysicalSight == null) return;
-        bool visible = _modeChosen && IsModernMode() &&
-            UsesDesktopInput() && modernViewmodelRigV2 &&
+        bool visible = UsesSharedDesktopBow() &&
+            modernViewmodelRigV2 &&
             modernUseReferenceFraming && modernUsePhysicalSight &&
             !_finished && !_roundOver &&
             (_arrowCam == null || !_arrowCam.IsActive);

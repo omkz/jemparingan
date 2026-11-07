@@ -5,6 +5,16 @@ public class JemparinganTarget : MonoBehaviour
 {
     public enum TraditionalZone { None, Awak, Jangga, Molo }
     public TraditionalZone LastTraditionalZone { get; private set; }
+    // Coordinates of the swept tip's contact on the target plane.
+    // Also used by the existing pooled impact burst.
+    public Vector3 LastImpactLocal { get; private set; }
+
+    public static float ImpactStrength(TraditionalZone zone)
+    {
+        return zone == TraditionalZone.Molo ? 1f :
+            zone == TraditionalZone.Jangga ? .76f :
+            zone == TraditionalZone.Awak ? .55f : 0f;
+    }
 
     // Shared visual and scoring boundaries. Keep these synchronized with
     // BuildBandulan so every colored region awards its advertised points.
@@ -19,11 +29,21 @@ public class JemparinganTarget : MonoBehaviour
     private const float BurstDuration = 0.40f;
     // Fade between round amplitudes instead of teleporting the bandulan.
     private const float SwayAmplitudeTransitionPerSecond = 0.34f;
+    private const float SwaySpeedTransitionPerSecond = 1.5f;
+    private const float SwayIrregularityTransitionPerSecond = 0.5f;
+    // The pivot sits 0.82 m above the target center in BuildBandulan.
+    private const float SuspensionLength = 0.82f;
     private const int SparkCount = 8;
     private Vector3 _rest;
     private Quaternion _restRotation;
     private float _activeSwayAmount;
-    private float _swayPhaseOffset;
+    private float _activeSwaySpeed;
+    private float _phase;
+    private float _swayIrregularity;
+    private float _activeSwayIrregularity;
+    private Transform _suspension;
+    private Vector3 _suspensionAnchorLocal;
+    private float _suspensionThickness;
     private Renderer _body;
     private Renderer _traditionalMolo, _traditionalJangga, _traditionalAwak;
     private Renderer _flashRenderer;
@@ -34,12 +54,14 @@ public class JemparinganTarget : MonoBehaviour
     private float _flashUntil;
     private float _hitAt = -1f;
     private bool _bullseye;
+    private float _impactStrength;
 
     private void Awake()
     {
         _rest = transform.localPosition;
         _restRotation = transform.localRotation;
         _activeSwayAmount = swayAmount;
+        _activeSwaySpeed = swaySpeed;
     }
 
     public void SetBody(Renderer body, JemparinganArt.Tone normalTone = JemparinganArt.Tone.Red)
@@ -57,40 +79,72 @@ public class JemparinganTarget : MonoBehaviour
 
 
 
-    // Preserve the old waveform's phase when speed changes, and ease the
-    // amplitude over a short window. No random jumps between rounds.
-    public void SetSway(float amount, float speed, bool resetImmediately = false)
+    // Reuse the existing suspension cord. Its lower end follows the
+    // moving bandulan tip, rather than remaining at the static start position.
+    public void AttachSuspension(Transform cord, Vector3 anchorLocal)
     {
-        amount = Mathf.Clamp(amount, 0f, 0.3f);
-        speed = Mathf.Clamp(speed, 0f, 5f);
-        if (resetImmediately)
-        {
-            _activeSwayAmount = amount;
-            _swayPhaseOffset = 0f;
-        }
-        else
-        {
-            _swayPhaseOffset += Time.time * (swaySpeed - speed);
-        }
-        swayAmount = amount;
-        swaySpeed = speed;
+        _suspension = cord;
+        _suspensionAnchorLocal = anchorLocal;
+        if (cord != null)
+            _suspensionThickness = cord.localScale.x;
+        UpdateSuspension();
+    }
+
+    // Level changes ease their amplitude, angular speed and subtle timing
+    // variation. Keep the running phase continuous across levels.
+    public void SetSway(float amount, float speed, bool resetImmediately = false,
+        float irregularity = 0f)
+    {
+        swayAmount = Mathf.Clamp(amount, 0f, 0.3f);
+        swaySpeed = Mathf.Clamp(speed, 0f, 5f);
+        _swayIrregularity = Mathf.Clamp(irregularity, 0f, 0.15f);
+        if (!resetImmediately) return;
+        _activeSwayAmount = swayAmount;
+        _activeSwaySpeed = swaySpeed;
+        _activeSwayIrregularity = _swayIrregularity;
+        _phase = 0f;
+        transform.localPosition = _rest;
+        transform.localRotation = _restRotation;
+        UpdateSuspension();
+    }
+
+    // Pure deterministic pendulum arc. The endpoint slows naturally near each
+    // turn; the bob also rises slightly and tilts with the suspension.
+    // A tiny phase warp in Level 3 varies the rhythm without random jumps.
+    public static Vector3 PendulumOffset(float phase, float amount,
+        float irregularity = 0f)
+    {
+        float wave = Mathf.Sin(phase + irregularity *
+            Mathf.Sin(phase * .67f));
+        float sideways = wave * Mathf.Clamp(amount, 0f, .3f);
+        float lift = SuspensionLength - Mathf.Sqrt(
+            SuspensionLength * SuspensionLength - sideways * sideways);
+        return new Vector3(sideways, lift, 0f);
     }
 
     private void Update()
     {
         _activeSwayAmount = Mathf.MoveTowards(_activeSwayAmount, swayAmount,
             SwayAmplitudeTransitionPerSecond * Time.deltaTime);
-        float phase = Time.time * swaySpeed + _swayPhaseOffset;
-        transform.localPosition = _rest +
-            Vector3.right * (Mathf.Sin(phase) * _activeSwayAmount);
-
+        _activeSwaySpeed = Mathf.MoveTowards(_activeSwaySpeed, swaySpeed,
+            SwaySpeedTransitionPerSecond * Time.deltaTime);
+        _activeSwayIrregularity = Mathf.MoveTowards(
+            _activeSwayIrregularity, _swayIrregularity,
+            SwayIrregularityTransitionPerSecond * Time.deltaTime);
+        _phase += _activeSwaySpeed * Time.deltaTime;
+        Vector3 arc = PendulumOffset(_phase, _activeSwayAmount,
+            _activeSwayIrregularity);
+        transform.localPosition = _rest + arc;
+        float leanDegrees = Mathf.Asin(Mathf.Clamp(
+            arc.x / SuspensionLength, -1f, 1f)) * Mathf.Rad2Deg;
+        float recoil = 0f;
         if (_hitAt >= 0f)
         {
             float age = Time.time - _hitAt;
-            float recoil = age < 0.5f
-                ? Mathf.Sin(age * 37f) * Mathf.Exp(-age * 9f) * (_bullseye ? 10f : 6f)
+            recoil = age < 0.5f
+                ? Mathf.Sin(age * 37f) * Mathf.Exp(-age * 9f) *
+                    Mathf.Lerp(2f, 9f, _impactStrength)
                 : 0f;
-            transform.localRotation = _restRotation * Quaternion.Euler(0f, 0f, recoil);
 
             if (_fxRoot != null && _fxRoot.gameObject.activeSelf)
             {
@@ -99,28 +153,57 @@ public class JemparinganTarget : MonoBehaviour
                 else AnimateBurst(progress);
             }
         }
+        transform.localRotation = _restRotation *
+            Quaternion.Euler(0f, 0f, leanDegrees + recoil);
+        UpdateSuspension();
 
         if (_flashUntil > 0f && Time.time >= _flashUntil)
             RestoreFlash();
     }
 
-    // Predicted target center for a small, optional lead cue on later stages.
-    // Uses the same deterministic sine function as Update; no random wind.
+    private void UpdateSuspension()
+    {
+        if (_suspension == null || _suspension.parent == null) return;
+        // Both endpoints expressed in the cord parent's local coordinates.
+        Vector3 end = _suspension.parent.InverseTransformPoint(
+            transform.TransformPoint(new Vector3(0f, TraditionalTop, 0f)));
+        Vector3 delta = end - _suspensionAnchorLocal;
+        if (delta.sqrMagnitude <= .000001f) return;
+        _suspension.localPosition = (_suspensionAnchorLocal + end) * .5f;
+        _suspension.localRotation =
+            Quaternion.FromToRotation(Vector3.up, delta.normalized);
+        _suspension.localScale = new Vector3(_suspensionThickness,
+            delta.magnitude * .5f, _suspensionThickness);
+    }
+
+    // Predict the same curved arc for the optional Traditional training aid.
+    // The speed ramp is integrated to keep predictions stable during transitions.
     public Vector3 PredictCenter(float secondsAhead)
     {
         float ahead = Mathf.Max(0f, secondsAhead);
         float predictedAmount = Mathf.MoveTowards(_activeSwayAmount, swayAmount,
             SwayAmplitudeTransitionPerSecond * ahead);
-        float predictedPhase = (Time.time + ahead) * swaySpeed + _swayPhaseOffset;
-        float predictedSway = Mathf.Sin(predictedPhase) * predictedAmount;
-        Vector3 localCenter = _rest + Vector3.right * predictedSway;
-        return transform.parent != null ? transform.parent.TransformPoint(localCenter) : localCenter;
+        float predictedIrregularity = Mathf.MoveTowards(
+            _activeSwayIrregularity, _swayIrregularity,
+            SwayIrregularityTransitionPerSecond * ahead);
+        float deltaSpeed = swaySpeed - _activeSwaySpeed;
+        float rampTime = Mathf.Min(ahead,
+            Mathf.Abs(deltaSpeed) / SwaySpeedTransitionPerSecond);
+        float phaseAdvance = _activeSwaySpeed * rampTime +
+            .5f * Mathf.Sign(deltaSpeed) *
+            SwaySpeedTransitionPerSecond * rampTime * rampTime +
+            swaySpeed * (ahead - rampTime);
+        Vector3 localCenter = _rest + PendulumOffset(
+            _phase + phaseAdvance, predictedAmount, predictedIrregularity);
+        return transform.parent != null
+            ? transform.parent.TransformPoint(localCenter) : localCenter;
     }
 
     // Swept hit-testing against visible Traditional zones; no Rigidbody required.
     public bool TestShot(Vector3 arrowFrom, Vector3 arrowTo, out bool bullseye)
     {
         LastTraditionalZone = TraditionalZone.None;
+        LastImpactLocal = Vector3.zero;
         // The cylinder is stylized and forgiving in width, but its colored
         // Y sections use the exact same boundaries as the 3D mesh.
         Vector3 traditionalBottom = transform.TransformPoint(
@@ -152,6 +235,7 @@ public class JemparinganTarget : MonoBehaviour
             ? TraditionalZone.Molo
             : hitY >= TraditionalNeckBottom
                 ? TraditionalZone.Jangga : TraditionalZone.Awak;
+        LastImpactLocal = new Vector3(hitX, hitY, 0f);
         bullseye = LastTraditionalZone == TraditionalZone.Molo;
         return true;
     }
@@ -159,6 +243,7 @@ public class JemparinganTarget : MonoBehaviour
     public void Flash(bool bullseye = false)
     {
         _bullseye = bullseye;
+        _impactStrength = ImpactStrength(LastTraditionalZone);
         _hitAt = Time.time;
         // Light up the hit colored section rather than flashing only the
         // white body even when the arrow struck the red head.
@@ -182,13 +267,23 @@ public class JemparinganTarget : MonoBehaviour
         }
         if (_flashRenderer != null)
         {
-            _flashRenderer.sharedMaterial = JemparinganArt.Material(JemparinganArt.Tone.Gold);
-            _flashUntil = Time.time + 0.14f;
+            JemparinganArt.Tone flashTone = LastTraditionalZone == TraditionalZone.Molo
+                ? JemparinganArt.Tone.Gold :
+                LastTraditionalZone == TraditionalZone.Jangga
+                    ? JemparinganArt.Tone.BowBrass : JemparinganArt.Tone.Jade;
+            _flashRenderer.sharedMaterial = JemparinganArt.Material(flashTone);
+            _flashUntil = Time.time + Mathf.Lerp(.10f, .17f, _impactStrength);
         }
         if (_sparks == null || _fxRoot == null) CreateBurst();
-        Material sparkMaterial = JemparinganArt.Material(bullseye ? JemparinganArt.Tone.Gold : JemparinganArt.Tone.Jade);
+        JemparinganArt.Tone sparkTone = LastTraditionalZone == TraditionalZone.Molo
+            ? JemparinganArt.Tone.Gold :
+            LastTraditionalZone == TraditionalZone.Jangga
+                ? JemparinganArt.Tone.BowBrass : JemparinganArt.Tone.Jade;
+        Material sparkMaterial = JemparinganArt.Material(sparkTone);
         for (int i = 0; i < _sparkRenderers.Length; i++)
             _sparkRenderers[i].sharedMaterial = sparkMaterial;
+        // Burst now starts at the actual hit instead of the target center.
+        _fxRoot.localPosition = LastImpactLocal + Vector3.back * .075f;
         _fxRoot.gameObject.SetActive(true);
         AnimateBurst(0f);
     }
@@ -205,7 +300,7 @@ public class JemparinganTarget : MonoBehaviour
     {
         _hitAt = -1f;
         RestoreFlash();
-        transform.localRotation = _restRotation;
+        // Recoil is reset without disturbing the current pendulum pose.
         if (_body != null) _body.sharedMaterial = JemparinganArt.Material(_normalBodyTone);
         if (_fxRoot != null) _fxRoot.gameObject.SetActive(false);
     }
@@ -230,8 +325,11 @@ public class JemparinganTarget : MonoBehaviour
 
     private void AnimateBurst(float progress)
     {
-        float radius = Mathf.Lerp(0.045f, 0.21f, progress);
-        float size = Mathf.Lerp(0.022f, 0.002f, progress);
+        // Full gold burst for Molo; shorter, softer sparks for other zones.
+        // The original eight pooled sparks are reused without allocation.
+        float radius = Mathf.Lerp(.018f, .15f * _impactStrength, progress);
+        float size = Mathf.Lerp(.018f, .002f, progress) *
+            Mathf.Lerp(.75f, 1.15f, _impactStrength);
         for (int i = 0; i < _sparks.Length; i++)
         {
             float angle = (i / (float)SparkCount) * Mathf.PI * 2f;

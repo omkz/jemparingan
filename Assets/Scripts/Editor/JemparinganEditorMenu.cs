@@ -126,6 +126,26 @@ public static class JemparinganEditorMenu
             Check("Traditional red zone", head, ref total, ref failed);
             Check("Traditional yellow zone", neck, ref total, ref failed);
             Check("Traditional white zone", body, ref total, ref failed);
+            bool offsetImpact = target.TestShot(new Vector3(.025f, .145f, -.2f),
+                new Vector3(.025f, .145f, .2f), out bullseye);
+            Check("Traditional hit feedback uses actual impact point",
+                offsetImpact &&
+                Mathf.Abs(target.LastImpactLocal.x - .025f) < .0001f &&
+                Mathf.Abs(target.LastImpactLocal.y - .145f) < .0001f,
+                ref total, ref failed);
+            bool farMiss = !target.TestShot(new Vector3(.19f, 0f, -.2f),
+                new Vector3(.19f, 0f, .2f), out bullseye);
+            Check("Traditional missed shot clears cached impact point",
+                farMiss && target.LastImpactLocal == Vector3.zero,
+                ref total, ref failed);
+            Check("Traditional hit FX intensity follows zone score",
+                JemparinganTarget.ImpactStrength(JemparinganTarget.TraditionalZone.Molo) >
+                JemparinganTarget.ImpactStrength(JemparinganTarget.TraditionalZone.Jangga) &&
+                JemparinganTarget.ImpactStrength(JemparinganTarget.TraditionalZone.Jangga) >
+                JemparinganTarget.ImpactStrength(JemparinganTarget.TraditionalZone.Awak) &&
+                JemparinganTarget.ImpactStrength(JemparinganTarget.TraditionalZone.Awak) > 0f &&
+                JemparinganTarget.ImpactStrength(JemparinganTarget.TraditionalZone.None) == 0f,
+                ref total, ref failed);
             bool nearNeckBottom = target.TestShot(new Vector3(0f, .055f, -.2f),
                 new Vector3(0f, .055f, .2f), out bullseye) &&
                 target.LastTraditionalZone == JemparinganTarget.TraditionalZone.Jangga;
@@ -196,6 +216,78 @@ public static class JemparinganEditorMenu
         finally
         {
             Object.DestroyImmediate(testObject);
+        }
+
+        // Pure pendulum regression checks: trajectory is bounded, smooth
+        // around the reversal and visibly more challenging in level 3.
+        Vector3 still = JemparinganTarget.PendulumOffset(0f, 0f);
+        Vector3 gentle = JemparinganTarget.PendulumOffset(Mathf.PI * .5f, .08f);
+        Vector3 harder = JemparinganTarget.PendulumOffset(Mathf.PI * .5f, .20f);
+        Vector3 reverse = JemparinganTarget.PendulumOffset(
+            Mathf.PI * 1.5f, .20f);
+        Check("Traditional level 1 is stationary",
+            still.sqrMagnitude < .000001f, ref total, ref failed);
+        Check("Traditional level 3 has wider swing than level 2",
+            harder.x > gentle.x && gentle.x > 0f &&
+            Mathf.Abs(reverse.x + harder.x) < .00001f,
+            ref total, ref failed);
+        Check("Traditional pendulum follows a shallow rising arc",
+            harder.y > gentle.y && gentle.y > 0f && harder.y < .04f,
+            ref total, ref failed);
+        Vector3 beforeTurn = JemparinganTarget.PendulumOffset(
+            Mathf.PI * .5f - .03f, .20f);
+        Vector3 afterTurn = JemparinganTarget.PendulumOffset(
+            Mathf.PI * .5f + .03f, .20f);
+        Check("Traditional pendulum reverses smoothly",
+            Mathf.Abs(beforeTurn.x - afterTurn.x) < .0001f,
+            ref total, ref failed);
+        Vector3 varied = JemparinganTarget.PendulumOffset(
+            1.1f, .20f, .12f);
+        Check("Traditional harder rhythm is deterministic and bounded",
+            Vector3.Distance(varied,
+                JemparinganTarget.PendulumOffset(1.1f, .20f, .12f)) < .000001f &&
+            Mathf.Abs(varied.x) <= .20001f,
+            ref total, ref failed);
+
+        // Traditional shares Modern's optical/ballistic alignment, but
+        // must not magnetize a shot towards any red/yellow/white target zone.
+        var sightCameraObject = new GameObject("Traditional sight QA camera (temporary)");
+        var sightBandulanObject = new GameObject("Traditional sight QA target (temporary)");
+        try
+        {
+            Camera sightCamera = sightCameraObject.AddComponent<Camera>();
+            sightCamera.transform.position = Vector3.zero;
+            sightCamera.transform.rotation = Quaternion.identity;
+            sightBandulanObject.transform.position = Vector3.forward * 10f;
+
+            Vector3 straightDirection;
+            bool straightOnBandulan;
+            bool straightZero = JemparinganModernAim.TryZeroToBandulanSightRay(
+                sightCamera, Vector3.forward,
+                new Vector3(.15f, -.16f, .95f), 11f, 2.25f, 4f,
+                sightBandulanObject.transform,
+                out straightDirection, out straightOnBandulan);
+            Check("Traditional sight zero on bandulan plane",
+                straightZero && straightOnBandulan &&
+                Mathf.Abs(straightDirection.magnitude - 1f) < .001f,
+                ref total, ref failed);
+
+            Vector3 outsideDirection;
+            bool outsideOnBandulan;
+            bool outsideZero = JemparinganModernAim.TryZeroToBandulanSightRay(
+                sightCamera, new Vector3(.15f, 0f, 1f).normalized,
+                new Vector3(.15f, -.16f, .95f), 11f, 2.25f, 4f,
+                sightBandulanObject.transform,
+                out outsideDirection, out outsideOnBandulan);
+            Check("Traditional off-bandulan aim does not snap",
+                outsideZero && !outsideOnBandulan &&
+                outsideDirection.x > straightDirection.x,
+                ref total, ref failed);
+        }
+        finally
+        {
+            Object.DestroyImmediate(sightBandulanObject);
+            Object.DestroyImmediate(sightCameraObject);
         }
 
         if (failed == 0)
