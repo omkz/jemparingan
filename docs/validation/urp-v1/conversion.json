@@ -1,0 +1,412 @@
+{
+  "pipeline": "JemparinganURP",
+  "renderer": "UniversalRenderer",
+  "renderScale": 1.0,
+  "msaa": 2,
+  "quality": [
+    {
+      "name": "Very Low",
+      "asset": "Assets/Settings/JemparinganURP/JemparinganURP.asset"
+    },
+    {
+      "name": "Low",
+      "asset": "Assets/Settings/JemparinganURP/JemparinganURP.asset"
+    },
+    {
+      "name": "Medium",
+      "asset": "Assets/Settings/JemparinganURP/JemparinganURP.asset"
+    },
+    {
+      "name": "High",
+      "asset": "Assets/Settings/JemparinganURP/JemparinganURP.asset"
+    },
+    {
+      "name": "Very High",
+      "asset": "Assets/Settings/JemparinganURP/JemparinganURP.asset"
+    },
+    {
+      "name": "Ultra",
+      "asset": "Assets/Settings/JemparinganURP/JemparinganURP.asset"
+    }
+  ],
+  "materials": [
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/GoldenHourSky_JogloPolish_v01.mat",
+      "shader": "Skybox/Procedural",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/GoldenHourSky_v03.mat",
+      "shader": "Skybox/Procedural",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Amber_Trim.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Amber_Trim_JogloPolish_v01.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Bamboo.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Banana_Leaves_v4.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Bandulan_Red.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Bandulan_White.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Blue_Mountain.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Blue_Mountain_v4.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Clay_Roof.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Clay_Roof_JogloPolish_v01.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Dark_Teak.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Dark_Teak_JogloPolish_v01.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Distance_Markers.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Dry_Rustic_Path_v4.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Far_Hills.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Far_Hills_v4.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Far_Mountain.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Far_Mountain_v4.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Grass.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Leaf_Green.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Leaf_Light.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Paddy_Bund.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Path_Edge.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Rice_Green.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Rice_Light.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Rice_YellowGreen_v4.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Rope.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Sand_Path.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Soft_Cloud.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Stone.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Stone_JogloPolish_v01.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Teak.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Teak_JogloPolish_v01.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Tree_Trunk.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Warm_Horizon.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Wood_Joinery_JogloPolish_v01.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Woven_Mat.mat",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Models/jemparingan_bandulan.obj",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Models/jemparingan_busur.obj",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    },
+    {
+      "path": "Assets/Models/jemparingan_pendopo_frame.obj",
+      "shader": "Universal Render Pipeline/Lit",
+      "supported": true,
+      "guidPreserved": true,
+      "colorPreserved": true,
+      "texturePreserved": true,
+      "smoothnessPreserved": true
+    }
+  ]
+}

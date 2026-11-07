@@ -199,48 +199,15 @@ public sealed class JemparinganModernBowSight : MonoBehaviour
         _lensMesh.triangles = triangles;
         lens.AddComponent<MeshFilter>().sharedMesh = _lensMesh;
 
-        Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
-        bool urp = shader != null;
-        if (shader == null) shader = Shader.Find("Standard");
-        if (shader == null) shader = Shader.Find("Sprites/Default");
-        if (shader == null)
+        // Persisted transparent URP material keeps its shader variant in builds.
+        var template = Resources.Load<Material>("Jemparingan/OpticalLens");
+        if (template == null)
         {
-            Debug.LogWarning("Modern sight: no transparent glass shader found.");
-            return; // Ring and reticle are still usable without glass.
+            Debug.LogError("Modern sight: Jemparingan URP OpticalLens material is missing.");
+            return;
         }
-
-        _lensMaterial = new Material(shader)
+        _lensMaterial = new Material(template)
             { name = "Modern optical glass | translucent blue" };
-        Color tint = new Color(.37f, .76f, .90f, .12f);
-        if (_lensMaterial.HasProperty("_BaseColor"))
-            _lensMaterial.SetColor("_BaseColor", tint);
-        if (_lensMaterial.HasProperty("_Color"))
-            _lensMaterial.SetColor("_Color", tint);
-
-        // Both URP and Built-in Standard require explicit transparent blend.
-        if (urp && _lensMaterial.HasProperty("_Surface"))
-        {
-            _lensMaterial.SetFloat("_Surface", 1f);
-            if (_lensMaterial.HasProperty("_Blend"))
-                _lensMaterial.SetFloat("_Blend", 0f);
-            _lensMaterial.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
-            _lensMaterial.DisableKeyword("_SURFACE_TYPE_OPAQUE");
-        }
-        else if (_lensMaterial.HasProperty("_Mode"))
-        {
-            _lensMaterial.SetFloat("_Mode", 3f);
-            _lensMaterial.EnableKeyword("_ALPHABLEND_ON");
-        }
-        if (_lensMaterial.HasProperty("_SrcBlend"))
-            _lensMaterial.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
-        if (_lensMaterial.HasProperty("_DstBlend"))
-            _lensMaterial.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
-        if (_lensMaterial.HasProperty("_ZWrite"))
-            _lensMaterial.SetFloat("_ZWrite", 0f);
-        if (_lensMaterial.HasProperty("_Cull"))
-            _lensMaterial.SetFloat("_Cull", 0f);
-        _lensMaterial.SetOverrideTag("RenderType", "Transparent");
-        _lensMaterial.renderQueue = (int)RenderQueue.Transparent;
 
         var renderer = lens.AddComponent<MeshRenderer>();
         renderer.sharedMaterial = _lensMaterial;

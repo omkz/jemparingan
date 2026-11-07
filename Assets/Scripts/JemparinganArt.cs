@@ -11,10 +11,11 @@ public static class JemparinganArt
     public static Material Material(Tone tone)
     {
         if (Materials.TryGetValue(tone, out Material existing) && existing != null) return existing;
-        Shader shader = Shader.Find("Universal Render Pipeline/Lit");
-        if (shader == null) shader = Shader.Find("Standard");
-        if (shader == null) shader = Shader.Find("Sprites/Default");
-        var mat = new Material(shader) { name = "Jemparingan_" + tone };
+        // A referenced template keeps the runtime shader/variants in player builds.
+        var template = Resources.Load<Material>("Jemparingan/RuntimeLit");
+        if (template == null)
+            throw new System.InvalidOperationException("Jemparingan URP RuntimeLit material is missing.");
+        var mat = new Material(template) { name = "Jemparingan_" + tone };
         Color col;
         switch (tone)
         {

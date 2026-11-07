@@ -153,6 +153,49 @@ MonoBehaviour:
   desktopInput: {fileID: 0}
   questInput: {fileID: 0}
   preferQuestHandsInEditor: 0
+  initialOutdoorMode: 1
+  modernArrowCount: 12
+  traditionalLevel2Sway: 0.08
+  traditionalLevel2Speed: 0.75
+  traditionalLevel3Sway: 0.16
+  traditionalLevel3Speed: 1.12
+  modernProgressiveStages: 1
+  modernMovingTargetTravel: 0.26
+  modernMovingTargetSpeed: 0.85
+  modernViewmodelRigV2: 1
+  modernBowForwardDistance: 0.78
+  modernBowRightOffset: 0.2
+  modernBowDownOffset: 0.18
+  modernBowVisualScale: 0.94
+  modernViewmodelFov: 65
+  modernUseReferenceFraming: 1
+  modernUseNewHands: 1
+  modernLightweightGameFeel: 1
+  modernReleaseRecoilDegrees: 1.1
+  modernSubtleBreathingSway: 1
+  modernIdleSwayDegrees: 0.28
+  modernBreathingCycleSeconds: 4.5
+  modernAimWobble: 1
+  modernAimWobbleDegrees: 0.1
+  modernReferenceGripViewportX: 0.554
+  modernReferenceGripViewportY: 0.27
+  modernReferenceGripDepth: 0.7
+  modernReferenceTipViewportY: 1.075
+  modernBowCantDegrees: -2
+  modernUprightV3Migrated: 0
+  modernReferenceAimFov: 60
+  modernPrecisionDrawThreshold: 0.96
+  modernPreAimRightShift: 0.09
+  modernPreAimLowering: 0.055
+  modernPrecisionPoseSpeed: 7
+  modernDebugCameraCrosshair: 0
+  modernUsePhysicalSight: 1
+  modernIdleRightShift: 0.22
+  modernIdleLowering: 0.22
+  modernIdleForwardShift: 0.08
+  modernIdleBowScale: 0.9
+  modernPoseTransitionSpeed: 4.8
+  modernEveryShotArrowCam: 1
   arrowsPerRound: 12
   minimumDraw: 0.1
   maximumDraw: 0.4
@@ -161,6 +204,14 @@ MonoBehaviour:
   simulatedGravity: 2.25
   aimAssist: 0.4
   trajectoryPreview: 1
+  minimumHoldSeconds: 0.14
+  focusTimeSeconds: 0.58
+  focusAngularTolerance: 3.5
+  focusPositionTolerance: 0.08
+  ambientWindVolume: 0.045
+  useOutdoorEnvironment: 0
+  outdoorTargetAnchor: {fileID: 0}
+  outdoorArrowLifetime: 3
 --- !u!114 &201857914
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -186,7 +237,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DesktopBowInput
   simulatedDrawSeconds: 1
+  modernFullDrawSeconds: 0.28
   lookSensitivity: 2.5
+  outdoorBowPresentation: 0
 --- !u!4 &201857916
 Transform:
   m_ObjectHideFlags: 0
@@ -310,6 +363,7 @@ GameObject:
   - component: {fileID: 1898939624}
   - component: {fileID: 1898939623}
   - component: {fileID: 1898939622}
+  - component: {fileID: 1898939625}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -391,6 +445,50 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1898939625
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1898939621}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
+  m_RenderShadows: 1
+  m_RequiresDepthTextureOption: 2
+  m_RequiresOpaqueTextureOption: 2
+  m_CameraType: 0
+  m_Cameras: []
+  m_RendererIndex: -1
+  m_VolumeLayerMask:
+    serializedVersion: 2
+    m_Bits: 1
+  m_VolumeTrigger: {fileID: 0}
+  m_VolumeFrameworkUpdateModeOption: 2
+  m_RenderPostProcessing: 0
+  m_Antialiasing: 0
+  m_AntialiasingQuality: 2
+  m_StopNaN: 0
+  m_Dithering: 0
+  m_ClearDepth: 1
+  m_AllowXRRendering: 1
+  m_AllowHDROutput: 1
+  m_UseScreenCoordOverride: 0
+  m_ScreenSizeOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
+  m_RequiresDepthTexture: 0
+  m_RequiresColorTexture: 0
+  m_TaaSettings:
+    m_Quality: 3
+    m_FrameInfluence: 0.1
+    m_JitterScale: 1
+    m_MipBias: 0
+    m_VarianceClampScale: 0.9
+    m_ContrastAdaptiveSharpening: 0
+  m_Version: 2
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

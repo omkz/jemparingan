@@ -1,0 +1,77 @@
+[
+  {
+    "path": "Assets/Models/jemparingan_bandulan.obj",
+    "materials": [
+      {
+        "path": "Assets/Settings/JemparinganURP/ModelMaterials/jemparingan_bandulan_red.mat",
+        "shader": "Universal Render Pipeline/Lit",
+        "supported": true
+      },
+      {
+        "path": "Assets/Settings/JemparinganURP/ModelMaterials/jemparingan_bandulan_gold.mat",
+        "shader": "Universal Render Pipeline/Lit",
+        "supported": true
+      },
+      {
+        "path": "Assets/Settings/JemparinganURP/ModelMaterials/jemparingan_bandulan_cream.mat",
+        "shader": "Universal Render Pipeline/Lit",
+        "supported": true
+      }
+    ]
+  },
+  {
+    "path": "Assets/Models/jemparingan_busur.obj",
+    "materials": [
+      {
+        "path": "Assets/Settings/JemparinganURP/ModelMaterials/jemparingan_busur_wood_light.mat",
+        "shader": "Universal Render Pipeline/Lit",
+        "supported": true
+      },
+      {
+        "path": "Assets/Settings/JemparinganURP/ModelMaterials/jemparingan_busur_wood_dark.mat",
+        "shader": "Universal Render Pipeline/Lit",
+        "supported": true
+      },
+      {
+        "path": "Assets/Settings/JemparinganURP/ModelMaterials/jemparingan_busur_cream.mat",
+        "shader": "Universal Render Pipeline/Lit",
+        "supported": true
+      },
+      {
+        "path": "Assets/Settings/JemparinganURP/ModelMaterials/jemparingan_busur_gold.mat",
+        "shader": "Universal Render Pipeline/Lit",
+        "supported": true
+      }
+    ]
+  },
+  {
+    "path": "Assets/Models/jemparingan_pendopo_frame.obj",
+    "materials": [
+      {
+        "path": "Assets/Settings/JemparinganURP/ModelMaterials/jemparingan_pendopo_frame_wood_dark.mat",
+        "shader": "Universal Render Pipeline/Lit",
+        "supported": true
+      },
+      {
+        "path": "Assets/Settings/JemparinganURP/ModelMaterials/jemparingan_pendopo_frame_wood.mat",
+        "shader": "Universal Render Pipeline/Lit",
+        "supported": true
+      },
+      {
+        "path": "Assets/Settings/JemparinganURP/ModelMaterials/jemparingan_pendopo_frame_wood_light.mat",
+        "shader": "Universal Render Pipeline/Lit",
+        "supported": true
+      },
+      {
+        "path": "Assets/Settings/JemparinganURP/ModelMaterials/jemparingan_pendopo_frame_gold.mat",
+        "shader": "Universal Render Pipeline/Lit",
+        "supported": true
+      },
+      {
+        "path": "Assets/Settings/JemparinganURP/ModelMaterials/jemparingan_pendopo_frame_indigo.mat",
+        "shader": "Universal Render Pipeline/Lit",
+        "supported": true
+      }
+    ]
+  }
+]

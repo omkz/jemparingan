@@ -1,0 +1,15 @@
+{
+  "status": "completed",
+  "buildId": "build_0b2fa46b5a19",
+  "result": "Succeeded",
+  "platform": "StandaloneLinux64",
+  "outputPath": "/tmp/jemparingan-urp-v1/Jemparingan.x86_64",
+  "totalSizeBytes": 249822164,
+  "buildTimeMs": 74082,
+  "buildStartedAt": "2026-11-07T12:56:33.5656930Z",
+  "buildEndedAt": "2026-11-07T12:57:47.6486610Z",
+  "totalWarnings": 0,
+  "totalErrors": 0,
+  "errors": [],
+  "warnings": []
+}

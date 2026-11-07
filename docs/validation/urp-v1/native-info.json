@@ -1,0 +1,13 @@
+{
+  "pipelineInstance": "UnityEngine.Rendering.Universal.UniversalRenderPipeline",
+  "pipelineAsset": "JemparinganURP",
+  "cpu": "Intel(R) Core(TM) i5-8350U CPU @ 1.70GHz",
+  "gpu": "Mesa Intel(R) UHD Graphics 620 (KBL GT2)",
+  "graphicsAPI": "OpenGLCore",
+  "width": 1280,
+  "height": 720,
+  "quality": "Ultra",
+  "audioListeners": 1,
+  "unsupportedRendererMaterials": 0,
+  "lensShader": "Universal Render Pipeline/Unlit"
+}

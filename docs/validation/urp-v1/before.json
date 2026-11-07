@@ -1,0 +1,2258 @@
+{
+  "materials": [
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/GoldenHourSky_JogloPolish_v01.mat",
+      "guid": "49f62da44c43a2348abf8af38f39288f",
+      "shader": "Skybox/Procedural",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/GoldenHourSky_v03.mat",
+      "guid": "76e3479e34a1f371daf6be377b7bab24",
+      "shader": "Skybox/Procedural",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Amber_Trim.mat",
+      "guid": "1666d8cce88e3c3e2a1749dced94503b",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.68235296,
+        0.498039216,
+        0.286274523,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Amber_Trim_JogloPolish_v01.mat",
+      "guid": "060da2db8f091a16aaad486d6b0707bd",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.623529434,
+        0.454901963,
+        0.274509817,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Bamboo.mat",
+      "guid": "54069664df859f6f0bc6a97633ea3a23",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.596078455,
+        0.5058824,
+        0.298039228,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Banana_Leaves_v4.mat",
+      "guid": "da5de867d53baff50b5c1642aeabdd25",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.258823544,
+        0.521568656,
+        0.254901975,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Bandulan_Red.mat",
+      "guid": "29ae519233458b98bbeb97551c6ecf6d",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.6509804,
+        0.1882353,
+        0.1882353,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Bandulan_White.mat",
+      "guid": "34ce434fd6b781f0ebe84e874159b000",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.9098039,
+        0.8627451,
+        0.7647059,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Blue_Mountain.mat",
+      "guid": "be43f0d434f53145d971e4c83ae3649e",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.392156869,
+        0.5254902,
+        0.58431375,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Blue_Mountain_v4.mat",
+      "guid": "d4b7167f03ac80e9a80a8e499d36fb49",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.392156869,
+        0.5254902,
+        0.58431375,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Clay_Roof.mat",
+      "guid": "0b99f2aa0e50a6580bd045082de13b32",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.3882353,
+        0.227450982,
+        0.1882353,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Clay_Roof_JogloPolish_v01.mat",
+      "guid": "f70f73793b193dfa3b039fa490245735",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.427450985,
+        0.258823544,
+        0.203921571,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Dark_Teak.mat",
+      "guid": "fc75ad688cab1cebd93d0eab38d930c7",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.286274523,
+        0.172549024,
+        0.137254909,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Dark_Teak_JogloPolish_v01.mat",
+      "guid": "43e081e86041221c394caea04230d08f",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.298039228,
+        0.180392161,
+        0.141176477,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Distance_Markers.mat",
+      "guid": "4b57599c8af06b0c1af798c87cb403bf",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.533333361,
+        0.3647059,
+        0.239215687,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Dry_Rustic_Path_v4.mat",
+      "guid": "25351e899d0086b5ca85c45575fe95bf",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.623529434,
+        0.5294118,
+        0.360784322,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Far_Hills.mat",
+      "guid": "0bfe5ac3beb24390490952aec5ac88df",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.3764706,
+        0.509803951,
+        0.427450985,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Far_Hills_v4.mat",
+      "guid": "b9f1f893f152a0361ac5f23dc59e4822",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.368627459,
+        0.5254902,
+        0.4117647,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Far_Mountain.mat",
+      "guid": "448d922c97ee88d6da5041b44ff5d8e8",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.5372549,
+        0.6156863,
+        0.635294139,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Far_Mountain_v4.mat",
+      "guid": "482ad5bb039f63982a7ca476b3c9daa5",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.5882353,
+        0.65882355,
+        0.6509804,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Grass.mat",
+      "guid": "01aaf3f4f5078794ca527707d4443ad2",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.4509804,
+        0.5764706,
+        0.321568638,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Leaf_Green.mat",
+      "guid": "b53cfad7a85b18e1fb174ab970770991",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.243137255,
+        0.478431374,
+        0.270588249,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Leaf_Light.mat",
+      "guid": "04095a56adaaaed318deafa58befd6e9",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.345098048,
+        0.5921569,
+        0.2901961,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Paddy_Bund.mat",
+      "guid": "2ff75a0c7e842f063bcdd3dc7227a5de",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.435294122,
+        0.458823532,
+        0.274509817,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Path_Edge.mat",
+      "guid": "5aafb6dd5f21619f2bfab50d8b4c6dbd",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.4117647,
+        0.447058827,
+        0.321568638,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Rice_Green.mat",
+      "guid": "cb7c84c1f859bd321a3b0bc15b83c34c",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.407843143,
+        0.6392157,
+        0.274509817,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Rice_Light.mat",
+      "guid": "fca745c57b203f5d887cb114ca76cc42",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.572549045,
+        0.7137255,
+        0.356862754,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Rice_YellowGreen_v4.mat",
+      "guid": "ca29e083c2c1d691e95a62e424fa4cb8",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.65882355,
+        0.721568644,
+        0.3647059,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Rope.mat",
+      "guid": "60466b32e450a5fcaad8a96fac8bbd51",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.4117647,
+        0.305882365,
+        0.211764708,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Sand_Path.mat",
+      "guid": "860a6d3a9b33bd8e0b7a24c5e2b574ee",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.7176471,
+        0.619607866,
+        0.4392157,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Soft_Cloud.mat",
+      "guid": "aa7143d1031f004f5893baaa39c8ffb5",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.8784314,
+        0.9019608,
+        0.8784314,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Stone.mat",
+      "guid": "a40f9e7c985c1388c8ad0575ff913dfa",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.545098066,
+        0.5372549,
+        0.4862745,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Stone_JogloPolish_v01.mat",
+      "guid": "7b196223cf3e71c2bab82b023ad2d476",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.5686275,
+        0.5372549,
+        0.4862745,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Teak.mat",
+      "guid": "68a8a269eb70dad06976c1bb00c2b44c",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.443137258,
+        0.282352954,
+        0.180392161,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Teak_JogloPolish_v01.mat",
+      "guid": "f20181dc1a0e3c0ca817924015644e93",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.482352942,
+        0.321568638,
+        0.215686277,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Tree_Trunk.mat",
+      "guid": "9edc2c509ab1d44d4b90092647d62a0a",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.3882353,
+        0.305882365,
+        0.211764708,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Warm_Horizon.mat",
+      "guid": "5f9858c51af8f322f8e08ee60f822645",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.7372549,
+        0.7137255,
+        0.5686275,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Wood_Joinery_JogloPolish_v01.mat",
+      "guid": "09114905980bb5947baafd5e68fe3ae9",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.509803951,
+        0.349019617,
+        0.235294119,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Jemparingan/EnvironmentPreview/Materials/Woven_Mat.mat",
+      "guid": "b4f114aac1fd1c216b41fbb20b0abee0",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.6784314,
+        0.5568628,
+        0.3647059,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.5,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Models/jemparingan_bandulan.obj",
+      "guid": "835b1feeaea9d985991fc1e9ed163525",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.97,
+        0.85,
+        0.69,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.0,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Models/jemparingan_busur.obj",
+      "guid": "c2a70c64042836575a245d245ad560a1",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.97,
+        0.85,
+        0.69,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.0,
+      "cutoff": 0.5,
+      "mode": 0.0
+    },
+    {
+      "path": "Assets/Models/jemparingan_pendopo_frame.obj",
+      "guid": "b2ba09b37dcf6d8599375769a7b690c6",
+      "shader": "Standard",
+      "mainTex": "",
+      "normal": "",
+      "metallicMap": "",
+      "specMap": "",
+      "emissionMap": "",
+      "color": [
+        0.88,
+        0.66,
+        0.29,
+        1.0
+      ],
+      "emission": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "specular": [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        1.0
+      ],
+      "offset": [
+        0.0,
+        0.0
+      ],
+      "metallic": 0.0,
+      "smoothness": 0.0,
+      "cutoff": 0.5,
+      "mode": 0.0
+    }
+  ],
+  "sceneObjects": [
+    "Player viewpoint | seated 1.35m|(0, 1.35, 1.25)|(-0.0119974092, 0, 0, 0.999928057)|(1, 1, 1)",
+    "Sun | warm afternoon - preview only|(0, 0, 0)|(0.370539576, -0.292080462, 0.1239808, 0.872936547)|(1, 1, 1)",
+    "01 | Joglo pendopo - saka guru, tumpang sari, brunjung|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "A | Floor, umpak, front step|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Stone base|(0, -0.16, 0)|(0, 0, 0, 1)|(8.35, 0.35, 8.35)",
+    "Teak floor|(0, 0.07, 0)|(0, 0, 0, 1)|(8, 0.14, 8)",
+    "Floor plank seam -3|(-3, 0.15, 0)|(0, 0, 0, 1)|(0.025, 0.008, 7.8)",
+    "Floor plank seam -2|(-2, 0.15, 0)|(0, 0, 0, 1)|(0.025, 0.008, 7.8)",
+    "Floor plank seam -1|(-1, 0.15, 0)|(0, 0, 0, 1)|(0.025, 0.008, 7.8)",
+    "Floor plank seam 0|(0, 0.15, 0)|(0, 0, 0, 1)|(0.025, 0.008, 7.8)",
+    "Floor plank seam 1|(1, 0.15, 0)|(0, 0, 0, 1)|(0.025, 0.008, 7.8)",
+    "Floor plank seam 2|(2, 0.15, 0)|(0, 0, 0, 1)|(0.025, 0.008, 7.8)",
+    "Floor plank seam 3|(3, 0.15, 0)|(0, 0, 0, 1)|(0.025, 0.008, 7.8)",
+    "Seated woven mat|(0, 0.155, 1.25)|(0, 0, 0, 1)|(1.4, 0.025, 1.15)",
+    "Low front step|(0, -0.23, 4.35)|(0, 0, 0, 1)|(5.6, 0.21, 0.75)",
+    "B | Outer penanggap columns|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Outer saka | -3.45, -3.45|(-3.45, 0, -3.45)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Stone umpak|(0, 0.28, 0)|(0, 0, 0, 1)|(0.65, 0.44, 0.65)",
+    "Outer teak saka|(0, 2.05, 0)|(0, 0, 0, 1)|(0.31, 3.18, 0.31)",
+    "Foot trim|(0, 0.53, 0)|(0, 0, 0, 1)|(0.4, 0.13, 0.4)",
+    "Column capital|(0, 3.69, 0)|(0, 0, 0, 1)|(0.56, 0.21, 0.56)",
+    "Column head|(0, 3.81, 0)|(0, 0, 0, 1)|(0.66, 0.11, 0.66)",
+    "Outer saka | -3.45, 3.45|(-3.45, 0, 3.45)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Stone umpak|(0, 0.28, 0)|(0, 0, 0, 1)|(0.65, 0.44, 0.65)",
+    "Outer teak saka|(0, 2.05, 0)|(0, 0, 0, 1)|(0.31, 3.18, 0.31)",
+    "Foot trim|(0, 0.53, 0)|(0, 0, 0, 1)|(0.4, 0.13, 0.4)",
+    "Column capital|(0, 3.69, 0)|(0, 0, 0, 1)|(0.56, 0.21, 0.56)",
+    "Column head|(0, 3.81, 0)|(0, 0, 0, 1)|(0.66, 0.11, 0.66)",
+    "Outer saka | 3.45, -3.45|(3.45, 0, -3.45)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Stone umpak|(0, 0.28, 0)|(0, 0, 0, 1)|(0.65, 0.44, 0.65)",
+    "Outer teak saka|(0, 2.05, 0)|(0, 0, 0, 1)|(0.31, 3.18, 0.31)",
+    "Foot trim|(0, 0.53, 0)|(0, 0, 0, 1)|(0.4, 0.13, 0.4)",
+    "Column capital|(0, 3.69, 0)|(0, 0, 0, 1)|(0.56, 0.21, 0.56)",
+    "Column head|(0, 3.81, 0)|(0, 0, 0, 1)|(0.66, 0.11, 0.66)",
+    "Outer saka | 3.45, 3.45|(3.45, 0, 3.45)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Stone umpak|(0, 0.28, 0)|(0, 0, 0, 1)|(0.65, 0.44, 0.65)",
+    "Outer teak saka|(0, 2.05, 0)|(0, 0, 0, 1)|(0.31, 3.18, 0.31)",
+    "Foot trim|(0, 0.53, 0)|(0, 0, 0, 1)|(0.4, 0.13, 0.4)",
+    "Column capital|(0, 3.69, 0)|(0, 0, 0, 1)|(0.56, 0.21, 0.56)",
+    "Column head|(0, 3.81, 0)|(0, 0, 0, 1)|(0.66, 0.11, 0.66)",
+    "C | FOUR SAKA GURU - primary structure|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Saka guru | -1.72, -1.72|(-1.72, 0, -1.72)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Umpak carved stone placeholder|(0, 0.3, 0)|(0, 0, 0, 1)|(0.64, 0.43, 0.64)",
+    "Saka guru teak post|(0, 2.38, 0)|(0, 0, 0, 1)|(0.35, 3.86, 0.35)",
+    "Saka guru base collar|(0, 0.57, 0)|(0, 0, 0, 1)|(0.46, 0.16, 0.46)",
+    "Saka guru head collar|(0, 4.23, 0)|(0, 0, 0, 1)|(0.54, 0.23, 0.54)",
+    "Saka guru upper capital|(0, 4.4, 0)|(0, 0, 0, 1)|(0.62, 0.16, 0.62)",
+    "Saka guru | -1.72, 1.72|(-1.72, 0, 1.72)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Umpak carved stone placeholder|(0, 0.3, 0)|(0, 0, 0, 1)|(0.64, 0.43, 0.64)",
+    "Saka guru teak post|(0, 2.38, 0)|(0, 0, 0, 1)|(0.35, 3.86, 0.35)",
+    "Saka guru base collar|(0, 0.57, 0)|(0, 0, 0, 1)|(0.46, 0.16, 0.46)",
+    "Saka guru head collar|(0, 4.23, 0)|(0, 0, 0, 1)|(0.54, 0.23, 0.54)",
+    "Saka guru upper capital|(0, 4.4, 0)|(0, 0, 0, 1)|(0.62, 0.16, 0.62)",
+    "Saka guru | 1.72, -1.72|(1.72, 0, -1.72)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Umpak carved stone placeholder|(0, 0.3, 0)|(0, 0, 0, 1)|(0.64, 0.43, 0.64)",
+    "Saka guru teak post|(0, 2.38, 0)|(0, 0, 0, 1)|(0.35, 3.86, 0.35)",
+    "Saka guru base collar|(0, 0.57, 0)|(0, 0, 0, 1)|(0.46, 0.16, 0.46)",
+    "Saka guru head collar|(0, 4.23, 0)|(0, 0, 0, 1)|(0.54, 0.23, 0.54)",
+    "Saka guru upper capital|(0, 4.4, 0)|(0, 0, 0, 1)|(0.62, 0.16, 0.62)",
+    "Saka guru | 1.72, 1.72|(1.72, 0, 1.72)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Umpak carved stone placeholder|(0, 0.3, 0)|(0, 0, 0, 1)|(0.64, 0.43, 0.64)",
+    "Saka guru teak post|(0, 2.38, 0)|(0, 0, 0, 1)|(0.35, 3.86, 0.35)",
+    "Saka guru base collar|(0, 0.57, 0)|(0, 0, 0, 1)|(0.46, 0.16, 0.46)",
+    "Saka guru head collar|(0, 4.23, 0)|(0, 0, 0, 1)|(0.54, 0.23, 0.54)",
+    "Saka guru upper capital|(0, 4.4, 0)|(0, 0, 0, 1)|(0.62, 0.16, 0.62)",
+    "D | Blandar, sunduk and tumpang sari|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Blandar pamidangan X|(0, 4.33, -1.72)|(0, 0, 0, 1)|(3.85, 0.27, 0.23)",
+    "Sunduk lintel X|(0, 3.93, -1.72)|(0, 0, 0, 1)|(3.62, 0.15, 0.15)",
+    "Blandar pamidangan X|(0, 4.33, 1.72)|(0, 0, 0, 1)|(3.85, 0.27, 0.23)",
+    "Sunduk lintel X|(0, 3.93, 1.72)|(0, 0, 0, 1)|(3.62, 0.15, 0.15)",
+    "Blandar pamidangan Z|(-1.72, 4.33, 0)|(0, 0, 0, 1)|(0.23, 0.27, 3.85)",
+    "Sunduk lintel Z|(-1.72, 3.93, 0)|(0, 0, 0, 1)|(0.15, 0.15, 3.62)",
+    "Blandar pamidangan Z|(1.72, 4.33, 0)|(0, 0, 0, 1)|(0.23, 0.27, 3.85)",
+    "Sunduk lintel Z|(1.72, 3.93, 0)|(0, 0, 0, 1)|(0.15, 0.15, 3.62)",
+    "Tumpang sari tier 1|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Tumpang X|(0, 4.48, -1.78)|(0, 0, 0, 1)|(3.71, 0.13, 0.14)",
+    "Gilded slim detail X|(0, 4.409, -1.78)|(0, 0, 0, 1)|(3.63999987, 0.024, 0.075)",
+    "Tumpang X|(0, 4.48, 1.78)|(0, 0, 0, 1)|(3.71, 0.13, 0.14)",
+    "Gilded slim detail X|(0, 4.409, 1.78)|(0, 0, 0, 1)|(3.63999987, 0.024, 0.075)",
+    "Tumpang Z|(-1.78, 4.48, 0)|(0, 0, 0, 1)|(0.14, 0.13, 3.71)",
+    "Tumpang Z|(1.78, 4.48, 0)|(0, 0, 0, 1)|(0.14, 0.13, 3.71)",
+    "Tumpang sari tier 2|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Tumpang X|(0, 4.62, -1.89)|(0, 0, 0, 1)|(3.93, 0.13, 0.14)",
+    "Gilded slim detail X|(0, 4.549, -1.89)|(0, 0, 0, 1)|(3.86, 0.024, 0.075)",
+    "Tumpang X|(0, 4.62, 1.89)|(0, 0, 0, 1)|(3.93, 0.13, 0.14)",
+    "Gilded slim detail X|(0, 4.549, 1.89)|(0, 0, 0, 1)|(3.86, 0.024, 0.075)",
+    "Tumpang Z|(-1.89, 4.62, 0)|(0, 0, 0, 1)|(0.14, 0.13, 3.93)",
+    "Tumpang Z|(1.89, 4.62, 0)|(0, 0, 0, 1)|(0.14, 0.13, 3.93)",
+    "Tumpang sari tier 3|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Tumpang X|(0, 4.76, -2.01)|(0, 0, 0, 1)|(4.17, 0.13, 0.14)",
+    "Gilded slim detail X|(0, 4.689, -2.01)|(0, 0, 0, 1)|(4.1, 0.024, 0.075)",
+    "Tumpang X|(0, 4.76, 2.01)|(0, 0, 0, 1)|(4.17, 0.13, 0.14)",
+    "Gilded slim detail X|(0, 4.689, 2.01)|(0, 0, 0, 1)|(4.1, 0.024, 0.075)",
+    "Tumpang Z|(-2.01, 4.76, 0)|(0, 0, 0, 1)|(0.14, 0.13, 4.17)",
+    "Tumpang Z|(2.01, 4.76, 0)|(0, 0, 0, 1)|(0.14, 0.13, 4.17)",
+    "Tumpang sari tier 4|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Tumpang X|(0, 4.9, -2.13)|(0, 0, 0, 1)|(4.41000032, 0.13, 0.14)",
+    "Gilded slim detail X|(0, 4.829, -2.13)|(0, 0, 0, 1)|(4.34, 0.024, 0.075)",
+    "Tumpang X|(0, 4.9, 2.13)|(0, 0, 0, 1)|(4.41000032, 0.13, 0.14)",
+    "Gilded slim detail X|(0, 4.829, 2.13)|(0, 0, 0, 1)|(4.34, 0.024, 0.075)",
+    "Tumpang Z|(-2.13, 4.9, 0)|(0, 0, 0, 1)|(0.14, 0.13, 4.41000032)",
+    "Tumpang Z|(2.13, 4.9, 0)|(0, 0, 0, 1)|(0.14, 0.13, 4.41000032)",
+    "E | Rafters, sloped structure and fascia|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Penanggap front/back blandar|(0, 3.79, -3.45)|(0, 0, 0, 1)|(7.62, 0.24, 0.24)",
+    "Penanggap front/back blandar|(0, 3.79, 3.45)|(0, 0, 0, 1)|(7.62, 0.24, 0.24)",
+    "Penanggap side blandar|(-3.45, 3.79, 0)|(0, 0, 0, 1)|(0.24, 0.24, 7.62)",
+    "Penanggap side blandar|(3.45, 3.79, 0)|(0, 0, 0, 1)|(0.24, 0.24, 7.62)",
+    "Penanggap front/back rafter|(-2.7104, 4.35, -3.22500014)|(0.4517207, 0, -0.3401982, 0.8247506)|(0.095, 2.88546515, 0.11)",
+    "Penanggap side rafter|(-3.22500014, 4.35, -2.7104)|(0.3401982, 0, -0.4517207, 0.8247506)|(0.095, 2.88546515, 0.11)",
+    "Penanggap front/back rafter|(-2.7104, 4.35, 3.22500014)|(-0.4517207, 0, -0.3401982, 0.8247506)|(0.095, 2.88546515, 0.11)",
+    "Penanggap side rafter|(3.22500014, 4.35, -2.7104)|(0.3401982, 0, 0.4517207, 0.8247506)|(0.095, 2.88546515, 0.11)",
+    "Penanggap front/back rafter|(-2.0328, 4.35, -3.22500014)|(0.481589, 0, -0.272019356, 0.8331132)|(0.095, 2.67934084, 0.11)",
+    "Penanggap side rafter|(-3.22500014, 4.35, -2.0328)|(0.272019356, 0, -0.481589, 0.8331132)|(0.095, 2.67934084, 0.11)",
+    "Penanggap front/back rafter|(-2.0328, 4.35, 3.22500014)|(-0.481589, 0, -0.272019356, 0.8331132)|(0.095, 2.67934084, 0.11)",
+    "Penanggap side rafter|(3.22500014, 4.35, -2.0328)|(0.272019356, 0, 0.481589, 0.8331132)|(0.095, 2.67934084, 0.11)",
+    "Penanggap front/back rafter|(-1.3552, 4.35, -3.22500014)|(0.5072606, 0, -0.191013083, 0.8403575)|(0.095, 2.5218153, 0.11)",
+    "Penanggap side rafter|(-3.22500014, 4.35, -1.3552)|(0.191013083, 0, -0.5072606, 0.8403575)|(0.095, 2.5218153, 0.11)",
+    "Penanggap front/back rafter|(-1.3552, 4.35, 3.22500014)|(-0.5072606, 0, -0.191013083, 0.8403575)|(0.095, 2.5218153, 0.11)",
+    "Penanggap side rafter|(3.22500014, 4.35, -1.3552)|(0.191013083, 0, 0.5072606, 0.8403575)|(0.095, 2.5218153, 0.11)",
+    "Penanggap front/back rafter|(-0.6776, 4.35, -3.22500014)|(0.524944961, 0, -0.09883614, 0.84537816)|(0.095, 2.42238784, 0.11)",
+    "Penanggap side rafter|(-3.22500014, 4.35, -0.6776)|(0.09883614, 0, -0.524944961, 0.84537816)|(0.095, 2.42238784, 0.11)",
+    "Penanggap front/back rafter|(-0.6776, 4.35, 3.22500014)|(-0.524944961, 0, -0.09883614, 0.84537816)|(0.095, 2.42238784, 0.11)",
+    "Penanggap side rafter|(3.22500014, 4.35, -0.6776)|(0.09883614, 0, 0.524944961, 0.84537816)|(0.095, 2.42238784, 0.11)",
+    "Penanggap front/back rafter|(0, 4.35, -3.22500014)|(0.5312949, 0, 0, 0.847187)|(0.095, 2.388326, 0.11)",
+    "Penanggap side rafter|(-3.22500014, 4.35, 0)|(0, 0, -0.531294942, 0.847187)|(0.095, 2.388326, 0.11)",
+    "Penanggap front/back rafter|(0, 4.35, 3.22500014)|(-0.5312949, 0, 0, 0.847187)|(0.095, 2.388326, 0.11)",
+    "Penanggap side rafter|(3.22500014, 4.35, 0)|(0, 0, 0.531294942, 0.847187)|(0.095, 2.388326, 0.11)",
+    "Penanggap front/back rafter|(0.6776, 4.35, -3.22500014)|(0.524944961, 0, 0.09883614, 0.84537816)|(0.095, 2.42238784, 0.11)",
+    "Penanggap side rafter|(-3.22500014, 4.35, 0.6776)|(-0.09883614, 0, -0.524944961, 0.84537816)|(0.095, 2.42238784, 0.11)",
+    "Penanggap front/back rafter|(0.6776, 4.35, 3.22500014)|(-0.524944961, 0, 0.09883614, 0.84537816)|(0.095, 2.42238784, 0.11)",
+    "Penanggap side rafter|(3.22500014, 4.35, 0.6776)|(-0.09883614, 0, 0.524944961, 0.84537816)|(0.095, 2.42238784, 0.11)",
+    "Penanggap front/back rafter|(1.3552, 4.35, -3.22500014)|(0.5072606, 0, 0.191013083, 0.8403575)|(0.095, 2.5218153, 0.11)",
+    "Penanggap side rafter|(-3.22500014, 4.35, 1.3552)|(-0.191013083, 0, -0.5072606, 0.8403575)|(0.095, 2.5218153, 0.11)",
+    "Penanggap front/back rafter|(1.3552, 4.35, 3.22500014)|(-0.5072606, 0, 0.191013083, 0.8403575)|(0.095, 2.5218153, 0.11)",
+    "Penanggap side rafter|(3.22500014, 4.35, 1.3552)|(-0.191013083, 0, 0.5072606, 0.8403575)|(0.095, 2.5218153, 0.11)",
+    "Penanggap front/back rafter|(2.0328, 4.35, -3.22500014)|(0.481589, 0, 0.272019356, 0.8331132)|(0.095, 2.67934084, 0.11)",
+    "Penanggap side rafter|(-3.22500014, 4.35, 2.0328)|(-0.272019356, 0, -0.481589, 0.8331132)|(0.095, 2.67934084, 0.11)",
+    "Penanggap front/back rafter|(2.0328, 4.35, 3.22500014)|(-0.481589, 0, 0.272019356, 0.8331132)|(0.095, 2.67934084, 0.11)",
+    "Penanggap side rafter|(3.22500014, 4.35, 2.0328)|(-0.272019356, 0, 0.481589, 0.8331132)|(0.095, 2.67934084, 0.11)",
+    "Penanggap front/back rafter|(2.7104, 4.35, -3.22500014)|(0.4517207, 0, 0.3401982, 0.8247506)|(0.095, 2.88546515, 0.11)",
+    "Penanggap side rafter|(-3.22500014, 4.35, 2.7104)|(-0.3401982, 0, -0.4517207, 0.8247506)|(0.095, 2.88546515, 0.11)",
+    "Penanggap front/back rafter|(2.7104, 4.35, 3.22500014)|(-0.4517207, 0, 0.3401982, 0.8247506)|(0.095, 2.88546515, 0.11)",
+    "Penanggap side rafter|(3.22500014, 4.35, 2.7104)|(-0.3401982, 0, 0.4517207, 0.8247506)|(0.095, 2.88546515, 0.11)",
+    "Brunjung steep inner rafter|(-0.975, 5.77999973, -1.425)|(0.346497774, 0, -0.2347243, 0.908209145)|(0.09, 2.462722, 0.1)",
+    "Brunjung steep inner rafter|(-0.975, 5.77999973, 1.425)|(-0.346497774, 0, -0.2347243, 0.908209145)|(0.09, 2.462722, 0.1)",
+    "Brunjung steep inner rafter|(-0.4875, 5.77999973, -1.425)|(0.367384464, 0, -0.124436654, 0.9217072)|(0.09, 2.288695, 0.1)",
+    "Brunjung steep inner rafter|(-0.4875, 5.77999973, 1.425)|(-0.367384464, 0, -0.124436654, 0.9217072)|(0.09, 2.288695, 0.1)",
+    "Brunjung steep inner rafter|(0, 5.77999973, -1.425)|(0.375339746, 0, 0, 0.926887333)|(0.09, 2.22766685, 0.1)",
+    "Brunjung steep inner rafter|(0, 5.77999973, 1.425)|(-0.375339746, 0, 0, 0.926887333)|(0.09, 2.22766685, 0.1)",
+    "Brunjung steep inner rafter|(0.4875, 5.77999973, -1.425)|(0.367384464, 0, 0.124436654, 0.9217072)|(0.09, 2.288695, 0.1)",
+    "Brunjung steep inner rafter|(0.4875, 5.77999973, 1.425)|(-0.367384464, 0, 0.124436654, 0.9217072)|(0.09, 2.288695, 0.1)",
+    "Brunjung steep inner rafter|(0.975, 5.77999973, -1.425)|(0.346497774, 0, 0.2347243, 0.908209145)|(0.09, 2.462722, 0.1)",
+    "Brunjung steep inner rafter|(0.975, 5.77999973, 1.425)|(-0.346497774, 0, 0.2347243, 0.908209145)|(0.09, 2.462722, 0.1)",
+    "Front roof fascia|(0, 3.66, 4.25)|(0, 0, 0, 1)|(8.4, 0.24, 0.22)",
+    "Front roof fascia narrow gold trim|(0, 3.5, 4.25)|(0, 0, 0, 1)|(8.2, 0.07, 0.16)",
+    "Left side eave fascia|(-4.25, 3.66, 0)|(0, 0, 0, 1)|(0.22, 0.24, 8.4)",
+    "Right side eave fascia|(4.25, 3.66, 0)|(0, 0, 0, 1)|(0.22, 0.24, 8.4)",
+    "Rear eave fascia|(0, 3.66, -4.25)|(0, 0, 0, 1)|(8.4, 0.24, 0.22)",
+    "F | Penanggap and steep brunjung roof|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Penanggap lower roof|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Brunjung high roof|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Molo | ridge cap|(0, 6.65, 0)|(0, 0, 0, 1)|(1.55, 0.13, 0.28)",
+    "G | Joglo polish v1 - joined timber details|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "One joined mesh | no colliders or realtime shadows|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "02 | Archery courtyard and 30m lane|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Large green ground|(0, -0.55, 44)|(0, 0, 0, 1)|(190, 1.05, 180)",
+    "Clear archery lane|(0, -0.007, 20.5)|(0, 0, 0, 1)|(2.55, 0.025, 33)",
+    "Lane border|(-1.48, 0.015, 20.5)|(0, 0, 0, 1)|(0.12, 0.05, 33)",
+    "Lane border|(1.48, 0.015, 20.5)|(0, 0, 0, 1)|(0.12, 0.05, 33)",
+    "Marker 10m left|(-2.2, 0.08, 11.25)|(0, 0, 0, 1)|(0.23, 0.15, 0.23)",
+    "Marker 10m right|(2.2, 0.08, 11.25)|(0, 0, 0, 1)|(0.23, 0.15, 0.23)",
+    "Marker 20m left|(-2.2, 0.08, 21.25)|(0, 0, 0, 1)|(0.23, 0.15, 0.23)",
+    "Marker 20m right|(2.2, 0.08, 21.25)|(0, 0, 0, 1)|(0.23, 0.15, 0.23)",
+    "Marker 30m left|(-2.2, 0.08, 31.25)|(0, 0, 0, 1)|(0.23, 0.15, 0.23)",
+    "Marker 30m right|(2.2, 0.08, 31.25)|(0, 0, 0, 1)|(0.23, 0.15, 0.23)",
+    "Preview Bandulan | movable target|(0, 0, 11.25)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Bandulan frame upright|(-0.65, 1.28, 0)|(0, 0, 0, 1)|(0.065, 1.24, 0.065)",
+    "Bandulan frame upright|(0.65, 1.28, 0)|(0, 0, 0, 1)|(0.065, 1.24, 0.065)",
+    "Bandulan frame top|(0, 2.48, 0)|(0, 0, 0, 1)|(1.55, 0.11, 0.12)",
+    "Gameplay bandulan anchor | 1.79m above ground|(0, 1.79, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Jemparingan Gameplay | Outdoor mode v5|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "03 | Rice fields, bamboo and trees|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "A | Irregular sawah paddy terraces|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Paddy -1-0-0|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-8.6, 0.01, 23)|(0, 0, 0, 1)|(3.95, 0.05, 5.03)",
+    "Earth bund|(-8.6, 0.016, 25.5653)|(0, 0, 0, 1)|(4.3, 0.055, 0.28)",
+    "Paddy -1-0-1|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-13.3432283, 0.01, 23)|(0, 0, 0, 1)|(4.202441, 0.05, 4.491864)",
+    "Earth bund|(-13.3432283, 0.016, 25.2908516)|(0, 0, 0, 1)|(4.552441, 0.055, 0.28)",
+    "Paddy -1-0-2|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-19.1226463, 0.01, 23)|(0, 0, 0, 1)|(4.22278929, 0.05, 4.40161562)",
+    "Earth bund|(-19.1226463, 0.016, 25.2448235)|(0, 0, 0, 1)|(4.572789, 0.055, 0.28)",
+    "Paddy -1-0-3|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-23.9649849, 0.01, 23)|(0, 0, 0, 1)|(3.992336, 0.05, 5.014865)",
+    "Earth bund|(-23.9649849, 0.016, 25.55758)|(0, 0, 0, 1)|(4.342336, 0.055, 0.28)",
+    "Paddy 1-0-0|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(8.6, 0.01, 23)|(0, 0, 0, 1)|(3.95, 0.05, 5.03)",
+    "Earth bund|(8.6, 0.016, 25.5653)|(0, 0, 0, 1)|(4.3, 0.055, 0.28)",
+    "Paddy 1-0-1|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(14.0567722, 0.01, 23)|(0, 0, 0, 1)|(4.202441, 0.05, 4.491864)",
+    "Earth bund|(14.0567722, 0.016, 25.2908516)|(0, 0, 0, 1)|(4.552441, 0.055, 0.28)",
+    "Paddy 1-0-2|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(18.477354, 0.01, 23)|(0, 0, 0, 1)|(4.22278929, 0.05, 4.40161562)",
+    "Earth bund|(18.477354, 0.016, 25.2448235)|(0, 0, 0, 1)|(4.572789, 0.055, 0.28)",
+    "Paddy 1-0-3|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(23.8350143, 0.01, 23)|(0, 0, 0, 1)|(3.992336, 0.05, 5.014865)",
+    "Earth bund|(23.8350143, 0.016, 25.55758)|(0, 0, 0, 1)|(4.342336, 0.055, 0.28)",
+    "Paddy -1-1-0|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-8.213527, 0.01, 29)|(0, 0, 0, 1)|(4.202441, 0.05, 4.85531473)",
+    "Earth bund|(-8.213527, 0.016, 31.47621)|(0, 0, 0, 1)|(4.552441, 0.055, 0.28)",
+    "Paddy -1-1-1|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-13.7827606, 0.01, 29)|(0, 0, 0, 1)|(4.22278929, 0.05, 4.27380276)",
+    "Earth bund|(-13.7827606, 0.016, 31.17964)|(0, 0, 0, 1)|(4.572789, 0.055, 0.28)",
+    "Paddy -1-1-2|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-19.11163, 0.01, 29)|(0, 0, 0, 1)|(3.992336, 0.05, 4.75779152)",
+    "Earth bund|(-19.11163, 0.016, 31.4264736)|(0, 0, 0, 1)|(4.342336, 0.055, 0.28)",
+    "Paddy -1-1-3|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-23.5354176, 0.01, 29)|(0, 0, 0, 1)|(3.72295928, 0.05, 4.936483)",
+    "Earth bund|(-23.5354176, 0.016, 31.5176067)|(0, 0, 0, 1)|(4.07295942, 0.055, 0.28)",
+    "Paddy 1-1-0|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(8.986474, 0.01, 29)|(0, 0, 0, 1)|(4.202441, 0.05, 4.85531473)",
+    "Earth bund|(8.986474, 0.016, 31.47621)|(0, 0, 0, 1)|(4.552441, 0.055, 0.28)",
+    "Paddy 1-1-1|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(13.61724, 0.01, 29)|(0, 0, 0, 1)|(4.22278929, 0.05, 4.27380276)",
+    "Earth bund|(13.61724, 0.016, 31.17964)|(0, 0, 0, 1)|(4.572789, 0.055, 0.28)",
+    "Paddy 1-1-2|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(18.48837, 0.01, 29)|(0, 0, 0, 1)|(3.992336, 0.05, 4.75779152)",
+    "Earth bund|(18.48837, 0.016, 31.4264736)|(0, 0, 0, 1)|(4.342336, 0.055, 0.28)",
+    "Paddy 1-1-3|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(24.2645836, 0.01, 29)|(0, 0, 0, 1)|(3.72295928, 0.05, 4.936483)",
+    "Earth bund|(24.2645836, 0.016, 31.5176067)|(0, 0, 0, 1)|(4.07295942, 0.055, 0.28)",
+    "Paddy -1-2-0|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-8.400696, 0.01, 35)|(0, 0, 0, 1)|(4.22278929, 0.05, 4.491864)",
+    "Earth bund|(-8.400696, 0.016, 37.29085)|(0, 0, 0, 1)|(4.572789, 0.055, 0.28)",
+    "Paddy -1-2-1|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-14.0994511, 0.01, 35)|(0, 0, 0, 1)|(3.992336, 0.05, 4.40161562)",
+    "Earth bund|(-14.0994511, 0.016, 37.2448235)|(0, 0, 0, 1)|(4.342336, 0.055, 0.28)",
+    "Paddy -1-2-2|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-18.63806, 0.01, 35)|(0, 0, 0, 1)|(3.72295928, 0.05, 5.014865)",
+    "Earth bund|(-18.63806, 0.016, 37.5575829)|(0, 0, 0, 1)|(4.07295942, 0.055, 0.28)",
+    "Paddy -1-2-3|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-23.647, 0.01, 35)|(0, 0, 0, 1)|(3.66232276, 0.05, 4.59471)",
+    "Earth bund|(-23.647, 0.016, 37.3433037)|(0, 0, 0, 1)|(4.012323, 0.055, 0.28)",
+    "Paddy 1-2-0|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(8.799305, 0.01, 35)|(0, 0, 0, 1)|(4.22278929, 0.05, 4.491864)",
+    "Earth bund|(8.799305, 0.016, 37.29085)|(0, 0, 0, 1)|(4.572789, 0.055, 0.28)",
+    "Paddy 1-2-1|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(13.3005495, 0.01, 35)|(0, 0, 0, 1)|(3.992336, 0.05, 4.40161562)",
+    "Earth bund|(13.3005495, 0.016, 37.2448235)|(0, 0, 0, 1)|(4.342336, 0.055, 0.28)",
+    "Paddy 1-2-2|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(18.96194, 0.01, 35)|(0, 0, 0, 1)|(3.72295928, 0.05, 5.014865)",
+    "Earth bund|(18.96194, 0.016, 37.5575829)|(0, 0, 0, 1)|(4.07295942, 0.055, 0.28)",
+    "Paddy 1-2-3|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(24.153, 0.01, 35)|(0, 0, 0, 1)|(3.66232276, 0.05, 4.59471)",
+    "Earth bund|(24.153, 0.016, 37.3433037)|(0, 0, 0, 1)|(4.012323, 0.055, 0.28)",
+    "Paddy -1-3-0|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-8.883693, 0.01, 41)|(0, 0, 0, 1)|(3.992336, 0.05, 4.27380276)",
+    "Earth bund|(-8.883693, 0.016, 43.1796379)|(0, 0, 0, 1)|(4.342336, 0.055, 0.28)",
+    "Paddy -1-3-1|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-13.8232365, 0.01, 41)|(0, 0, 0, 1)|(3.72295928, 0.05, 4.75779152)",
+    "Earth bund|(-13.8232365, 0.016, 43.4264755)|(0, 0, 0, 1)|(4.07295942, 0.055, 0.28)",
+    "Paddy -1-3-2|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-18.40486, 0.01, 41)|(0, 0, 0, 1)|(3.66232276, 0.05, 4.936483)",
+    "Earth bund|(-18.40486, 0.016, 43.5176048)|(0, 0, 0, 1)|(4.012323, 0.055, 0.28)",
+    "Paddy -1-3-3|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-24.1341114, 0.01, 41)|(0, 0, 0, 1)|(3.86617541, 0.05, 4.30377054)",
+    "Earth bund|(-24.1341114, 0.016, 43.1949234)|(0, 0, 0, 1)|(4.21617556, 0.055, 0.28)",
+    "Paddy 1-3-0|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(8.316308, 0.01, 41)|(0, 0, 0, 1)|(3.992336, 0.05, 4.27380276)",
+    "Earth bund|(8.316308, 0.016, 43.1796379)|(0, 0, 0, 1)|(4.342336, 0.055, 0.28)",
+    "Paddy 1-3-1|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(13.5767641, 0.01, 41)|(0, 0, 0, 1)|(3.72295928, 0.05, 4.75779152)",
+    "Earth bund|(13.5767641, 0.016, 43.4264755)|(0, 0, 0, 1)|(4.07295942, 0.055, 0.28)",
+    "Paddy 1-3-2|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(19.19514, 0.01, 41)|(0, 0, 0, 1)|(3.66232276, 0.05, 4.936483)",
+    "Earth bund|(19.19514, 0.016, 43.5176048)|(0, 0, 0, 1)|(4.012323, 0.055, 0.28)",
+    "Paddy 1-3-3|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(23.66589, 0.01, 41)|(0, 0, 0, 1)|(3.86617541, 0.05, 4.30377054)",
+    "Earth bund|(23.66589, 0.016, 43.1949234)|(0, 0, 0, 1)|(4.21617556, 0.055, 0.28)",
+    "Paddy -1-4-0|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-8.945605, 0.01, 47)|(0, 0, 0, 1)|(3.72295928, 0.05, 4.40161562)",
+    "Earth bund|(-8.945605, 0.016, 49.2448235)|(0, 0, 0, 1)|(4.07295942, 0.055, 0.28)",
+    "Paddy -1-4-1|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-13.3641024, 0.01, 47)|(0, 0, 0, 1)|(3.66232276, 0.05, 5.014865)",
+    "Earth bund|(-13.3641024, 0.016, 49.5575829)|(0, 0, 0, 1)|(4.012323, 0.055, 0.28)",
+    "Paddy -1-4-2|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-18.7581654, 0.01, 47)|(0, 0, 0, 1)|(3.86617541, 0.05, 4.59471)",
+    "Earth bund|(-18.7581654, 0.016, 49.3433037)|(0, 0, 0, 1)|(4.21617556, 0.055, 0.28)",
+    "Paddy -1-4-3|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-24.2737312, 0.01, 47)|(0, 0, 0, 1)|(4.147096, 0.05, 4.331153)",
+    "Earth bund|(-24.2737312, 0.016, 49.20889)|(0, 0, 0, 1)|(4.497096, 0.055, 0.28)",
+    "Paddy 1-4-0|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(8.25439548, 0.01, 47)|(0, 0, 0, 1)|(3.72295928, 0.05, 4.40161562)",
+    "Earth bund|(8.25439548, 0.016, 49.2448235)|(0, 0, 0, 1)|(4.07295942, 0.055, 0.28)",
+    "Paddy 1-4-1|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(14.0358982, 0.01, 47)|(0, 0, 0, 1)|(3.66232276, 0.05, 5.014865)",
+    "Earth bund|(14.0358982, 0.016, 49.5575829)|(0, 0, 0, 1)|(4.012323, 0.055, 0.28)",
+    "Paddy 1-4-2|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(18.841835, 0.01, 47)|(0, 0, 0, 1)|(3.86617541, 0.05, 4.59471)",
+    "Earth bund|(18.841835, 0.016, 49.3433037)|(0, 0, 0, 1)|(4.21617556, 0.055, 0.28)",
+    "Paddy 1-4-3|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(23.526268, 0.01, 47)|(0, 0, 0, 1)|(4.147096, 0.05, 4.331153)",
+    "Earth bund|(23.526268, 0.016, 49.20889)|(0, 0, 0, 1)|(4.497096, 0.055, 0.28)",
+    "Paddy -1-5-0|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-8.494536, 0.01, 53)|(0, 0, 0, 1)|(3.66232276, 0.05, 4.75779152)",
+    "Earth bund|(-8.494536, 0.016, 55.4264755)|(0, 0, 0, 1)|(4.012323, 0.055, 0.28)",
+    "Paddy -1-5-1|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-13.4035416, 0.01, 53)|(0, 0, 0, 1)|(3.86617541, 0.05, 4.936483)",
+    "Earth bund|(-13.4035416, 0.016, 55.5176048)|(0, 0, 0, 1)|(4.21617556, 0.055, 0.28)",
+    "Paddy -1-5-2|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-19.1735668, 0.01, 53)|(0, 0, 0, 1)|(4.147096, 0.05, 4.30377054)",
+    "Earth bund|(-19.1735668, 0.016, 55.1949234)|(0, 0, 0, 1)|(4.497096, 0.055, 0.28)",
+    "Paddy -1-5-3|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-23.8586216, 0.01, 53)|(0, 0, 0, 1)|(4.24680758, 0.05, 4.651682)",
+    "Earth bund|(-23.8586216, 0.016, 55.3723564)|(0, 0, 0, 1)|(4.59680748, 0.055, 0.28)",
+    "Paddy 1-5-0|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(8.705464, 0.01, 53)|(0, 0, 0, 1)|(3.66232276, 0.05, 4.75779152)",
+    "Earth bund|(8.705464, 0.016, 55.4264755)|(0, 0, 0, 1)|(4.012323, 0.055, 0.28)",
+    "Paddy 1-5-1|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(13.996459, 0.01, 53)|(0, 0, 0, 1)|(3.86617541, 0.05, 4.936483)",
+    "Earth bund|(13.996459, 0.016, 55.5176048)|(0, 0, 0, 1)|(4.21617556, 0.055, 0.28)",
+    "Paddy 1-5-2|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(18.4264336, 0.01, 53)|(0, 0, 0, 1)|(4.147096, 0.05, 4.30377054)",
+    "Earth bund|(18.4264336, 0.016, 55.1949234)|(0, 0, 0, 1)|(4.497096, 0.055, 0.28)",
+    "Paddy 1-5-3|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(23.9413776, 0.01, 53)|(0, 0, 0, 1)|(4.24680758, 0.05, 4.651682)",
+    "Earth bund|(23.9413776, 0.016, 55.3723564)|(0, 0, 0, 1)|(4.59680748, 0.055, 0.28)",
+    "Paddy -1-6-0|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-8.200007, 0.01, 59)|(0, 0, 0, 1)|(3.86617541, 0.05, 5.014865)",
+    "Earth bund|(-8.200007, 0.016, 61.5575829)|(0, 0, 0, 1)|(4.21617556, 0.055, 0.28)",
+    "Paddy -1-6-1|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-13.8830147, 0.01, 59)|(0, 0, 0, 1)|(4.147096, 0.05, 4.59471)",
+    "Earth bund|(-13.8830147, 0.016, 61.3433037)|(0, 0, 0, 1)|(4.497096, 0.055, 0.28)",
+    "Paddy -1-6-2|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-19.034483, 0.01, 59)|(0, 0, 0, 1)|(4.24680758, 0.05, 4.331153)",
+    "Earth bund|(-19.034483, 0.016, 61.20889)|(0, 0, 0, 1)|(4.59680748, 0.055, 0.28)",
+    "Paddy -1-6-3|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-23.50493, 0.01, 59)|(0, 0, 0, 1)|(4.07363558, 0.05, 4.9706645)",
+    "Earth bund|(-23.50493, 0.016, 61.535038)|(0, 0, 0, 1)|(4.42363548, 0.055, 0.28)",
+    "Paddy 1-6-0|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(8.999993, 0.01, 59)|(0, 0, 0, 1)|(3.86617541, 0.05, 5.014865)",
+    "Earth bund|(8.999993, 0.016, 61.5575829)|(0, 0, 0, 1)|(4.21617556, 0.055, 0.28)",
+    "Paddy 1-6-1|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(13.5169859, 0.01, 59)|(0, 0, 0, 1)|(4.147096, 0.05, 4.59471)",
+    "Earth bund|(13.5169859, 0.016, 61.3433037)|(0, 0, 0, 1)|(4.497096, 0.055, 0.28)",
+    "Paddy 1-6-2|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(18.5655174, 0.01, 59)|(0, 0, 0, 1)|(4.24680758, 0.05, 4.331153)",
+    "Earth bund|(18.5655174, 0.016, 61.20889)|(0, 0, 0, 1)|(4.59680748, 0.055, 0.28)",
+    "Paddy 1-6-3|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(24.29507, 0.01, 59)|(0, 0, 0, 1)|(4.07363558, 0.05, 4.9706645)",
+    "Earth bund|(24.29507, 0.016, 61.535038)|(0, 0, 0, 1)|(4.42363548, 0.055, 0.28)",
+    "Paddy -1-7-0|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-8.499188, 0.01, 65)|(0, 0, 0, 1)|(4.147096, 0.05, 4.936483)",
+    "Earth bund|(-8.499188, 0.016, 67.51761)|(0, 0, 0, 1)|(4.497096, 0.055, 0.28)",
+    "Paddy -1-7-1|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-14.09084, 0.01, 65)|(0, 0, 0, 1)|(4.24680758, 0.05, 4.30377054)",
+    "Earth bund|(-14.09084, 0.016, 67.19492)|(0, 0, 0, 1)|(4.59680748, 0.055, 0.28)",
+    "Paddy -1-7-2|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-18.5473557, 0.01, 65)|(0, 0, 0, 1)|(4.07363558, 0.05, 4.651682)",
+    "Earth bund|(-18.5473557, 0.016, 67.37236)|(0, 0, 0, 1)|(4.42363548, 0.055, 0.28)",
+    "Paddy -1-7-3|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-23.73764, 0.01, 65)|(0, 0, 0, 1)|(3.78679371, 0.05, 4.99482965)",
+    "Earth bund|(-23.73764, 0.016, 67.54736)|(0, 0, 0, 1)|(4.13679361, 0.055, 0.28)",
+    "Paddy 1-7-0|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(8.700812, 0.01, 65)|(0, 0, 0, 1)|(4.147096, 0.05, 4.936483)",
+    "Earth bund|(8.700812, 0.016, 67.51761)|(0, 0, 0, 1)|(4.497096, 0.055, 0.28)",
+    "Paddy 1-7-1|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(13.30916, 0.01, 65)|(0, 0, 0, 1)|(4.24680758, 0.05, 4.30377054)",
+    "Earth bund|(13.30916, 0.016, 67.19492)|(0, 0, 0, 1)|(4.59680748, 0.055, 0.28)",
+    "Paddy 1-7-2|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(19.0526447, 0.01, 65)|(0, 0, 0, 1)|(4.07363558, 0.05, 4.651682)",
+    "Earth bund|(19.0526447, 0.016, 67.37236)|(0, 0, 0, 1)|(4.42363548, 0.055, 0.28)",
+    "Paddy 1-7-3|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(24.06236, 0.01, 65)|(0, 0, 0, 1)|(3.78679371, 0.05, 4.99482965)",
+    "Earth bund|(24.06236, 0.016, 67.54736)|(0, 0, 0, 1)|(4.13679361, 0.055, 0.28)",
+    "Paddy -1-8-0|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-8.948004, 0.01, 71)|(0, 0, 0, 1)|(4.24680758, 0.05, 4.59471)",
+    "Earth bund|(-8.948004, 0.016, 73.3433)|(0, 0, 0, 1)|(4.59680748, 0.055, 0.28)",
+    "Paddy -1-8-1|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-13.7185421, 0.01, 71)|(0, 0, 0, 1)|(4.07363558, 0.05, 4.331153)",
+    "Earth bund|(-13.7185421, 0.016, 73.2088852)|(0, 0, 0, 1)|(4.42363548, 0.055, 0.28)",
+    "Paddy -1-8-2|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-18.4352283, 0.01, 71)|(0, 0, 0, 1)|(3.78679371, 0.05, 4.9706645)",
+    "Earth bund|(-18.4352283, 0.016, 73.53504)|(0, 0, 0, 1)|(4.13679361, 0.055, 0.28)",
+    "Paddy -1-8-3|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-24.21134, 0.01, 71)|(0, 0, 0, 1)|(3.650003, 0.05, 4.70196)",
+    "Earth bund|(-24.21134, 0.016, 73.398)|(0, 0, 0, 1)|(4.000003, 0.055, 0.28)",
+    "Paddy 1-8-0|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(8.251997, 0.01, 71)|(0, 0, 0, 1)|(4.24680758, 0.05, 4.59471)",
+    "Earth bund|(8.251997, 0.016, 73.3433)|(0, 0, 0, 1)|(4.59680748, 0.055, 0.28)",
+    "Paddy 1-8-1|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(13.6814585, 0.01, 71)|(0, 0, 0, 1)|(4.07363558, 0.05, 4.331153)",
+    "Earth bund|(13.6814585, 0.016, 73.2088852)|(0, 0, 0, 1)|(4.42363548, 0.055, 0.28)",
+    "Paddy 1-8-2|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(19.164772, 0.01, 71)|(0, 0, 0, 1)|(3.78679371, 0.05, 4.9706645)",
+    "Earth bund|(19.164772, 0.016, 73.53504)|(0, 0, 0, 1)|(4.13679361, 0.055, 0.28)",
+    "Paddy 1-8-3|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(23.58866, 0.01, 71)|(0, 0, 0, 1)|(3.650003, 0.05, 4.70196)",
+    "Earth bund|(23.58866, 0.016, 73.398)|(0, 0, 0, 1)|(4.000003, 0.055, 0.28)",
+    "Paddy -1-9-0|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-8.880279, 0.01, 77)|(0, 0, 0, 1)|(4.07363558, 0.05, 4.30377054)",
+    "Earth bund|(-8.880279, 0.016, 79.19492)|(0, 0, 0, 1)|(4.42363548, 0.055, 0.28)",
+    "Paddy -1-9-1|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-13.3187227, 0.01, 77)|(0, 0, 0, 1)|(3.78679371, 0.05, 4.651682)",
+    "Earth bund|(-13.3187227, 0.016, 79.37236)|(0, 0, 0, 1)|(4.13679361, 0.055, 0.28)",
+    "Paddy -1-9-2|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-18.86453, 0.01, 77)|(0, 0, 0, 1)|(3.650003, 0.05, 4.99482965)",
+    "Earth bund|(-18.86453, 0.016, 79.54736)|(0, 0, 0, 1)|(4.000003, 0.055, 0.28)",
+    "Paddy -1-9-3|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(-24.22292, 0.01, 77)|(0, 0, 0, 1)|(3.78902817, 0.05, 4.36131859)",
+    "Earth bund|(-24.22292, 0.016, 79.22427)|(0, 0, 0, 1)|(4.139028, 0.055, 0.28)",
+    "Paddy 1-9-0|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(8.319722, 0.01, 77)|(0, 0, 0, 1)|(4.07363558, 0.05, 4.30377054)",
+    "Earth bund|(8.319722, 0.016, 79.19492)|(0, 0, 0, 1)|(4.42363548, 0.055, 0.28)",
+    "Paddy 1-9-1|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(14.0812778, 0.01, 77)|(0, 0, 0, 1)|(3.78679371, 0.05, 4.651682)",
+    "Earth bund|(14.0812778, 0.016, 79.37236)|(0, 0, 0, 1)|(4.13679361, 0.055, 0.28)",
+    "Paddy 1-9-2|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(18.73547, 0.01, 77)|(0, 0, 0, 1)|(3.650003, 0.05, 4.99482965)",
+    "Earth bund|(18.73547, 0.016, 79.54736)|(0, 0, 0, 1)|(4.000003, 0.055, 0.28)",
+    "Paddy 1-9-3|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Rice field|(23.5770817, 0.01, 77)|(0, 0, 0, 1)|(3.78902817, 0.05, 4.36131859)",
+    "Earth bund|(23.5770817, 0.016, 79.22427)|(0, 0, 0, 1)|(4.139028, 0.055, 0.28)",
+    "B | Natural side access paths|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Soft earth path segment|(-6.45, -0.005, 9)|(0, 0, 0, 1)|(1.25, 0.05, 9.8)",
+    "Soft earth path segment|(-6.92524433, -0.005, 18.5)|(0, 0, 0, 1)|(1.25, 0.05, 9.8)",
+    "Soft earth path segment|(-7.098444, -0.005, 28)|(0, 0, 0, 1)|(1.25, 0.05, 9.8)",
+    "Soft earth path segment|(-6.85951948, -0.005, 37.5)|(0, 0, 0, 1)|(1.25, 0.05, 9.8)",
+    "Soft earth path segment|(-6.360322, -0.005, 47)|(0, 0, 0, 1)|(1.25, 0.05, 9.8)",
+    "Soft earth path segment|(-5.91812, -0.005, 56.5)|(0, 0, 0, 1)|(1.25, 0.05, 9.8)",
+    "Soft earth path segment|(-5.81395769, -0.005, 66)|(0, 0, 0, 1)|(1.25, 0.05, 9.8)",
+    "Soft earth path segment|(-6.114037, -0.005, 75.5)|(0, 0, 0, 1)|(1.25, 0.05, 9.8)",
+    "Soft earth path segment|(6.45, -0.005, 9)|(0, 0, 0, 1)|(1.25, 0.05, 9.8)",
+    "Soft earth path segment|(6.92524433, -0.005, 18.5)|(0, 0, 0, 1)|(1.25, 0.05, 9.8)",
+    "Soft earth path segment|(7.098444, -0.005, 28)|(0, 0, 0, 1)|(1.25, 0.05, 9.8)",
+    "Soft earth path segment|(6.85951948, -0.005, 37.5)|(0, 0, 0, 1)|(1.25, 0.05, 9.8)",
+    "Soft earth path segment|(6.360322, -0.005, 47)|(0, 0, 0, 1)|(1.25, 0.05, 9.8)",
+    "Soft earth path segment|(5.91812, -0.005, 56.5)|(0, 0, 0, 1)|(1.25, 0.05, 9.8)",
+    "Soft earth path segment|(5.81395769, -0.005, 66)|(0, 0, 0, 1)|(1.25, 0.05, 9.8)",
+    "Soft earth path segment|(6.114037, -0.005, 75.5)|(0, 0, 0, 1)|(1.25, 0.05, 9.8)",
+    "C | Bamboo boundary|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Bamboo fence post|(-5.2, 0.62, 6)|(0, 0, 0, 1)|(0.055, 0.62, 0.055)",
+    "Bamboo fence post|(-5.2, 0.62, 10.3)|(0, 0, 0, 1)|(0.055, 0.62, 0.055)",
+    "Bamboo fence post|(-5.2, 0.62, 14.6)|(0, 0, 0, 1)|(0.055, 0.62, 0.055)",
+    "Bamboo fence post|(-5.2, 0.62, 18.9000015)|(0, 0, 0, 1)|(0.055, 0.62, 0.055)",
+    "Bamboo fence post|(-5.2, 0.62, 23.2)|(0, 0, 0, 1)|(0.055, 0.62, 0.055)",
+    "Bamboo fence post|(-5.2, 0.62, 27.5)|(0, 0, 0, 1)|(0.055, 0.62, 0.055)",
+    "Bamboo fence post|(-5.2, 0.62, 31.8000011)|(0, 0, 0, 1)|(0.055, 0.62, 0.055)",
+    "Bamboo fence post|(-5.2, 0.62, 36.1000023)|(0, 0, 0, 1)|(0.055, 0.62, 0.055)",
+    "Bamboo fence post|(-5.2, 0.62, 40.4)|(0, 0, 0, 1)|(0.055, 0.62, 0.055)",
+    "Bamboo fence post|(-5.2, 0.62, 44.7)|(0, 0, 0, 1)|(0.055, 0.62, 0.055)",
+    "Bamboo fence post|(-5.2, 0.62, 49)|(0, 0, 0, 1)|(0.055, 0.62, 0.055)",
+    "Bamboo fence rail|(-5.2, 0.44, 27.5)|(0, 0, 0, 1)|(0.075, 0.065, 44)",
+    "Bamboo fence rail|(-5.2, 0.86, 27.5)|(0, 0, 0, 1)|(0.075, 0.065, 44)",
+    "Bamboo fence post|(5.2, 0.62, 6)|(0, 0, 0, 1)|(0.055, 0.62, 0.055)",
+    "Bamboo fence post|(5.2, 0.62, 10.3)|(0, 0, 0, 1)|(0.055, 0.62, 0.055)",
+    "Bamboo fence post|(5.2, 0.62, 14.6)|(0, 0, 0, 1)|(0.055, 0.62, 0.055)",
+    "Bamboo fence post|(5.2, 0.62, 18.9000015)|(0, 0, 0, 1)|(0.055, 0.62, 0.055)",
+    "Bamboo fence post|(5.2, 0.62, 23.2)|(0, 0, 0, 1)|(0.055, 0.62, 0.055)",
+    "Bamboo fence post|(5.2, 0.62, 27.5)|(0, 0, 0, 1)|(0.055, 0.62, 0.055)",
+    "Bamboo fence post|(5.2, 0.62, 31.8000011)|(0, 0, 0, 1)|(0.055, 0.62, 0.055)",
+    "Bamboo fence post|(5.2, 0.62, 36.1000023)|(0, 0, 0, 1)|(0.055, 0.62, 0.055)",
+    "Bamboo fence post|(5.2, 0.62, 40.4)|(0, 0, 0, 1)|(0.055, 0.62, 0.055)",
+    "Bamboo fence post|(5.2, 0.62, 44.7)|(0, 0, 0, 1)|(0.055, 0.62, 0.055)",
+    "Bamboo fence post|(5.2, 0.62, 49)|(0, 0, 0, 1)|(0.055, 0.62, 0.055)",
+    "Bamboo fence rail|(5.2, 0.44, 27.5)|(0, 0, 0, 1)|(0.075, 0.065, 44)",
+    "Bamboo fence rail|(5.2, 0.86, 27.5)|(0, 0, 0, 1)|(0.075, 0.065, 44)",
+    "D | Tropical tree clusters|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Tree 1|(-10, 0, 7)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Trunk|(0, 1.56400013, 0)|(0, 0, 0, 1)|(0.17, 1.56400013, 0.17)",
+    "Crown center|(0, 3.4, 0)|(0, 0, 0, 1)|(1.7, 1.6, 1.7)",
+    "Crown left|(-0.88, 2.94, 0.22)|(0, 0, 0, 1)|(1.34, 1.18, 1.27)",
+    "Crown right|(0.84, 2.98, -0.1)|(0, 0, 0, 1)|(1.45, 1.32, 1.29)",
+    "Tree 2|(10, 0, 12)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Trunk|(0, 1.817, 0)|(0, 0, 0, 1)|(0.17, 1.817, 0.17)",
+    "Crown center|(0, 3.95, 0)|(0, 0, 0, 1)|(1.7, 1.6, 1.7)",
+    "Crown left|(-0.88, 3.49, 0.22)|(0, 0, 0, 1)|(1.34, 1.18, 1.27)",
+    "Crown right|(0.84, 3.53, -0.1)|(0, 0, 0, 1)|(1.45, 1.32, 1.29)",
+    "Tree 3|(-13, 0, 23)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Trunk|(0, 2.07, 0)|(0, 0, 0, 1)|(0.17, 2.07, 0.17)",
+    "Crown center|(0, 4.5, 0)|(0, 0, 0, 1)|(1.7, 1.6, 1.7)",
+    "Crown left|(-0.88, 4.04, 0.22)|(0, 0, 0, 1)|(1.34, 1.18, 1.27)",
+    "Crown right|(0.84, 4.08, -0.1)|(0, 0, 0, 1)|(1.45, 1.32, 1.29)",
+    "Tree 4|(15, 0, 29)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Trunk|(0, 2.32300019, 0)|(0, 0, 0, 1)|(0.17, 2.32300019, 0.17)",
+    "Crown center|(0, 5.05, 0)|(0, 0, 0, 1)|(1.7, 1.6, 1.7)",
+    "Crown left|(-0.88, 4.59, 0.22)|(0, 0, 0, 1)|(1.34, 1.18, 1.27)",
+    "Crown right|(0.84, 4.63, -0.1)|(0, 0, 0, 1)|(1.45, 1.32, 1.29)",
+    "Tree 5|(-24, 0, 37)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Trunk|(0, 1.56400013, 0)|(0, 0, 0, 1)|(0.17, 1.56400013, 0.17)",
+    "Crown center|(0, 3.4, 0)|(0, 0, 0, 1)|(1.7, 1.6, 1.7)",
+    "Crown left|(-0.88, 2.94, 0.22)|(0, 0, 0, 1)|(1.34, 1.18, 1.27)",
+    "Crown right|(0.84, 2.98, -0.1)|(0, 0, 0, 1)|(1.45, 1.32, 1.29)",
+    "Tree 6|(25, 0, 43)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Trunk|(0, 1.817, 0)|(0, 0, 0, 1)|(0.17, 1.817, 0.17)",
+    "Crown center|(0, 3.95, 0)|(0, 0, 0, 1)|(1.7, 1.6, 1.7)",
+    "Crown left|(-0.88, 3.49, 0.22)|(0, 0, 0, 1)|(1.34, 1.18, 1.27)",
+    "Crown right|(0.84, 3.53, -0.1)|(0, 0, 0, 1)|(1.45, 1.32, 1.29)",
+    "Tree 7|(-34, 0, 59)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Trunk|(0, 2.07, 0)|(0, 0, 0, 1)|(0.17, 2.07, 0.17)",
+    "Crown center|(0, 4.5, 0)|(0, 0, 0, 1)|(1.7, 1.6, 1.7)",
+    "Crown left|(-0.88, 4.04, 0.22)|(0, 0, 0, 1)|(1.34, 1.18, 1.27)",
+    "Crown right|(0.84, 4.08, -0.1)|(0, 0, 0, 1)|(1.45, 1.32, 1.29)",
+    "Tree 8|(35, 0, 57)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Trunk|(0, 2.32300019, 0)|(0, 0, 0, 1)|(0.17, 2.32300019, 0.17)",
+    "Crown center|(0, 5.05, 0)|(0, 0, 0, 1)|(1.7, 1.6, 1.7)",
+    "Crown left|(-0.88, 4.59, 0.22)|(0, 0, 0, 1)|(1.34, 1.18, 1.27)",
+    "Crown right|(0.84, 4.63, -0.1)|(0, 0, 0, 1)|(1.45, 1.32, 1.29)",
+    "Tree 9|(-44, 0, 74)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Trunk|(0, 1.56400013, 0)|(0, 0, 0, 1)|(0.17, 1.56400013, 0.17)",
+    "Crown center|(0, 3.4, 0)|(0, 0, 0, 1)|(1.7, 1.6, 1.7)",
+    "Crown left|(-0.88, 2.94, 0.22)|(0, 0, 0, 1)|(1.34, 1.18, 1.27)",
+    "Crown right|(0.84, 2.98, -0.1)|(0, 0, 0, 1)|(1.45, 1.32, 1.29)",
+    "Tree 10|(47, 0, 81)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Trunk|(0, 1.817, 0)|(0, 0, 0, 1)|(0.17, 1.817, 0.17)",
+    "Crown center|(0, 3.95, 0)|(0, 0, 0, 1)|(1.7, 1.6, 1.7)",
+    "Crown left|(-0.88, 3.49, 0.22)|(0, 0, 0, 1)|(1.34, 1.18, 1.27)",
+    "Crown right|(0.84, 3.53, -0.1)|(0, 0, 0, 1)|(1.45, 1.32, 1.29)",
+    "E | Banana leaf silhouettes|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Banana plant|(-7.6, 0, 15)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Banana pseudostem|(0, 1.26, 0)|(0, 0, 0, 1)|(0.11, 1.25, 0.11)",
+    "Banana leaf blade|(0.7, 2.395, 0)|(0.0226933416, 0.7067426, -0.0226933416, 0.7067425)|(0.37, 0.035, 1.55)",
+    "Banana leaf blade|(0.349999964, 2.585, 0.5629165)|(-0.103341252, 0.272971332, 0.0295075122, 0.9560003)|(0.37, 0.035, 1.55)",
+    "Banana leaf blade|(-0.350000024, 2.395, 0.562916458)|(0.03258347, -0.2744039, 0.009303715, 0.9610174)|(0.37, 0.035, 1.55)",
+    "Banana leaf blade|(-0.7, 2.585, -5.68248026E-08)|(-0.0720892847, -0.7034225, -0.07208929, 0.7034225)|(0.37, 0.035, 1.55)",
+    "Banana leaf blade|(-0.349999934, 2.395, -0.5629165)|(-0.009303713, 0.9610174, -0.03258347, -0.27440384)|(0.37, 0.035, 1.55)",
+    "Banana leaf blade|(0.349999934, 2.585, -0.5629165)|(-0.0295075122, 0.9560003, 0.103341252, 0.272971332)|(0.37, 0.035, 1.55)",
+    "Banana plant|(8, 0, 19)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Banana pseudostem|(0, 1.26, 0)|(0, 0, 0, 1)|(0.11, 1.25, 0.11)",
+    "Banana leaf blade|(0.7, 2.395, 0)|(0.0226933416, 0.7067426, -0.0226933416, 0.7067425)|(0.37, 0.035, 1.55)",
+    "Banana leaf blade|(0.349999964, 2.585, 0.5629165)|(-0.103341252, 0.272971332, 0.0295075122, 0.9560003)|(0.37, 0.035, 1.55)",
+    "Banana leaf blade|(-0.350000024, 2.395, 0.562916458)|(0.03258347, -0.2744039, 0.009303715, 0.9610174)|(0.37, 0.035, 1.55)",
+    "Banana leaf blade|(-0.7, 2.585, -5.68248026E-08)|(-0.0720892847, -0.7034225, -0.07208929, 0.7034225)|(0.37, 0.035, 1.55)",
+    "Banana leaf blade|(-0.349999934, 2.395, -0.5629165)|(-0.009303713, 0.9610174, -0.03258347, -0.27440384)|(0.37, 0.035, 1.55)",
+    "Banana leaf blade|(0.349999934, 2.585, -0.5629165)|(-0.0295075122, 0.9560003, 0.103341252, 0.272971332)|(0.37, 0.035, 1.55)",
+    "Banana plant|(-10.4, 0, 47)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Banana pseudostem|(0, 1.26, 0)|(0, 0, 0, 1)|(0.11, 1.25, 0.11)",
+    "Banana leaf blade|(0.7, 2.395, 0)|(0.0226933416, 0.7067426, -0.0226933416, 0.7067425)|(0.37, 0.035, 1.55)",
+    "Banana leaf blade|(0.349999964, 2.585, 0.5629165)|(-0.103341252, 0.272971332, 0.0295075122, 0.9560003)|(0.37, 0.035, 1.55)",
+    "Banana leaf blade|(-0.350000024, 2.395, 0.562916458)|(0.03258347, -0.2744039, 0.009303715, 0.9610174)|(0.37, 0.035, 1.55)",
+    "Banana leaf blade|(-0.7, 2.585, -5.68248026E-08)|(-0.0720892847, -0.7034225, -0.07208929, 0.7034225)|(0.37, 0.035, 1.55)",
+    "Banana leaf blade|(-0.349999934, 2.395, -0.5629165)|(-0.009303713, 0.9610174, -0.03258347, -0.27440384)|(0.37, 0.035, 1.55)",
+    "Banana leaf blade|(0.349999934, 2.585, -0.5629165)|(-0.0295075122, 0.9560003, 0.103341252, 0.272971332)|(0.37, 0.035, 1.55)",
+    "Banana plant|(9.5, 0, 56)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Banana pseudostem|(0, 1.26, 0)|(0, 0, 0, 1)|(0.11, 1.25, 0.11)",
+    "Banana leaf blade|(0.7, 2.395, 0)|(0.0226933416, 0.7067426, -0.0226933416, 0.7067425)|(0.37, 0.035, 1.55)",
+    "Banana leaf blade|(0.349999964, 2.585, 0.5629165)|(-0.103341252, 0.272971332, 0.0295075122, 0.9560003)|(0.37, 0.035, 1.55)",
+    "Banana leaf blade|(-0.350000024, 2.395, 0.562916458)|(0.03258347, -0.2744039, 0.009303715, 0.9610174)|(0.37, 0.035, 1.55)",
+    "Banana leaf blade|(-0.7, 2.585, -5.68248026E-08)|(-0.0720892847, -0.7034225, -0.07208929, 0.7034225)|(0.37, 0.035, 1.55)",
+    "Banana leaf blade|(-0.349999934, 2.395, -0.5629165)|(-0.009303713, 0.9610174, -0.03258347, -0.27440384)|(0.37, 0.035, 1.55)",
+    "Banana leaf blade|(0.349999934, 2.585, -0.5629165)|(-0.0295075122, 0.9560003, 0.103341252, 0.272971332)|(0.37, 0.035, 1.55)",
+    "04 | Distant mountains and clouds|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Far mountain ridge|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Middle blue mountain ridge|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Front rolling hills|(0, 0, 0)|(0, 0, 0, 1)|(1, 1, 1)",
+    "Thin distant cloud 0|(-61, 34, 122)|(0, 0, 0, 1)|(14, 1.5, 3.7)",
+    "Thin distant cloud 1|(-37, 37.7, 144)|(0, 0, 0, 1)|(14, 1.5, 3.7)",
+    "Thin distant cloud 2|(-13, 41.4, 122)|(0, 0, 0, 1)|(14, 1.5, 3.7)",
+    "Thin distant cloud 3|(11, 34, 144)|(0, 0, 0, 1)|(14, 1.5, 3.7)",
+    "Thin distant cloud 4|(35, 37.7, 122)|(0, 0, 0, 1)|(14, 1.5, 3.7)",
+    "Thin distant cloud 5|(59, 41.4, 144)|(0, 0, 0, 1)|(14, 1.5, 3.7)"
+  ],
+  "components": [
+    "DesktopBowInput",
+    "JemparinganGame",
+    "MetaQuestBowInput",
+    "UnityEngine.AudioListener",
+    "UnityEngine.Camera",
+    "UnityEngine.Light",
+    "UnityEngine.MeshFilter",
+    "UnityEngine.MeshRenderer",
+    "UnityEngine.Transform"
+  ]
+}

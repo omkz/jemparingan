@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 // Optional, desktop-only cinematic camera. Follows the real pooled projectile
 // without moving the player's main camera or changing trajectory/collision.
@@ -32,6 +33,13 @@ public sealed class JemparinganArrowFollowCamera : MonoBehaviour
             cameraObject.transform.SetParent(transform, false);
             _followCamera = cameraObject.AddComponent<Camera>();
             _followCamera.enabled = false;
+            // URP renders independent Base cameras in depth order. This camera
+            // replaces the whole view; it is not an Overlay in the seated stack.
+            var cameraData = cameraObject.AddComponent<UniversalAdditionalCameraData>();
+            cameraData.renderType = CameraRenderType.Base;
+            cameraData.renderPostProcessing = false;
+            cameraData.allowXRRendering = false;
+            cameraData.SetRenderer(-1);
             cameraObject.tag = "Untagged"; // Camera.main must remain the seated player camera.
         }
 
@@ -41,14 +49,13 @@ public sealed class JemparinganArrowFollowCamera : MonoBehaviour
         _startedAt = Time.unscaledTime;
         _impactHoldUntil = -1f;
 
-        // Built-in render pipeline: render a full-screen follow view above the
+        // Render a full-screen Base-camera follow view above the
         // unchanged player camera. There is deliberately no second AudioListener.
         _followCamera.CopyFrom(playerCamera);
         _followCamera.depth = playerCamera.depth + 1f;
         _followCamera.clearFlags = playerCamera.clearFlags == CameraClearFlags.Skybox
             ? CameraClearFlags.Skybox : CameraClearFlags.SolidColor;
         _followCamera.targetTexture = null;
-        _followCamera.stereoTargetEye = StereoTargetEyeMask.None;
         PlaceBehindArrow();
         _desktopInput.CameraLookSuppressed = true;
         IsActive = true;
