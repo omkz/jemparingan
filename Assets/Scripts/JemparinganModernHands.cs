@@ -13,6 +13,21 @@ public sealed class JemparinganModernHands : MonoBehaviour
     private const int Sides = 12;
     private const int SleeveRings = 13;
     private const float ReleaseFollowSeconds = .17f;
+    // Trig for the twelve sides is constant: cache it once instead of
+    // evaluating sine/cosine 156 times per visible sleeve update.
+    private static readonly Vector2[] SleeveSection = MakeRingDirections(1);
+    private static readonly Vector2[] SleevePleats = MakeRingDirections(3);
+
+    private static Vector2[] MakeRingDirections(int harmonic)
+    {
+        var directions = new Vector2[Sides];
+        for (int side = 0; side < Sides; side++)
+        {
+            float angle = harmonic * (2f * Mathf.PI * side / Sides);
+            directions[side] = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+        }
+        return directions;
+    }
 
     // Hand, fingers, and sleeve remain children of the cosmetic bow.
     // These are prebuilt meshes; animation only rotates tiny grip joints.
@@ -308,14 +323,17 @@ public sealed class JemparinganModernHands : MonoBehaviour
             float foldWeight = Mathf.Sin(Mathf.PI * t);
             float gather = 1f + .045f * foldWeight *
                 Mathf.Sin(t * 3f * Mathf.PI);
+            float wrinkleAngle = t * 5f;
+            float wrinkleCos = Mathf.Cos(wrinkleAngle);
+            float wrinkleSin = Mathf.Sin(wrinkleAngle);
             for (int j = 0; j < Sides; j++)
             {
-                float a = j * Mathf.PI * 2f / Sides;
+                Vector2 section = SleeveSection[j];
+                Vector2 pleat = SleevePleats[j];
                 float wrinkle = 1f + .027f * foldWeight *
-                    Mathf.Cos(a * 3f + t * 5f);
+                    (pleat.x * wrinkleCos - pleat.y * wrinkleSin);
                 vertices[ring * Sides + j] = point + radius * gather * wrinkle *
-                    (across * Mathf.Cos(a) +
-                     normal * Mathf.Sin(a));
+                    (across * section.x + normal * section.y);
             }
         }
         sleeve.vertices = vertices;
