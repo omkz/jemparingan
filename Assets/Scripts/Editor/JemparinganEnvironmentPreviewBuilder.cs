@@ -92,6 +92,69 @@ public static class JemparinganEnvironmentPreviewBuilder
             ". No scene regenerated; review Game view, then save with Ctrl+S.");
     }
 
+    // Explicitly persist the already-reviewed visual polish to the existing
+    // playable scene. This is separate from Apply so a user can preview and
+    // undo material/lighting changes before committing them to disk.
+    [MenuItem("Tools/Jemparingan/Environment/Save Joglo Polish to Scene v1")]
+    public static void SaveJogloPolishToScene()
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode)
+        {
+            Debug.LogError("Stop Play Mode before saving the Joglo scene.");
+            return;
+        }
+        Scene scene = SceneManager.GetActiveScene();
+        if (!scene.IsValid() || !scene.isLoaded ||
+            scene.path != PlayableScenePath)
+        {
+            Debug.LogError("Open Playable Environment v5 in Edit Mode before saving Joglo Polish.");
+            return;
+        }
+        Transform pendopo = null;
+        foreach (GameObject root in scene.GetRootGameObjects())
+            if (root.name == PendopoName) pendopo = root.transform;
+        if (pendopo == null || pendopo.Find(JoineryName) == null)
+        {
+            Debug.LogError("Joglo joinery is not present in the open scene. Run Apply Joglo + Lighting Polish v1 first.");
+            return;
+        }
+        const string skyPath = AssetRoot + "/GoldenHourSky_JogloPolish_v01.mat";
+        Material expectedSky = AssetDatabase.LoadAssetAtPath<Material>(skyPath);
+        if (expectedSky == null || RenderSettings.skybox != expectedSky)
+        {
+            Debug.LogError("The Joglo skybox is not assigned. Run Apply Joglo + Lighting Polish v1 first.");
+            return;
+        }
+
+        // Marking the scene dirty before an explicit SaveScene avoids relying
+        // on keyboard focus, toolbar Save behavior, or scene auto-save options.
+        EditorSceneManager.MarkSceneDirty(scene);
+        AssetDatabase.SaveAssets();
+        bool saved = EditorSceneManager.SaveScene(scene, scene.path, false);
+        string diskPath = Path.Combine(
+            Directory.GetParent(Application.dataPath).FullName, scene.path);
+        bool persisted = false;
+        bool skyPersisted = false;
+        if (saved && File.Exists(diskPath))
+        {
+            string serializedScene = File.ReadAllText(diskPath);
+            persisted = serializedScene.Contains("m_Name: " + JoineryName);
+            string expectedGuid = AssetDatabase.AssetPathToGUID(skyPath);
+            skyPersisted = !string.IsNullOrEmpty(expectedGuid) &&
+                serializedScene.Contains("guid: " + expectedGuid);
+        }
+        if (!saved || !persisted || !skyPersisted)
+        {
+            Debug.LogError("Joglo scene save verification FAILED: SaveScene=" +
+                saved + ", joinery on disk=" + persisted +
+                ", skybox reference on disk=" + skyPersisted +
+                ", path=" + diskPath);
+            return;
+        }
+        Debug.Log("Joglo scene saved and verified on disk: " + diskPath +
+            ". Run Validate Joglo Polish v1, then check git status --short.");
+    }
+
     [MenuItem("Tools/Jemparingan/Environment/Validate Joglo Polish v1")]
     public static void ValidateJogloPolish()
     {
@@ -130,25 +193,55 @@ public static class JemparinganEnvironmentPreviewBuilder
         {
             if (renderer.sharedMaterial == null) continue;
             string name = renderer.sharedMaterial.name;
-            if (name.EndsWith("_JogloPolish_v01", StringComparison.Ordinal))
+            string materialPath = AssetDatabase.GetAssetPath(renderer.sharedMaterial);
+            if (materialPath.StartsWith(MaterialFolder + "/", StringComparison.Ordinal) &&
+                materialPath.EndsWith("_JogloPolish_v01.mat", StringComparison.Ordinal))
                 polished++;
-            if (name == "Jemparingan_Preview_Teak" ||
+            // The committed original .mat assets have short names (Teak,
+            // Dark_Teak, etc.). The previous check used nonexistent
+            // Jemparingan_Preview_* names and missed unpolished objects.
+            if (materialPath == MaterialFolder + "/Teak.mat" ||
+                materialPath == MaterialFolder + "/Dark_Teak.mat" ||
+                materialPath == MaterialFolder + "/Clay_Roof.mat" ||
+                materialPath == MaterialFolder + "/Amber_Trim.mat" ||
+                materialPath == MaterialFolder + "/Stone.mat" ||
+                name == "Jemparingan_Preview_Teak" ||
                 name == "Jemparingan_Preview_Dark_Teak" ||
                 name == "Jemparingan_Preview_Clay_Roof")
                 oldFinish++;
         }
         bool sunOK = RenderSettings.sun != null &&
             RenderSettings.sun.shadows == LightShadows.None;
-        bool skyOK = RenderSettings.skybox != null &&
-            RenderSettings.skybox.name.Contains("Joglo Polish");
-        bool passed = jointMesh && polished > 0 && oldFinish == 0 &&
-            sunOK && skyOK;
+        // Match the committed asset itself. Do not test its display name:
+        // older saved versions are named "GoldenHourSky_JogloPolish_v01"
+        // rather than "Jemparingan Golden Hour | Joglo Polish v1".
+        const string skyPath = AssetRoot +
+            "/GoldenHourSky_JogloPolish_v01.mat";
+        Material expectedSky = AssetDatabase.LoadAssetAtPath<Material>(skyPath);
+        Material activeSky = RenderSettings.skybox;
+        bool skyOK = expectedSky != null && activeSky == expectedSky;
+        // A PASS requires some original joglo materials to have been
+        // remapped as well as the single joined-timber detail renderer.
+        // Inspect the actual saved scene: in-memory success alone does not
+        // prove the .unity file is committed or even saved.
+        string absoluteScenePath = Path.Combine(
+            Directory.GetParent(Application.dataPath).FullName, scene.path);
+        bool savedJoinery = File.Exists(absoluteScenePath) &&
+            File.ReadAllText(absoluteScenePath).Contains(
+                "m_Name: " + JoineryName);
+        bool passed = jointMesh && polished > 1 && oldFinish == 0 &&
+            sunOK && skyOK && savedJoinery;
         string report = "Joglo Polish QA: joinery triangles=" + triangles +
             "/144, joined renderers=" + joinedRenderers +
             "/1, colliders=" + colliders +
             "/0, polished materials=" + polished +
             ", old wood/roof materials=" + oldFinish +
-            ", shadow-free sun=" + sunOK + ", sky=" + skyOK;
+            ", shadow-free sun=" + sunOK + ", sky=" + skyOK +
+            " (active=" + (activeSky != null
+                ? AssetDatabase.GetAssetPath(activeSky) : "none") +
+            ", expected=" + skyPath + ")" +
+            ", saved scene joinery=" + savedJoinery +
+            ", scene file=" + absoluteScenePath;
         if (passed) Debug.Log(report + " | PASS. Visual and FPS tests remain.");
         else Debug.LogError(report + " | FAIL. Apply Joglo + Lighting Polish v1.");
     }
@@ -1147,13 +1240,30 @@ public static class JemparinganEnvironmentPreviewBuilder
             Material old = renderer.sharedMaterial;
             if (old == null) continue;
             Material next = null;
-            switch (old.name)
+            // Identify the actual, committed Unity material assets by path.
+            // Their m_Name values are "Stone", "Teak", "Dark_Teak",
+            // "Amber_Trim", and "Clay_Roof" — NOT the old synthetic
+            // Jemparingan_Preview_* names from an early blockout.
+            string oldPath = AssetDatabase.GetAssetPath(old);
+            switch (oldPath)
             {
-                case "Jemparingan_Preview_Stone": next = stone; break;
-                case "Jemparingan_Preview_Teak": next = teak; break;
-                case "Jemparingan_Preview_Dark_Teak": next = darkWood; break;
-                case "Jemparingan_Preview_Amber_Trim": next = trim; break;
-                case "Jemparingan_Preview_Clay_Roof": next = roof; break;
+                case MaterialFolder + "/Stone.mat": next = stone; break;
+                case MaterialFolder + "/Teak.mat": next = teak; break;
+                case MaterialFolder + "/Dark_Teak.mat": next = darkWood; break;
+                case MaterialFolder + "/Amber_Trim.mat": next = trim; break;
+                case MaterialFolder + "/Clay_Roof.mat": next = roof; break;
+            }
+            // Support any unsaved legacy in-memory materials as well.
+            if (next == null)
+            {
+                switch (old.name)
+                {
+                    case "Jemparingan_Preview_Stone": next = stone; break;
+                    case "Jemparingan_Preview_Teak": next = teak; break;
+                    case "Jemparingan_Preview_Dark_Teak": next = darkWood; break;
+                    case "Jemparingan_Preview_Amber_Trim": next = trim; break;
+                    case "Jemparingan_Preview_Clay_Roof": next = roof; break;
+                }
             }
             if (next == null || next == old) continue;
             Undo.RecordObject(renderer, "Polish joglo timber and roof materials");

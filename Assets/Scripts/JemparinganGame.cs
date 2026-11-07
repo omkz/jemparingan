@@ -2449,6 +2449,9 @@ public class JemparinganGame : MonoBehaviour
         _target.SetTraditionalZoneRenderers(molo.GetComponent<Renderer>(),
             jangga.GetComponent<Renderer>(), _traditionalBandulanBody);
         _target.SetBody(_traditionalBandulanBody, JemparinganArt.Tone.BandulanWhite);
+        // Decorative bindings/grain are joined into one mesh; no additional
+        // scored surface, collision shape, or change to suspension geometry.
+        JemparinganTargetTrim.BuildTraditional(traditional.transform);
         // The existing suspension mesh follows the target's upper tip.
         // No new suspension object or runtime component is created.
         _target.AttachSuspension(_bandulanSuspension, new Vector3(0f, .69f, 0f));

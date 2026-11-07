@@ -45,6 +45,10 @@ public sealed class JemparinganModernTarget : MonoBehaviour
         AddDisc("Blue | 6", .28f, -.032f, JemparinganArt.Tone.Jade);
         AddDisc("Red | 8", .17f, -.037f, JemparinganArt.Tone.Scarlet);
         AddDisc("Gold | 10", .085f, -.042f, JemparinganArt.Tone.Gold);
+        // Raised teak lip and tiny brass pins outside the white scoring ring.
+        // This detail follows the cosmetic face recoil but never alters
+        // PointsForRadius, FaceDepth, or the scoring hit plane.
+        JemparinganTargetTrim.BuildModernFace(_face);
 
         JemparinganArt.Beam("Target stand vertical", transform,
             new Vector3(0f, -1.14f, .18f), new Vector3(0f, -.46f, .18f),
@@ -52,6 +56,9 @@ public sealed class JemparinganModernTarget : MonoBehaviour
         JemparinganArt.Beam("Target stand base", transform,
             new Vector3(-.34f, -1.13f, .20f), new Vector3(.34f, -1.13f, .20f),
             .042f, JemparinganArt.Tone.DarkWood);
+        // Two joined braces give the stand a readable, grounded silhouette.
+        // They are one mesh renderer, behind the target, without colliders.
+        JemparinganTargetTrim.BuildModernStand(transform);
         JemparinganArt.Label("Target number", transform,
             new Vector3(0f, .69f, -.06f), "TARGET " + number,
             .022f, Color.white);
