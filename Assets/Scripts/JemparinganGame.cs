@@ -29,7 +29,8 @@ public class JemparinganGame : MonoBehaviour
     // Reuse the outdoor scene's 16-shot arrow and HUD pool.
     [SerializeField, Range(6, 16)] private int modernArrowCount = 12;
     [Header("Shared three-level progression")]
-    // Traditional targets remain bandulan; only lateral sway changes per level.
+    // Traditional keeps one bandulan. Level 3 adds a slight deterministic
+    // variation to the pendulum rhythm, not random motion.
     [SerializeField, Range(.02f, .20f)] private float traditionalLevel2Sway = .08f;
     [SerializeField, Range(.3f, 1.5f)] private float traditionalLevel2Speed = .75f;
     [SerializeField, Range(.08f, .30f)] private float traditionalLevel3Sway = .20f;
@@ -392,9 +393,12 @@ public class JemparinganGame : MonoBehaviour
         }
         else if (IsTraditionalMode() && _target != null)
         {
-            // Level 1 is still; levels 2 and 3 progressively sway.
-            _target.SetSway(_stage == 1 ? traditionalLevel2Sway : traditionalLevel3Sway,
-                _stage == 1 ? traditionalLevel2Speed : traditionalLevel3Speed);
+            // Phase and rope remain continuous; level 3 has a subtle
+            // deterministic rhythm shift in addition to the larger arc.
+            _target.SetSway(
+                _stage == 1 ? traditionalLevel2Sway : traditionalLevel3Sway,
+                _stage == 1 ? traditionalLevel2Speed : traditionalLevel3Speed,
+                false, _stage == 2 ? .12f : 0f);
         }
         _stageIntroStartedAt = Time.time;
         _stageIntroUntil = Time.time + 1.25f;
@@ -2421,6 +2425,9 @@ public class JemparinganGame : MonoBehaviour
         _target.SetTraditionalZoneRenderers(molo.GetComponent<Renderer>(),
             jangga.GetComponent<Renderer>(), _traditionalBandulanBody);
         _target.SetBody(_traditionalBandulanBody, JemparinganArt.Tone.BandulanWhite);
+        // The existing suspension mesh follows the target's upper tip.
+        // No new suspension object or runtime component is created.
+        _target.AttachSuspension(_bandulanSuspension, new Vector3(0f, .69f, 0f));
         traditional.SetActive(true);
     }
 
