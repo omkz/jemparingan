@@ -82,6 +82,20 @@ public static class JemparinganEditorMenu
         int total = 0;
         int failed = 0;
 
+        // Cosmetic bow polish must preserve the existing string attachment
+        // points used by gameplay and the physical sight calibration.
+        Vector3 upperBowTip = JemparinganBowVisual.UpperTip;
+        Vector3 lowerBowTip = JemparinganBowVisual.LowerTip;
+        float originalTipX = .015f + .11f * Mathf.Sin(Mathf.PI * .90f);
+        Check("Shared bow polish preserves original string tip anchors",
+            Mathf.Abs(upperBowTip.x - originalTipX) < .0001f &&
+            Mathf.Abs(lowerBowTip.x - originalTipX) < .0001f &&
+            Mathf.Abs(upperBowTip.y - .65f) < .0001f &&
+            Mathf.Abs(lowerBowTip.y + .65f) < .0001f &&
+            Mathf.Abs(upperBowTip.z - .095f) < .0001f &&
+            Mathf.Abs(lowerBowTip.z - .095f) < .0001f,
+            ref total, ref failed);
+
         Check("accuracy 0/0 = 0", JemparinganScoreRules.AccuracyPercent(0, 0) == 0, ref total, ref failed);
         Check("accuracy 9/12 = 75", JemparinganScoreRules.AccuracyPercent(9, 12) == 75, ref total, ref failed);
         Check("Traditional pool handles 12 arrows",
