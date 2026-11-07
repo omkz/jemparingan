@@ -92,6 +92,69 @@ public static class JemparinganEnvironmentPreviewBuilder
             ". No scene regenerated; review Game view, then save with Ctrl+S.");
     }
 
+    // Explicitly persist the already-reviewed visual polish to the existing
+    // playable scene. This is separate from Apply so a user can preview and
+    // undo material/lighting changes before committing them to disk.
+    [MenuItem("Tools/Jemparingan/Environment/Save Joglo Polish to Scene v1")]
+    public static void SaveJogloPolishToScene()
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode)
+        {
+            Debug.LogError("Stop Play Mode before saving the Joglo scene.");
+            return;
+        }
+        Scene scene = SceneManager.GetActiveScene();
+        if (!scene.IsValid() || !scene.isLoaded ||
+            scene.path != PlayableScenePath)
+        {
+            Debug.LogError("Open Playable Environment v5 in Edit Mode before saving Joglo Polish.");
+            return;
+        }
+        Transform pendopo = null;
+        foreach (GameObject root in scene.GetRootGameObjects())
+            if (root.name == PendopoName) pendopo = root.transform;
+        if (pendopo == null || pendopo.Find(JoineryName) == null)
+        {
+            Debug.LogError("Joglo joinery is not present in the open scene. Run Apply Joglo + Lighting Polish v1 first.");
+            return;
+        }
+        const string skyPath = AssetRoot + "/GoldenHourSky_JogloPolish_v01.mat";
+        Material expectedSky = AssetDatabase.LoadAssetAtPath<Material>(skyPath);
+        if (expectedSky == null || RenderSettings.skybox != expectedSky)
+        {
+            Debug.LogError("The Joglo skybox is not assigned. Run Apply Joglo + Lighting Polish v1 first.");
+            return;
+        }
+
+        // Marking the scene dirty before an explicit SaveScene avoids relying
+        // on keyboard focus, toolbar Save behavior, or scene auto-save options.
+        EditorSceneManager.MarkSceneDirty(scene);
+        AssetDatabase.SaveAssets();
+        bool saved = EditorSceneManager.SaveScene(scene, scene.path, false);
+        string diskPath = Path.Combine(
+            Directory.GetParent(Application.dataPath).FullName, scene.path);
+        bool persisted = false;
+        bool skyPersisted = false;
+        if (saved && File.Exists(diskPath))
+        {
+            string serializedScene = File.ReadAllText(diskPath);
+            persisted = serializedScene.Contains("m_Name: " + JoineryName);
+            string expectedGuid = AssetDatabase.AssetPathToGUID(skyPath);
+            skyPersisted = !string.IsNullOrEmpty(expectedGuid) &&
+                serializedScene.Contains("guid: " + expectedGuid);
+        }
+        if (!saved || !persisted || !skyPersisted)
+        {
+            Debug.LogError("Joglo scene save verification FAILED: SaveScene=" +
+                saved + ", joinery on disk=" + persisted +
+                ", skybox reference on disk=" + skyPersisted +
+                ", path=" + diskPath);
+            return;
+        }
+        Debug.Log("Joglo scene saved and verified on disk: " + diskPath +
+            ". Run Validate Joglo Polish v1, then check git status --short.");
+    }
+
     [MenuItem("Tools/Jemparingan/Environment/Validate Joglo Polish v1")]
     public static void ValidateJogloPolish()
     {
