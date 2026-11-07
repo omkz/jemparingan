@@ -33,8 +33,8 @@ public class JemparinganGame : MonoBehaviour
     // variation to the pendulum rhythm, not random motion.
     [SerializeField, Range(.02f, .20f)] private float traditionalLevel2Sway = .08f;
     [SerializeField, Range(.3f, 1.5f)] private float traditionalLevel2Speed = .75f;
-    [SerializeField, Range(.08f, .30f)] private float traditionalLevel3Sway = .20f;
-    [SerializeField, Range(.8f, 2.5f)] private float traditionalLevel3Speed = 1.35f;
+    [SerializeField, Range(.08f, .30f)] private float traditionalLevel3Sway = .16f;
+    [SerializeField, Range(.8f, 2.5f)] private float traditionalLevel3Speed = 1.12f;
     [Header("Modern progressive targets")]
     [SerializeField] private bool modernProgressiveStages = true;
     [SerializeField, Range(0f, .45f)] private float modernMovingTargetTravel = .26f;
@@ -207,6 +207,10 @@ public class JemparinganGame : MonoBehaviour
     private int _shots, _hits, _score, _best, _poolCursor;
     private int _previousBest, _bullseyes;
     private int _moloHits, _janggaHits, _awakHits;
+    // Reuse the shared score HUD for a brief Traditional-only score pulse.
+    // No new text, UI object, or per-shot allocation is required.
+    private float _traditionalImpactAt = -1f;
+    private JemparinganTarget.TraditionalZone _traditionalImpactZone;
     private string _lastInfo = "";
     private int _lastPowerStep = -1;
     private bool _lastStableSignal;
@@ -398,7 +402,7 @@ public class JemparinganGame : MonoBehaviour
             _target.SetSway(
                 _stage == 1 ? traditionalLevel2Sway : traditionalLevel3Sway,
                 _stage == 1 ? traditionalLevel2Speed : traditionalLevel3Speed,
-                false, _stage == 2 ? .12f : 0f);
+                false, _stage == 2 ? .08f : 0f);
         }
         _stageIntroStartedAt = Time.time;
         _stageIntroUntil = Time.time + 1.25f;
@@ -478,6 +482,29 @@ public class JemparinganGame : MonoBehaviour
                 colWidth, 20f), heading, caption);
             GUI.Label(new Rect(columnX, panel.y + 29f,
                 colWidth, 35f), value, number);
+        }
+
+        // A short underline gives hit confirmation without text or an
+        // extra HUD widget. Zone color matches the existing bandulan FX.
+        if (IsTraditionalMode() && _traditionalImpactAt >= 0f)
+        {
+            float age = Time.time - _traditionalImpactAt;
+            if (age >= 0f && age < .46f)
+            {
+                Color impactTint = _traditionalImpactZone ==
+                    JemparinganTarget.TraditionalZone.Molo
+                    ? new Color(.99f, .80f, .34f) :
+                    _traditionalImpactZone ==
+                    JemparinganTarget.TraditionalZone.Jangga
+                        ? new Color(.97f, .78f, .45f)
+                        : new Color(.49f, .88f, .75f);
+                float fade = Mathf.Pow(1f - age / .46f, 2f);
+                DrawModernPanelRect(new Rect(
+                    panel.x + 12f + colWidth * 1.20f,
+                    panel.y + 67f, colWidth * .60f, 3f),
+                    new Color(impactTint.r, impactTint.g,
+                        impactTint.b, fade * .95f));
+            }
         }
 
         // Three silent indicators communicate level progression with color.
@@ -1712,8 +1739,20 @@ public class JemparinganGame : MonoBehaviour
         else if (zone == JemparinganTarget.TraditionalZone.Awak) _awakHits++;
         _score += points;
         if (_score > _best) _best = _score;
-        _audio.PlayOneShot(zone == JemparinganTarget.TraditionalZone.Molo ?
-            _bullseyeSound : _hitSound, .50f);
+        _traditionalImpactAt = Time.time;
+        _traditionalImpactZone = zone;
+        // Emphasize a Molo hit using the existing procedural clips,
+        // without adding voices or overlapping new sound sources.
+        if (_audio != null)
+        {
+            float volume = zone == JemparinganTarget.TraditionalZone.Molo
+                ? .56f : zone == JemparinganTarget.TraditionalZone.Jangga
+                    ? .46f : .38f;
+            AudioClip impactSound = zone == JemparinganTarget.TraditionalZone.Molo
+                ? _bullseyeSound : _hitSound;
+            if (impactSound != null)
+                _audio.PlayOneShot(impactSound, volume);
+        }
         string zoneName = zone == JemparinganTarget.TraditionalZone.Molo ? "MOLO" :
             zone == JemparinganTarget.TraditionalZone.Jangga ? "JANGGA" : "AWAK";
         ShowImpactLabel("+" + points + "  " + zoneName,
@@ -1848,6 +1887,8 @@ public class JemparinganGame : MonoBehaviour
         _stageIntroUntil = -1f;
         _bullseyes = 0;
         _moloHits = _janggaHits = _awakHits = 0;
+        _traditionalImpactAt = -1f;
+        _traditionalImpactZone = JemparinganTarget.TraditionalZone.None;
         _previousBest = PlayerPrefs.GetInt(BestKey(), 0);
         _best = _previousBest;
         ClearDrawState();
