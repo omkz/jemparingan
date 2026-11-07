@@ -4,6 +4,9 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Jemparingan/Scenes/JemparinganPlayableEnvironment_v05.unity
+    guid: 9556bd266b77090de84ceb6306dcbf4a
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0
