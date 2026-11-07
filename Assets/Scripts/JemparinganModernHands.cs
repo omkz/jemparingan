@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-// Shared desktop Traditional/Modern LEFT-HAND first-person grip.
-// Quest tracking is a separate input/visual path: this is not a VR hand rig.
-// Keep the grip contact, bowstring, nock, shot, camera and scoring unchanged.
+// Shared desktop Traditional/Modern procedural grip and draw hands.
+// Quest hand tracking is a separate path: this is not a VR hand rig.
+// This component owns only cosmetic meshes, never input, shot or scoring.
 public sealed class JemparinganModernHands : MonoBehaviour
 {
     // Slightly rounder close-up silhouette, still tiny procedural geometry.
@@ -17,9 +17,11 @@ public sealed class JemparinganModernHands : MonoBehaviour
     // These are prebuilt meshes; animation only rotates tiny grip joints.
     private readonly List<Mesh> _meshes = new List<Mesh>();
     private readonly Transform[] _gripFingers = new Transform[4];
-    private Transform _root, _leftPalm, _thumb;
-    private Mesh _leftSleeve;
+    private Transform _root, _leftPalm, _thumb, _rightVisuals, _rightPalm;
+    private Mesh _leftSleeve, _rightSleeve;
     private readonly Vector3[] _leftSleeveVertices =
+        new Vector3[SleeveRings * Sides];
+    private readonly Vector3[] _rightSleeveVertices =
         new Vector3[SleeveRings * Sides];
     private float _gripPressure;
     private bool _wasDrawing;
@@ -40,6 +42,7 @@ public sealed class JemparinganModernHands : MonoBehaviour
         _leftSleeve = DynamicSleeve(sleeveRoot,
             "Modern left sleeve | deforming", _leftSleeveVertices);
 
+        BuildRightDrawHand();
         Hide();
     }
 
@@ -110,6 +113,57 @@ public sealed class JemparinganModernHands : MonoBehaviour
                 new Vector3(-.064f, -.083f, -.044f),
                 new Vector3(-.055f, -.068f, -.042f) },
             new[] { .026f, .025f, .021f }, .94f);
+    }
+
+    // A lightweight two-finger string pinch, not an extra arm controller.
+    // The entire right visual is anchored to the actual nock each frame,
+    // with the forearm extending off the bottom-right screen edge.
+    private void BuildRightDrawHand()
+    {
+        _rightVisuals = new GameObject(
+            "Modern FPS | right string draw hand (cosmetic)").transform;
+        _rightVisuals.SetParent(_root, false);
+        _rightPalm = new GameObject("Right hand | string pinch").transform;
+        _rightPalm.SetParent(_rightVisuals, false);
+
+        AddSkinnedTube("Right wrist into palm", _rightPalm,
+            JemparinganArt.Tone.TraditionalSkin, new[] {
+                new Vector3(.090f, -.065f, -.053f),
+                new Vector3(.080f, -.054f, -.047f),
+                new Vector3(.067f, -.036f, -.039f),
+                new Vector3(.052f, -.014f, -.024f),
+                new Vector3(.044f, .003f, -.015f) },
+            new[] { .022f, .026f, .030f, .027f, .021f }, .88f);
+
+        // Index and middle fingers sit on the string; the right thumb
+        // opposes them. Avoid a full fist blocking the calibrated reticle.
+        for (int finger = 0; finger < 2; finger++)
+        {
+            float y = .006f - finger * .020f;
+            AddSkinnedTube("Right draw finger " + finger, _rightPalm,
+                JemparinganArt.Tone.TraditionalSkin, new[] {
+                    new Vector3(.048f, y, -.015f),
+                    new Vector3(.037f, y, -.011f),
+                    new Vector3(.025f, y + .002f, -.003f),
+                    new Vector3(.010f, y + .003f, .010f),
+                    new Vector3(-.003f, y, .022f) },
+                new[] { .011f, .0105f, .0092f, .0072f, .0045f },
+                .90f);
+        }
+        AddSkinnedTube("Right opposing thumb", _rightPalm,
+            JemparinganArt.Tone.TraditionalSkin, new[] {
+                new Vector3(.068f, -.041f, -.024f),
+                new Vector3(.056f, -.033f, -.013f),
+                new Vector3(.037f, -.025f, .004f),
+                new Vector3(.015f, -.016f, .016f) },
+            new[] { .014f, .013f, .010f, .005f }, .90f);
+
+        Transform sleeve = new GameObject(
+            "Right forearm | from bottom-right").transform;
+        sleeve.SetParent(_rightVisuals, false);
+        _rightSleeve = DynamicSleeve(sleeve,
+            "Modern right sleeve | deforming", _rightSleeveVertices);
+        _rightVisuals.gameObject.SetActive(false);
     }
 
     private void AddSkinnedTube(string name, Transform parent,
@@ -209,11 +263,11 @@ public sealed class JemparinganModernHands : MonoBehaviour
         renderer.receiveShadows = false;
     }
 
-    // Called after the shared desktop cosmetic bow has been posed and
-    // the gameplay string/nock updated. Only LEFT-HAND animation here.
-    // Input, projectile launch, bow pose and optical sight are untouched.
+    // Called after the shared desktop cosmetic bow has been posed and the
+    // gameplay string/nock updated. Both hands are visual-only.
     public void Present(Camera camera, bool drawing,
-        float drawPower, float raisedPose)
+        float drawPower, float raisedPose, Transform stringNock,
+        bool showRightDrawHand)
     {
         if (_root == null || camera == null) return;
         if (!_root.gameObject.activeSelf)
@@ -265,6 +319,26 @@ public sealed class JemparinganModernHands : MonoBehaviour
         PoseSleeve(camera, _leftSleeve, _leftSleeveVertices,
             sleeveStart, leftWrist, .061f, .023f,
             Mathf.Lerp(.014f, .040f, rise));
+
+        // Right hand follows the actual nock computed by JemparinganGame.
+        // Never synthesize a second draw length or move the nock from here.
+        bool showRight = showRightDrawHand && drawing && stringNock != null;
+        if (_rightVisuals != null &&
+            _rightVisuals.gameObject.activeSelf != showRight)
+            _rightVisuals.gameObject.SetActive(showRight);
+        if (showRight)
+        {
+            _rightPalm.localPosition =
+                _rightVisuals.InverseTransformPoint(stringNock.position) +
+                new Vector3(.009f, -.006f, -.035f);
+            _rightPalm.localRotation = Quaternion.identity;
+            Vector3 rightWrist = _rightPalm.TransformPoint(
+                new Vector3(.086f, -.063f, -.052f));
+            Vector3 rightSleeveStart = camera.ViewportToWorldPoint(
+                new Vector3(1.13f, -.27f, .62f));
+            PoseSleeve(camera, _rightSleeve, _rightSleeveVertices,
+                rightSleeveStart, rightWrist, .056f, .026f, .025f);
+        }
     }
 
     private void PoseSleeve(Camera camera, Mesh sleeve, Vector3[] vertices,
@@ -309,6 +383,8 @@ public sealed class JemparinganModernHands : MonoBehaviour
 
     public void Hide()
     {
+        if (_rightVisuals != null)
+            _rightVisuals.gameObject.SetActive(false);
         if (_root != null) _root.gameObject.SetActive(false);
         if (_leftPalm != null)
         {
