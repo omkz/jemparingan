@@ -1,0 +1,380 @@
+{
+  "idle": {
+    "utc": "2026-11-07T19:19:16.9604020Z",
+    "frame": 2960,
+    "fields": {
+      "_mode": "Modern",
+      "_modeChosen": true,
+      "_shots": 0,
+      "_hits": 0,
+      "_score": 0,
+      "_stage": 0,
+      "_finished": false,
+      "_wasDrawing": false,
+      "_awaitStringRelease": false,
+      "_moloHits": 0,
+      "_janggaHits": 0,
+      "_awakHits": 0,
+      "_modernDrawPower": 0,
+      "_modernSightZeroed": true
+    },
+    "sightCalibrated": false,
+    "reticleViewport": [
+      0.6466321,
+      0.3625693,
+      0.8773581
+    ],
+    "camera": "Player viewpoint | seated 1.35m",
+    "fov": 84,
+    "cameraPosition": [
+      0,
+      1.35,
+      1.25
+    ],
+    "targetPosition": [
+      0,
+      1.66,
+      11.25
+    ],
+    "sway": 0,
+    "inputHeld": false,
+    "arrowCam": false,
+    "flying": 0
+  },
+  "full": {
+    "utc": "2026-11-07T19:19:18.2639120Z",
+    "frame": 2996,
+    "fields": {
+      "_mode": "Modern",
+      "_modeChosen": true,
+      "_shots": 0,
+      "_hits": 0,
+      "_score": 0,
+      "_stage": 0,
+      "_finished": false,
+      "_wasDrawing": true,
+      "_awaitStringRelease": false,
+      "_moloHits": 0,
+      "_janggaHits": 0,
+      "_awakHits": 0,
+      "_modernDrawPower": 1,
+      "_modernSightZeroed": true
+    },
+    "sightCalibrated": true,
+    "reticleViewport": [
+      0.4993491,
+      0.5007854,
+      0.7639852
+    ],
+    "camera": "Player viewpoint | seated 1.35m",
+    "fov": 60,
+    "cameraPosition": [
+      0,
+      1.35,
+      1.25
+    ],
+    "targetPosition": [
+      0,
+      1.66,
+      11.25
+    ],
+    "sway": 0,
+    "inputHeld": true,
+    "arrowCam": false,
+    "flying": 0
+  },
+  "release": {
+    "utc": "2026-11-07T19:19:18.3913990Z",
+    "frame": 2998,
+    "fields": {
+      "_mode": "Modern",
+      "_modeChosen": true,
+      "_shots": 1,
+      "_hits": 0,
+      "_score": 0,
+      "_stage": 0,
+      "_finished": false,
+      "_wasDrawing": false,
+      "_awaitStringRelease": false,
+      "_moloHits": 0,
+      "_janggaHits": 0,
+      "_awakHits": 0,
+      "_modernDrawPower": 0,
+      "_modernSightZeroed": true
+    },
+    "sightCalibrated": true,
+    "reticleViewport": [
+      0.5788444,
+      0.4248545,
+      0.7914526
+    ],
+    "camera": "Player viewpoint | seated 1.35m",
+    "fov": 84,
+    "cameraPosition": [
+      0,
+      1.35,
+      1.25
+    ],
+    "targetPosition": [
+      0,
+      1.66,
+      11.25
+    ],
+    "sway": 0,
+    "inputHeld": false,
+    "arrowCam": true,
+    "flying": 1
+  },
+  "resolved": {
+    "utc": "2026-11-07T19:19:20.8040410Z",
+    "frame": 3103,
+    "fields": {
+      "_mode": "Modern",
+      "_modeChosen": true,
+      "_shots": 1,
+      "_hits": 1,
+      "_score": 10,
+      "_stage": 0,
+      "_finished": false,
+      "_wasDrawing": false,
+      "_awaitStringRelease": false,
+      "_moloHits": 0,
+      "_janggaHits": 0,
+      "_awakHits": 0,
+      "_modernDrawPower": 0,
+      "_modernSightZeroed": true
+    },
+    "sightCalibrated": true,
+    "reticleViewport": [
+      0.6708217,
+      0.3283359,
+      0.8784651
+    ],
+    "camera": "Player viewpoint | seated 1.35m",
+    "fov": 84,
+    "cameraPosition": [
+      0,
+      1.35,
+      1.25
+    ],
+    "targetPosition": [
+      0,
+      1.66,
+      11.25
+    ],
+    "sway": 0,
+    "inputHeld": false,
+    "arrowCam": false,
+    "flying": 0
+  },
+  "beforeRestart": {
+    "utc": "2026-11-07T19:19:21.4222970Z",
+    "frame": 3133,
+    "fields": {
+      "_mode": "Modern",
+      "_modeChosen": true,
+      "_shots": 1,
+      "_hits": 1,
+      "_score": 10,
+      "_stage": 0,
+      "_finished": false,
+      "_wasDrawing": true,
+      "_awaitStringRelease": false,
+      "_moloHits": 0,
+      "_janggaHits": 0,
+      "_awakHits": 0,
+      "_modernDrawPower": 1,
+      "_modernSightZeroed": true
+    },
+    "sightCalibrated": true,
+    "reticleViewport": [
+      0.4992388,
+      0.5054902,
+      0.7781846
+    ],
+    "camera": "Player viewpoint | seated 1.35m",
+    "fov": 68.85553,
+    "cameraPosition": [
+      0,
+      1.35,
+      1.25
+    ],
+    "targetPosition": [
+      0,
+      1.66,
+      11.25
+    ],
+    "sway": 0,
+    "inputHeld": true,
+    "arrowCam": false,
+    "flying": 0
+  },
+  "restartHeld": {
+    "utc": "2026-11-07T19:19:21.8456870Z",
+    "frame": 3152,
+    "fields": {
+      "_mode": "Modern",
+      "_modeChosen": true,
+      "_shots": 0,
+      "_hits": 0,
+      "_score": 0,
+      "_stage": 0,
+      "_finished": false,
+      "_wasDrawing": false,
+      "_awaitStringRelease": true,
+      "_moloHits": 0,
+      "_janggaHits": 0,
+      "_awakHits": 0,
+      "_modernDrawPower": 0,
+      "_modernSightZeroed": false
+    },
+    "sightCalibrated": false,
+    "reticleViewport": [
+      0.4743258,
+      0.5325643,
+      0.7781763
+    ],
+    "camera": "Player viewpoint | seated 1.35m",
+    "fov": 84,
+    "cameraPosition": [
+      0,
+      1.35,
+      1.25
+    ],
+    "targetPosition": [
+      0,
+      1.66,
+      11.25
+    ],
+    "sway": 0,
+    "inputHeld": true,
+    "arrowCam": false,
+    "flying": 0
+  },
+  "restartReleased": {
+    "utc": "2026-11-07T19:19:22.5560750Z",
+    "frame": 3189,
+    "fields": {
+      "_mode": "Modern",
+      "_modeChosen": true,
+      "_shots": 0,
+      "_hits": 0,
+      "_score": 0,
+      "_stage": 0,
+      "_finished": false,
+      "_wasDrawing": false,
+      "_awaitStringRelease": false,
+      "_moloHits": 0,
+      "_janggaHits": 0,
+      "_awakHits": 0,
+      "_modernDrawPower": 0,
+      "_modernSightZeroed": true
+    },
+    "sightCalibrated": false,
+    "reticleViewport": [
+      0.6459948,
+      0.3625542,
+      0.8775582
+    ],
+    "camera": "Player viewpoint | seated 1.35m",
+    "fov": 84,
+    "cameraPosition": [
+      0,
+      1.35,
+      1.25
+    ],
+    "targetPosition": [
+      0,
+      1.66,
+      11.25
+    ],
+    "sway": 0,
+    "inputHeld": false,
+    "arrowCam": false,
+    "flying": 0
+  },
+  "nextShot": {
+    "utc": "2026-11-07T19:19:25.7413790Z",
+    "frame": 3363,
+    "fields": {
+      "_mode": "Modern",
+      "_modeChosen": true,
+      "_shots": 1,
+      "_hits": 1,
+      "_score": 10,
+      "_stage": 0,
+      "_finished": false,
+      "_wasDrawing": false,
+      "_awaitStringRelease": false,
+      "_moloHits": 0,
+      "_janggaHits": 0,
+      "_awakHits": 0,
+      "_modernDrawPower": 0,
+      "_modernSightZeroed": true
+    },
+    "sightCalibrated": false,
+    "reticleViewport": [
+      0.6465008,
+      0.3628664,
+      0.8776643
+    ],
+    "camera": "Player viewpoint | seated 1.35m",
+    "fov": 84,
+    "cameraPosition": [
+      0,
+      1.35,
+      1.25
+    ],
+    "targetPosition": [
+      0,
+      1.66,
+      11.25
+    ],
+    "sway": 0,
+    "inputHeld": false,
+    "arrowCam": false,
+    "flying": 0
+  },
+  "earlyFrame": {
+    "utc": "2026-11-07T19:19:17.2428340Z",
+    "frame": 2961,
+    "fields": {
+      "_mode": "Modern",
+      "_modeChosen": true,
+      "_shots": 0,
+      "_hits": 0,
+      "_score": 0,
+      "_stage": 0,
+      "_finished": false,
+      "_wasDrawing": true,
+      "_awaitStringRelease": false,
+      "_moloHits": 0,
+      "_janggaHits": 0,
+      "_awakHits": 0,
+      "_modernDrawPower": 1,
+      "_modernSightZeroed": true
+    },
+    "sightCalibrated": false,
+    "reticleViewport": [
+      0.4617463,
+      0.5574335,
+      0.8093964
+    ],
+    "camera": "Player viewpoint | seated 1.35m",
+    "fov": 84,
+    "cameraPosition": [
+      0,
+      1.35,
+      1.25
+    ],
+    "targetPosition": [
+      0,
+      1.66,
+      11.25
+    ],
+    "sway": 0,
+    "inputHeld": true,
+    "arrowCam": false,
+    "flying": 0
+  }
+}

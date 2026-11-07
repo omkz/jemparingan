@@ -215,11 +215,11 @@ public class JemparinganGame : MonoBehaviour
     private int _lastPowerStep = -1;
     private bool _lastStableSignal;
 
-    // Web browser builds are mouse/keyboard demos. Keep Quest hand tracking
+    // Desktop players and Web browser builds use mouse/keyboard. Keep Quest hand tracking
     // reserved for native Quest builds and opt-in Editor tests.
     private bool UsesDesktopInput()
     {
-#if UNITY_WEBGL && !UNITY_EDITOR
+#if (UNITY_WEBGL || UNITY_STANDALONE) && !UNITY_EDITOR
         return true;
 #else
         return Application.isEditor && !preferQuestHandsInEditor;
@@ -289,6 +289,10 @@ public class JemparinganGame : MonoBehaviour
         if (questInput == null) questInput = GetComponent<MetaQuestBowInput>();
         yield return null;
         _ready = BuildScene();
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        if (_ready) Debug.Log("Jemparingan input route: " +
+            (UsesDesktopInput() ? "desktop mouse/keyboard" : "Quest hands"));
+#endif
         if (_ready && useOutdoorEnvironment)
         {
             // Desktop/Web use an explicit menu. For a future native Quest

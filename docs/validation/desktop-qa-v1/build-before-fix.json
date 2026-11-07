@@ -1,0 +1,15 @@
+{
+  "status": "completed",
+  "buildId": "build_b33bf2e27897",
+  "result": "Succeeded",
+  "platform": "StandaloneLinux64",
+  "outputPath": "/tmp/jemparingan-desktop-qa-v1/Jemparingan.x86_64",
+  "totalSizeBytes": 225462806,
+  "buildTimeMs": 64848,
+  "buildStartedAt": "2026-11-07T12:16:28.7845320Z",
+  "buildEndedAt": "2026-11-07T12:17:33.6334850Z",
+  "totalWarnings": 0,
+  "totalErrors": 0,
+  "errors": [],
+  "warnings": []
+}
