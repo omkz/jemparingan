@@ -198,6 +198,37 @@ public static class JemparinganEditorMenu
             Object.DestroyImmediate(testObject);
         }
 
+        // Pure pendulum regression checks: trajectory is bounded, smooth
+        // around the reversal and visibly more challenging in level 3.
+        Vector3 still = JemparinganTarget.PendulumOffset(0f, 0f);
+        Vector3 gentle = JemparinganTarget.PendulumOffset(Mathf.PI * .5f, .08f);
+        Vector3 harder = JemparinganTarget.PendulumOffset(Mathf.PI * .5f, .20f);
+        Vector3 reverse = JemparinganTarget.PendulumOffset(
+            Mathf.PI * 1.5f, .20f);
+        Check("Traditional level 1 is stationary",
+            still.sqrMagnitude < .000001f, ref total, ref failed);
+        Check("Traditional level 3 has wider swing than level 2",
+            harder.x > gentle.x && gentle.x > 0f &&
+            Mathf.Abs(reverse.x + harder.x) < .00001f,
+            ref total, ref failed);
+        Check("Traditional pendulum follows a shallow rising arc",
+            harder.y > gentle.y && gentle.y > 0f && harder.y < .04f,
+            ref total, ref failed);
+        Vector3 beforeTurn = JemparinganTarget.PendulumOffset(
+            Mathf.PI * .5f - .03f, .20f);
+        Vector3 afterTurn = JemparinganTarget.PendulumOffset(
+            Mathf.PI * .5f + .03f, .20f);
+        Check("Traditional pendulum reverses smoothly",
+            Mathf.Abs(beforeTurn.x - afterTurn.x) < .0001f,
+            ref total, ref failed);
+        Vector3 varied = JemparinganTarget.PendulumOffset(
+            1.1f, .20f, .12f);
+        Check("Traditional harder rhythm is deterministic and bounded",
+            Vector3.Distance(varied,
+                JemparinganTarget.PendulumOffset(1.1f, .20f, .12f)) < .000001f &&
+            Mathf.Abs(varied.x) <= .20001f,
+            ref total, ref failed);
+
         // Traditional shares Modern's optical/ballistic alignment, but
         // must not magnetize a shot towards any red/yellow/white target zone.
         var sightCameraObject = new GameObject("Traditional sight QA camera (temporary)");
