@@ -60,8 +60,10 @@ public class JemparinganGame : MonoBehaviour
     // but use a modest, fixed roll for modern target archery. The old
     // landmark-derived ~17-degree lean looked excessive with a real sight.
     [SerializeField] private bool modernUseReferenceFraming = true;
-    [Header("Modern-only first-person left hand (no right-hand rendering)")]
+    [Header("Shared desktop first-person grip and draw hands")]
     [SerializeField] private bool modernUseNewHands = true;
+    // Cosmetic only. Disable if the right pinch obstructs the view.
+    [SerializeField] private bool modernShowRightDrawHand = true;
     private JemparinganModernHands _modernHands;
     [Header("Modern lightweight release and impact feel (cosmetic only)")]
     [SerializeField] private bool modernLightweightGameFeel = true;
@@ -2567,9 +2569,9 @@ public class JemparinganGame : MonoBehaviour
         }
         if (UsesSharedDesktopBow())
         {
-            // Both desktop modes share the new first-person hands without
+            // Both desktop modes share the first-person hands without
             // rendering the legacy Traditional hand rig.
-            // The independent new rig follows grip, nock and current bow pose.
+            // The right draw hand follows the existing nock, never the input.
             HideTraditionalArms();
             bool show = modernUseNewHands && UsesDesktopInput() &&
                 modernViewmodelRigV2 && modernUseReferenceFraming &&
@@ -2577,7 +2579,8 @@ public class JemparinganGame : MonoBehaviour
                 (_arrowCam == null || !_arrowCam.IsActive);
             if (show && _modernHands != null)
                 _modernHands.Present(_playerCamera, stringDrawing,
-                    _modernDrawPower, _modernRaisedPose);
+                    _modernDrawPower, _modernRaisedPose,
+                    _stringMarker, modernShowRightDrawHand);
             else
                 HideModernHands();
             return;
