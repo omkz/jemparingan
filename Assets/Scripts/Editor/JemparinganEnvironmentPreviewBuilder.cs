@@ -130,9 +130,19 @@ public static class JemparinganEnvironmentPreviewBuilder
         {
             if (renderer.sharedMaterial == null) continue;
             string name = renderer.sharedMaterial.name;
-            if (name.EndsWith("_JogloPolish_v01", StringComparison.Ordinal))
+            string materialPath = AssetDatabase.GetAssetPath(renderer.sharedMaterial);
+            if (materialPath.StartsWith(MaterialFolder + "/", StringComparison.Ordinal) &&
+                materialPath.EndsWith("_JogloPolish_v01.mat", StringComparison.Ordinal))
                 polished++;
-            if (name == "Jemparingan_Preview_Teak" ||
+            // The committed original .mat assets have short names (Teak,
+            // Dark_Teak, etc.). The previous check used nonexistent
+            // Jemparingan_Preview_* names and missed unpolished objects.
+            if (materialPath == MaterialFolder + "/Teak.mat" ||
+                materialPath == MaterialFolder + "/Dark_Teak.mat" ||
+                materialPath == MaterialFolder + "/Clay_Roof.mat" ||
+                materialPath == MaterialFolder + "/Amber_Trim.mat" ||
+                materialPath == MaterialFolder + "/Stone.mat" ||
+                name == "Jemparingan_Preview_Teak" ||
                 name == "Jemparingan_Preview_Dark_Teak" ||
                 name == "Jemparingan_Preview_Clay_Roof")
                 oldFinish++;
@@ -147,8 +157,17 @@ public static class JemparinganEnvironmentPreviewBuilder
         Material expectedSky = AssetDatabase.LoadAssetAtPath<Material>(skyPath);
         Material activeSky = RenderSettings.skybox;
         bool skyOK = expectedSky != null && activeSky == expectedSky;
-        bool passed = jointMesh && polished > 0 && oldFinish == 0 &&
-            sunOK && skyOK;
+        // A PASS requires some original joglo materials to have been
+        // remapped as well as the single joined-timber detail renderer.
+        // Inspect the actual saved scene: in-memory success alone does not
+        // prove the .unity file is committed or even saved.
+        string absoluteScenePath = Path.Combine(
+            Directory.GetParent(Application.dataPath).FullName, scene.path);
+        bool savedJoinery = File.Exists(absoluteScenePath) &&
+            File.ReadAllText(absoluteScenePath).Contains(
+                "m_Name: " + JoineryName);
+        bool passed = jointMesh && polished > 1 && oldFinish == 0 &&
+            sunOK && skyOK && savedJoinery;
         string report = "Joglo Polish QA: joinery triangles=" + triangles +
             "/144, joined renderers=" + joinedRenderers +
             "/1, colliders=" + colliders +
@@ -157,7 +176,9 @@ public static class JemparinganEnvironmentPreviewBuilder
             ", shadow-free sun=" + sunOK + ", sky=" + skyOK +
             " (active=" + (activeSky != null
                 ? AssetDatabase.GetAssetPath(activeSky) : "none") +
-            ", expected=" + skyPath + ")";
+            ", expected=" + skyPath + ")" +
+            ", saved scene joinery=" + savedJoinery +
+            ", scene file=" + absoluteScenePath;
         if (passed) Debug.Log(report + " | PASS. Visual and FPS tests remain.");
         else Debug.LogError(report + " | FAIL. Apply Joglo + Lighting Polish v1.");
     }
@@ -1156,13 +1177,30 @@ public static class JemparinganEnvironmentPreviewBuilder
             Material old = renderer.sharedMaterial;
             if (old == null) continue;
             Material next = null;
-            switch (old.name)
+            // Identify the actual, committed Unity material assets by path.
+            // Their m_Name values are "Stone", "Teak", "Dark_Teak",
+            // "Amber_Trim", and "Clay_Roof" — NOT the old synthetic
+            // Jemparingan_Preview_* names from an early blockout.
+            string oldPath = AssetDatabase.GetAssetPath(old);
+            switch (oldPath)
             {
-                case "Jemparingan_Preview_Stone": next = stone; break;
-                case "Jemparingan_Preview_Teak": next = teak; break;
-                case "Jemparingan_Preview_Dark_Teak": next = darkWood; break;
-                case "Jemparingan_Preview_Amber_Trim": next = trim; break;
-                case "Jemparingan_Preview_Clay_Roof": next = roof; break;
+                case MaterialFolder + "/Stone.mat": next = stone; break;
+                case MaterialFolder + "/Teak.mat": next = teak; break;
+                case MaterialFolder + "/Dark_Teak.mat": next = darkWood; break;
+                case MaterialFolder + "/Amber_Trim.mat": next = trim; break;
+                case MaterialFolder + "/Clay_Roof.mat": next = roof; break;
+            }
+            // Support any unsaved legacy in-memory materials as well.
+            if (next == null)
+            {
+                switch (old.name)
+                {
+                    case "Jemparingan_Preview_Stone": next = stone; break;
+                    case "Jemparingan_Preview_Teak": next = teak; break;
+                    case "Jemparingan_Preview_Dark_Teak": next = darkWood; break;
+                    case "Jemparingan_Preview_Amber_Trim": next = trim; break;
+                    case "Jemparingan_Preview_Clay_Roof": next = roof; break;
+                }
             }
             if (next == null || next == old) continue;
             Undo.RecordObject(renderer, "Polish joglo timber and roof materials");
