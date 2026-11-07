@@ -398,9 +398,9 @@ public class JemparinganGame : MonoBehaviour
         }
         _stageIntroStartedAt = Time.time;
         _stageIntroUntil = Time.time + 1.25f;
-        // Desktop IMGUI has its own concise stage card; don't duplicate
-        // it with the old world-space text at the center of the view.
-        if (_stageBanner != null && (!UsesDesktopInput() || IsTraditionalMode()))
+        // Both desktop modes use the same concise IMGUI stage transition.
+        // World-space banners remain only for non-desktop/Quest input.
+        if (_stageBanner != null && !UsesDesktopInput())
         {
             _stageBanner.text = "LEVEL " + (_stage + 1) + "/3";
             _stageBannerUntil = Time.time + 1.5f;
@@ -544,12 +544,14 @@ public class JemparinganGame : MonoBehaviour
         GUI.color = saved;
     }
 
-    // Results focus on performance, not explaining hidden level rules.
+    // Shared result layout; Traditional gets one compact scoring-zone row.
+    // Modern retains its original 250 px result card unchanged.
     private void DrawModernResultsGUI()
     {
         float panelWidth = Mathf.Min(390f, Screen.width - 24f);
         if (panelWidth < 240f) return;
-        float panelHeight = 250f;
+        bool traditional = IsTraditionalMode();
+        float panelHeight = traditional ? 290f : 250f;
         Rect panel = new Rect((Screen.width - panelWidth) * .5f,
             (Screen.height - panelHeight) * .5f,
             panelWidth, panelHeight);
@@ -566,7 +568,7 @@ public class JemparinganGame : MonoBehaviour
         DrawModernPanelRect(new Rect(panel.x, panel.y, panelWidth,
             4f), ModernStageAccent(_stage));
         GUI.Label(new Rect(x, panel.y + 13f, contentWidth, 28f),
-            "COMPLETE", heading);
+            traditional ? "TRADITIONAL COMPLETE" : "COMPLETE", heading);
         GUI.Label(new Rect(x, panel.y + 48f, contentWidth, 53f),
             _score.ToString(), scoreStyle);
         GUI.Label(new Rect(x, panel.y + 107f, contentWidth, 21f),
@@ -576,11 +578,20 @@ public class JemparinganGame : MonoBehaviour
         GUI.Label(new Rect(x, panel.y + 135f, contentWidth, 22f),
             "ACCURACY  " + accuracy + "%   •   HITS  " +
             _hits + "/" + _shots, statStyle);
+        if (traditional)
+        {
+            // A single row summarizes the three bandulan scoring zones;
+            // nothing extra appears while the player is aiming.
+            GUI.Label(new Rect(x, panel.y + 165f, contentWidth, 23f),
+                "MOLO " + _moloHits + "   •   JANGGA " + _janggaHits +
+                "   •   AWAK " + _awakHits, statStyle);
+        }
+        float buttonY = traditional ? 224f : 184f;
         float gap = 12f;
         float buttonWidth = (contentWidth - gap) * .5f;
         Color savedBackground = GUI.backgroundColor;
         GUI.backgroundColor = new Color(.46f, .83f, .71f);
-        if (GUI.Button(new Rect(x, panel.y + 184f,
+        if (GUI.Button(new Rect(x, panel.y + buttonY,
             buttonWidth, 44f), "RETRY"))
         {
             ResetRound();
@@ -588,7 +599,7 @@ public class JemparinganGame : MonoBehaviour
         }
         GUI.backgroundColor = new Color(.75f, .82f, .88f);
         if (GUI.Button(new Rect(x + buttonWidth + gap,
-            panel.y + 184f, buttonWidth, 44f), "MODES"))
+            panel.y + buttonY, buttonWidth, 44f), "MODES"))
             ReturnToModeSelect();
         GUI.backgroundColor = savedBackground;
     }
@@ -1775,7 +1786,7 @@ public class JemparinganGame : MonoBehaviour
             ? (newRecord ? "NEW BEST  |  R: RETRY  |  M: MODES"
                 : "R: RETRY  |  M: MODES")
             : "RELEASE + HOLD TO RETRY";
-        _resultsPanel.SetActive(true);
+        _resultsPanel.SetActive(!UsesDesktopInput());
     }
 
     private void ShowImpactLabel(string message, Color color)
