@@ -5,6 +5,16 @@ public class JemparinganTarget : MonoBehaviour
 {
     public enum TraditionalZone { None, Awak, Jangga, Molo }
     public TraditionalZone LastTraditionalZone { get; private set; }
+    // Coordinates of the swept tip's contact on the target plane.
+    // Also used by the existing pooled impact burst.
+    public Vector3 LastImpactLocal { get; private set; }
+
+    public static float ImpactStrength(TraditionalZone zone)
+    {
+        return zone == TraditionalZone.Molo ? 1f :
+            zone == TraditionalZone.Jangga ? .76f :
+            zone == TraditionalZone.Awak ? .55f : 0f;
+    }
 
     // Shared visual and scoring boundaries. Keep these synchronized with
     // BuildBandulan so every colored region awards its advertised points.
@@ -44,6 +54,7 @@ public class JemparinganTarget : MonoBehaviour
     private float _flashUntil;
     private float _hitAt = -1f;
     private bool _bullseye;
+    private float _impactStrength;
 
     private void Awake()
     {
@@ -132,7 +143,7 @@ public class JemparinganTarget : MonoBehaviour
             float age = Time.time - _hitAt;
             recoil = age < 0.5f
                 ? Mathf.Sin(age * 37f) * Mathf.Exp(-age * 9f) *
-                    (_bullseye ? 10f : 6f)
+                    Mathf.Lerp(2f, 9f, _impactStrength)
                 : 0f;
 
             if (_fxRoot != null && _fxRoot.gameObject.activeSelf)
@@ -192,6 +203,7 @@ public class JemparinganTarget : MonoBehaviour
     public bool TestShot(Vector3 arrowFrom, Vector3 arrowTo, out bool bullseye)
     {
         LastTraditionalZone = TraditionalZone.None;
+        LastImpactLocal = Vector3.zero;
         // The cylinder is stylized and forgiving in width, but its colored
         // Y sections use the exact same boundaries as the 3D mesh.
         Vector3 traditionalBottom = transform.TransformPoint(
@@ -223,6 +235,7 @@ public class JemparinganTarget : MonoBehaviour
             ? TraditionalZone.Molo
             : hitY >= TraditionalNeckBottom
                 ? TraditionalZone.Jangga : TraditionalZone.Awak;
+        LastImpactLocal = new Vector3(hitX, hitY, 0f);
         bullseye = LastTraditionalZone == TraditionalZone.Molo;
         return true;
     }
@@ -230,6 +243,7 @@ public class JemparinganTarget : MonoBehaviour
     public void Flash(bool bullseye = false)
     {
         _bullseye = bullseye;
+        _impactStrength = ImpactStrength(LastTraditionalZone);
         _hitAt = Time.time;
         // Light up the hit colored section rather than flashing only the
         // white body even when the arrow struck the red head.
@@ -253,13 +267,23 @@ public class JemparinganTarget : MonoBehaviour
         }
         if (_flashRenderer != null)
         {
-            _flashRenderer.sharedMaterial = JemparinganArt.Material(JemparinganArt.Tone.Gold);
-            _flashUntil = Time.time + 0.14f;
+            JemparinganArt.Tone flashTone = LastTraditionalZone == TraditionalZone.Molo
+                ? JemparinganArt.Tone.Gold :
+                LastTraditionalZone == TraditionalZone.Jangga
+                    ? JemparinganArt.Tone.BowBrass : JemparinganArt.Tone.Jade;
+            _flashRenderer.sharedMaterial = JemparinganArt.Material(flashTone);
+            _flashUntil = Time.time + Mathf.Lerp(.10f, .17f, _impactStrength);
         }
         if (_sparks == null || _fxRoot == null) CreateBurst();
-        Material sparkMaterial = JemparinganArt.Material(bullseye ? JemparinganArt.Tone.Gold : JemparinganArt.Tone.Jade);
+        JemparinganArt.Tone sparkTone = LastTraditionalZone == TraditionalZone.Molo
+            ? JemparinganArt.Tone.Gold :
+            LastTraditionalZone == TraditionalZone.Jangga
+                ? JemparinganArt.Tone.BowBrass : JemparinganArt.Tone.Jade;
+        Material sparkMaterial = JemparinganArt.Material(sparkTone);
         for (int i = 0; i < _sparkRenderers.Length; i++)
             _sparkRenderers[i].sharedMaterial = sparkMaterial;
+        // Burst now starts at the actual hit instead of the target center.
+        _fxRoot.localPosition = LastImpactLocal + Vector3.back * .075f;
         _fxRoot.gameObject.SetActive(true);
         AnimateBurst(0f);
     }
@@ -301,8 +325,11 @@ public class JemparinganTarget : MonoBehaviour
 
     private void AnimateBurst(float progress)
     {
-        float radius = Mathf.Lerp(0.045f, 0.21f, progress);
-        float size = Mathf.Lerp(0.022f, 0.002f, progress);
+        // Full gold burst for Molo; shorter, softer sparks for other zones.
+        // The original eight pooled sparks are reused without allocation.
+        float radius = Mathf.Lerp(.018f, .15f * _impactStrength, progress);
+        float size = Mathf.Lerp(.018f, .002f, progress) *
+            Mathf.Lerp(.75f, 1.15f, _impactStrength);
         for (int i = 0; i < _sparks.Length; i++)
         {
             float angle = (i / (float)SparkCount) * Mathf.PI * 2f;
