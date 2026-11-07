@@ -139,8 +139,14 @@ public static class JemparinganEnvironmentPreviewBuilder
         }
         bool sunOK = RenderSettings.sun != null &&
             RenderSettings.sun.shadows == LightShadows.None;
-        bool skyOK = RenderSettings.skybox != null &&
-            RenderSettings.skybox.name.Contains("Joglo Polish");
+        // Match the committed asset itself. Do not test its display name:
+        // older saved versions are named "GoldenHourSky_JogloPolish_v01"
+        // rather than "Jemparingan Golden Hour | Joglo Polish v1".
+        const string skyPath = AssetRoot +
+            "/GoldenHourSky_JogloPolish_v01.mat";
+        Material expectedSky = AssetDatabase.LoadAssetAtPath<Material>(skyPath);
+        Material activeSky = RenderSettings.skybox;
+        bool skyOK = expectedSky != null && activeSky == expectedSky;
         bool passed = jointMesh && polished > 0 && oldFinish == 0 &&
             sunOK && skyOK;
         string report = "Joglo Polish QA: joinery triangles=" + triangles +
@@ -148,7 +154,10 @@ public static class JemparinganEnvironmentPreviewBuilder
             "/1, colliders=" + colliders +
             "/0, polished materials=" + polished +
             ", old wood/roof materials=" + oldFinish +
-            ", shadow-free sun=" + sunOK + ", sky=" + skyOK;
+            ", shadow-free sun=" + sunOK + ", sky=" + skyOK +
+            " (active=" + (activeSky != null
+                ? AssetDatabase.GetAssetPath(activeSky) : "none") +
+            ", expected=" + skyPath + ")";
         if (passed) Debug.Log(report + " | PASS. Visual and FPS tests remain.");
         else Debug.LogError(report + " | FAIL. Apply Joglo + Lighting Polish v1.");
     }
