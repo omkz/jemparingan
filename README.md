@@ -30,6 +30,14 @@ Launch origin, aim, projectile motion, swept-tip detection, scoring, pooling and
 
 The scenic-only preview lives in `Assets/Jemparingan/Scenes/JemparinganEnvironmentPreview_v01.unity`; the older indoor scene `JemparinganOptimized_v02.unity` is retained as a historical/legacy scene. The playable outdoor scene is the recommended one.
 
+### Joglo + afternoon lighting polish v1 (Unity Editor only)
+
+This pass improves the **existing playable Joglo v5 scene without regenerating or overwriting it**. In Edit Mode, open `Assets/Jemparingan/Scenes/JemparinganPlayableEnvironment_v05.unity`, then choose **Tools > Jemparingan > Environment > Apply Joglo + Lighting Polish v1**. Review in Scene/Game view, and save the modified scene with **Ctrl+S** only when satisfied. For a code-only PR checkout, no scene file changes until you explicitly use that Editor menu.
+
+The tool applies versioned URP Lit materials to the joglo only (warmer teak, quieter trim, clay roof, stone), adjusts the golden-hour sky/ambient and the existing directional sun while keeping realtime shadows **off**, and adds a single static combined 144-triangle mesh of eight wooden knee braces and four narrow fascia lines. It is idempotent: running it again does not create another detail group. It does **not** touch the bandulan, archery lane, target, cameras, input, gameplay or projectile paths. The old material assets and saved scene are not overwritten. The **Create Playable Environment v5** generator remains a separate, destructive/regeneration workflow and should not be used just for this polish.
+
+Run **Tools > Jemparingan > Environment > Validate Joglo Polish v1** afterward (expected: 144 combined triangles, one joined renderer, no extra colliders or realtime shadows). In Play Mode, inspect whether the roof silhouette remains legible, the aiming lane stays unobstructed, both modes still shoot properly and the scenery is not blown out. Measure rendering in Unity Profiler; the combined mesh is cheap but overall Quest FPS is still unverified.
+
 ## Validation
 
 In Unity Edit Mode, use **Tools > Jemparingan > Run Target Hitbox Checks**, then **Tools > Jemparingan > Run Gameplay QA (Traditional + Modern)**. In Play Mode, check Traditional sight alignment and the no-snap miss case, shared bow/hand pose and recoil, minimal unobstructed HUD, Traditional hit zones, stage boundaries at shots 4 and 8, smooth pendulum turns with an attached cord, sparks appearing at the precise hit point and differing for Molo/Jangga/Awak, subtle score underline pulse, restart resetting to a still bandulan, 12-shot results showing Molo/Jangga/Awak totals, Modern stages, arrow camera, input and replay. These checks supplement—not replace—real Unity compilation and headset testing.
