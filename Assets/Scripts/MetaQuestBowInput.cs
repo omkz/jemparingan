@@ -10,6 +10,29 @@ public class MetaQuestBowInput : MonoBehaviour, IJemparinganInput
     public OVRHand leftHand;
     public OVRHand rightHand;
 
+    private readonly JemparinganQuestGestureGate _gestureGate = new JemparinganQuestGestureGate();
+    private bool _focused = true;
+    private bool _paused;
+
+    public void CancelGesture()
+    {
+        _gestureGate.Interrupt();
+        _hasHandAim = false;
+    }
+
+    private void OnEnable() { CancelGesture(); }
+    private void OnDisable() { CancelGesture(); }
+    private void OnApplicationFocus(bool focused)
+    {
+        _focused = focused;
+        CancelGesture();
+    }
+    private void OnApplicationPause(bool paused)
+    {
+        _paused = paused;
+        CancelGesture();
+    }
+
     // Hand-to-hand direction is the approximate arrow line while drawing.
     // Validate palm/hand-anchor ergonomics and real tracking on Quest hardware.
     private Vector3 _lastValidHandAim;
@@ -19,12 +42,26 @@ public class MetaQuestBowInput : MonoBehaviour, IJemparinganInput
     {
         pose = default;
         Camera cam = Camera.main;
-        if (cam == null || leftHand == null || rightHand == null) return false;
-        if (!leftHand.IsTracked || !rightHand.IsTracked) return false;
-        if (leftHand.IsSystemGestureInProgress || rightHand.IsSystemGestureInProgress) return false;
+        bool valid = isActiveAndEnabled && _focused && !_paused && cam != null &&
+            leftHand != null && rightHand != null &&
+            leftHand.isActiveAndEnabled && rightHand.isActiveAndEnabled &&
+            leftHand.IsTracked && rightHand.IsTracked &&
+            leftHand.IsDataValid && rightHand.IsDataValid &&
+            leftHand.IsDataHighConfidence && rightHand.IsDataHighConfidence &&
+            leftHand.GetFingerConfidence(OVRHand.HandFinger.Index) == OVRHand.TrackingConfidence.High &&
+            rightHand.GetFingerConfidence(OVRHand.HandFinger.Index) == OVRHand.TrackingConfidence.High &&
+            !leftHand.IsSystemGestureInProgress && !rightHand.IsSystemGestureInProgress;
+        if (OVRManager.instance != null)
+            valid &= OVRManager.hasInputFocus && OVRManager.hasVrFocus;
+        if (!valid)
+        {
+            CancelGesture();
+            return false;
+        }
 
         bool leftPinch = leftHand.GetFingerIsPinching(OVRHand.HandFinger.Index);
         bool rightPinch = rightHand.GetFingerIsPinching(OVRHand.HandFinger.Index);
+        if (!_gestureGate.Accept(true, leftPinch, rightPinch)) return false;
 
         Vector3 bowPosition = leftHand.transform.position;
         Vector3 stringPosition = rightHand.transform.position;
@@ -34,9 +71,15 @@ public class MetaQuestBowInput : MonoBehaviour, IJemparinganInput
         // Head direction is used only while idle / when hand geometry is invalid.
         // With both pinch gestures held, the aim follows the bow-string axis,
         // rather than requiring the player to point their head at the target.
-        if (leftPinch && rightPinch && handAxis.sqrMagnitude >= 0.02f &&
-            Vector3.Dot(handAxis.normalized, cameraAim) > 0.20f)
+        if (leftPinch && rightPinch)
         {
+            // Degenerate geometry cancels instead of firing along cached/head aim.
+            // The axis is independent of head direction, allowing the user to look away.
+            if (handAxis.sqrMagnitude < 0.0064f || handAxis.sqrMagnitude > 0.64f)
+            {
+                CancelGesture();
+                return false;
+            }
             handAim = handAxis.normalized;
             _lastValidHandAim = handAim;
             _hasHandAim = true;

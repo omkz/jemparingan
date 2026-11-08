@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using Input = JemparinganDesktopControls;
 
 // V0.9: regression hardening, deterministic scoring, and safer shot pool lifecycle.
 // Quest integration is deliberately left for the later phase.
@@ -265,6 +266,7 @@ public class JemparinganGame : MonoBehaviour
 
     private void OnDisable()
     {
+        ClearDrawState();
         RestoreModernCameraFov();
         HideModernPhysicalSight();
         HideModernHands();
@@ -2550,6 +2552,12 @@ public class JemparinganGame : MonoBehaviour
 
     private void UpdateTraditionalPresentation(bool stringDrawing)
     {
+        if (!UsesDesktopInput())
+        {
+            HideTraditionalArms();
+            HideModernHands();
+            return;
+        }
         if (!UsesTraditionalPresentation())
         {
             HideModernHands();

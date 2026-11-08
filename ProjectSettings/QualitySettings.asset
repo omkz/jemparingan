@@ -273,7 +273,7 @@ QualitySettings:
     excludedTargetPlatforms: []
   - serializedVersion: 5
     name: Ultra
-    pixelLightCount: 4
+    pixelLightCount: 3
     shadows: 2
     shadowResolution: 2
     shadowProjection: 1
@@ -286,7 +286,7 @@ QualitySettings:
     skinWeights: 255
     globalTextureMipmapLimit: 0
     textureMipmapLimitSettings: []
-    anisotropicTextures: 2
+    anisotropicTextures: 1
     antiAliasing: 2
     softParticles: 1
     softVegetation: 1
@@ -333,6 +333,7 @@ QualitySettings:
     Kepler: 5
     LinuxHeadlessSimulation: 5
     Nintendo Switch: 5
+    Nintendo Switch 2: 5
     PS4: 5
     PS5: 5
     QNX: 5

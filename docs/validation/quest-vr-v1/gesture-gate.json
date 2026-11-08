@@ -1,0 +1,108 @@
+{
+  "method": "Actual production gesture gate compiled with Add-Type; synthetic samples, no headset or Unity interaction claim",
+  "pass": true,
+  "checks": [
+    {
+      "check": "Startup with held bow/string is blocked",
+      "pass": true,
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "Opening string before neutral remains blocked",
+      "pass": true,
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "Both hands neutral arms input",
+      "pass": true,
+      "accepted": true,
+      "expected": true
+    },
+    {
+      "check": "Left bow pinch is accepted",
+      "pass": true,
+      "accepted": true,
+      "expected": true
+    },
+    {
+      "check": "Right string pinch is accepted",
+      "pass": true,
+      "accepted": true,
+      "expected": true
+    },
+    {
+      "check": "Normal string release is accepted",
+      "pass": true,
+      "accepted": true,
+      "expected": true
+    },
+    {
+      "check": "Invalid tracking sample is rejected",
+      "pass": true,
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "Reacquired held draw remains blocked",
+      "pass": true,
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "Reacquired release remains blocked",
+      "pass": true,
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "Neutral after tracking loss is accepted",
+      "pass": true,
+      "accepted": true,
+      "expected": true
+    },
+    {
+      "check": "Fresh draw after recovery is accepted",
+      "pass": true,
+      "accepted": true,
+      "expected": true
+    },
+    {
+      "check": "Dropping bow while string held cancels",
+      "pass": true,
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "Regripping bow with held string remains blocked",
+      "pass": true,
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "Neutral after dropped bow is accepted",
+      "pass": true,
+      "accepted": true,
+      "expected": true
+    },
+    {
+      "check": "Explicit focus/pause/disable interruption blocks held input",
+      "pass": true,
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "Explicit interruption requires both hands neutral",
+      "pass": true,
+      "accepted": false,
+      "expected": false
+    },
+    {
+      "check": "Both neutral rearm after explicit interruption",
+      "pass": true,
+      "accepted": true,
+      "expected": true
+    }
+  ]
+}

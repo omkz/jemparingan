@@ -1,0 +1,7 @@
+{
+  "pass": true,
+  "sourceTransforms": 561,
+  "copyTransforms": 579,
+  "errors": [],
+  "method": "All original transform/active states, renderer material references and lights compared in saved scenes; added XR hierarchy excluded from original entries."
+}

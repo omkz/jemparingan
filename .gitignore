@@ -32,3 +32,7 @@ Thumbs.db
 # Unity crash logs
 sysinfo.txt
 
+# Meta developer agent settings contain machine-local credentials.
+/Assets/Resources/DevAgentSettings.asset
+/Assets/Resources/DevAgentSettings.asset.meta
+

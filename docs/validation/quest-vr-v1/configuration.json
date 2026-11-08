@@ -1,0 +1,26 @@
+{
+  "unity": "6000.3.27f1",
+  "activeTarget": "StandaloneWindows64",
+  "androidSupported": true,
+  "loaders": [
+    "UnityEngine.XR.OpenXR.OpenXRLoader"
+  ],
+  "autoInitialize": true,
+  "renderMode": "SinglePassInstanced",
+  "features": [
+    "UnityEngine.XR.OpenXR.Features.Interactions.HandInteractionProfile",
+    "UnityEngine.XR.Hands.OpenXR.MetaHandTrackingAim",
+    "Meta.XR.MetaXRFeature",
+    "Meta.XR.MetaXRFoveationFeature",
+    "UnityEngine.XR.Hands.OpenXR.HandTracking"
+  ],
+  "architecture": "ARM64",
+  "backend": "IL2CPP",
+  "minApi": 32,
+  "graphics": [
+    "Vulkan"
+  ],
+  "handSupport": "HandsOnly",
+  "passthrough": "None",
+  "validation": []
+}

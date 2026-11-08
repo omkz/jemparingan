@@ -1,4 +1,5 @@
 using UnityEngine;
+using Input = JemparinganDesktopControls;
 
 // Editor keyboard/mouse prototype only. Not the competition's Quest input.
 public class DesktopBowInput : MonoBehaviour, IJemparinganInput

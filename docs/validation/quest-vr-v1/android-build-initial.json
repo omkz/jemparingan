@@ -1,0 +1,13 @@
+{
+  "job_id": "build-6fecbbe0f4",
+  "result": "failed",
+  "platform": "Android",
+  "output_path": "Builds/QuestVRv1/JemparinganQuest-dev.apk",
+  "started_at": "2026-11-08T17:07:37.0126468Z",
+  "duration_seconds": 223.4343519,
+  "completed_at": "2026-11-08T17:11:20.4469987Z",
+  "total_size_mb": 0.0,
+  "errors": 1,
+  "warnings": 3,
+  "error": "Active Input Handling was Both, which is unsupported on Android. Build canceled at the Unity dialog; subsequently configured Input System only and verified the desktop controls bridge."
+}

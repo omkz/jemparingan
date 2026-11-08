@@ -1,0 +1,245 @@
+{
+  "pass": true,
+  "method": "Editor Play Mode, real projectile Update/collision/scoring; near-target Shoot injection bypasses gestures and aiming. No device/stereo/performance claim.",
+  "rows": [
+    {
+      "check": "Unavailable real hand data cancels pending draw with zero shots",
+      "pass": true
+    },
+    {
+      "mode": "Traditional",
+      "shot": 1,
+      "expected": 3,
+      "actual": 3,
+      "shots": 1,
+      "stage": 1,
+      "pass": true
+    },
+    {
+      "mode": "Traditional",
+      "shot": 2,
+      "expected": 2,
+      "actual": 2,
+      "shots": 2,
+      "stage": 1,
+      "pass": true
+    },
+    {
+      "mode": "Traditional",
+      "shot": 3,
+      "expected": 1,
+      "actual": 1,
+      "shots": 3,
+      "stage": 1,
+      "pass": true
+    },
+    {
+      "mode": "Traditional",
+      "shot": 4,
+      "expected": 0,
+      "actual": 0,
+      "shots": 4,
+      "stage": 2,
+      "pass": true
+    },
+    {
+      "mode": "Traditional",
+      "shot": 5,
+      "expected": 3,
+      "actual": 3,
+      "shots": 5,
+      "stage": 2,
+      "pass": true
+    },
+    {
+      "mode": "Traditional",
+      "shot": 6,
+      "expected": 2,
+      "actual": 2,
+      "shots": 6,
+      "stage": 2,
+      "pass": true
+    },
+    {
+      "mode": "Traditional",
+      "shot": 7,
+      "expected": 1,
+      "actual": 1,
+      "shots": 7,
+      "stage": 2,
+      "pass": true
+    },
+    {
+      "mode": "Traditional",
+      "shot": 8,
+      "expected": 0,
+      "actual": 0,
+      "shots": 8,
+      "stage": 3,
+      "pass": true
+    },
+    {
+      "mode": "Traditional",
+      "shot": 9,
+      "expected": 3,
+      "actual": 3,
+      "shots": 9,
+      "stage": 3,
+      "pass": true
+    },
+    {
+      "mode": "Traditional",
+      "shot": 10,
+      "expected": 2,
+      "actual": 2,
+      "shots": 10,
+      "stage": 3,
+      "pass": true
+    },
+    {
+      "mode": "Traditional",
+      "shot": 11,
+      "expected": 1,
+      "actual": 1,
+      "shots": 11,
+      "stage": 3,
+      "pass": true
+    },
+    {
+      "mode": "Traditional",
+      "shot": 12,
+      "expected": 0,
+      "actual": 0,
+      "shots": 12,
+      "stage": 3,
+      "pass": true
+    },
+    {
+      "mode": "Traditional",
+      "check": "12-shot round reaches results",
+      "pass": true
+    },
+    {
+      "mode": "Modern",
+      "shot": 1,
+      "expected": 10,
+      "actual": 10,
+      "shots": 1,
+      "stage": 1,
+      "pass": true
+    },
+    {
+      "mode": "Modern",
+      "shot": 2,
+      "expected": 8,
+      "actual": 8,
+      "shots": 2,
+      "stage": 1,
+      "pass": true
+    },
+    {
+      "mode": "Modern",
+      "shot": 3,
+      "expected": 6,
+      "actual": 6,
+      "shots": 3,
+      "stage": 1,
+      "pass": true
+    },
+    {
+      "mode": "Modern",
+      "shot": 4,
+      "expected": 4,
+      "actual": 4,
+      "shots": 4,
+      "stage": 2,
+      "pass": true
+    },
+    {
+      "mode": "Modern",
+      "shot": 5,
+      "expected": 2,
+      "actual": 2,
+      "shots": 5,
+      "stage": 2,
+      "pass": true
+    },
+    {
+      "mode": "Modern",
+      "shot": 6,
+      "expected": 0,
+      "actual": 0,
+      "shots": 6,
+      "stage": 2,
+      "pass": true
+    },
+    {
+      "mode": "Modern",
+      "shot": 7,
+      "expected": 10,
+      "actual": 10,
+      "shots": 7,
+      "stage": 2,
+      "pass": true
+    },
+    {
+      "mode": "Modern",
+      "shot": 8,
+      "expected": 8,
+      "actual": 8,
+      "shots": 8,
+      "stage": 3,
+      "pass": true
+    },
+    {
+      "mode": "Modern",
+      "shot": 9,
+      "expected": 6,
+      "actual": 6,
+      "shots": 9,
+      "stage": 3,
+      "pass": true
+    },
+    {
+      "mode": "Modern",
+      "shot": 10,
+      "expected": 4,
+      "actual": 4,
+      "shots": 10,
+      "stage": 3,
+      "pass": true
+    },
+    {
+      "mode": "Modern",
+      "shot": 11,
+      "expected": 2,
+      "actual": 2,
+      "shots": 11,
+      "stage": 3,
+      "pass": true
+    },
+    {
+      "mode": "Modern",
+      "shot": 12,
+      "expected": 0,
+      "actual": 0,
+      "shots": 12,
+      "stage": 3,
+      "pass": true
+    },
+    {
+      "mode": "Modern",
+      "check": "12-shot round reaches results",
+      "pass": true
+    },
+    {
+      "check": "Runtime one camera/listener and supported materials",
+      "pass": true,
+      "cameras": [
+        "CenterEyeAnchor"
+      ],
+      "listeners": 1,
+      "badMaterials": []
+    }
+  ]
+}
