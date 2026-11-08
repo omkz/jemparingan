@@ -13,6 +13,9 @@ using UnityEngine.XR.Management;
 public static class JemparinganQuestEditorXR
 {
     private const string QuestScene = "Assets/Jemparingan/Scenes/JemparinganQuest.unity";
+    // A minimal test scene isolates OpenXR frame submission from OVRManager,
+    // hand prefabs and the full Jemparingan environment.
+    private const string SmokeScene = "Assets/Jemparingan/Scenes/JemparinganOpenXRSmoke.unity";
     private const string QuestPlayKey = "Jemparingan.QuestEditorXR.Requested";
     private static XRGeneralSettings _original;
     private static XRGeneralSettings _session;
@@ -32,7 +35,7 @@ public static class JemparinganQuestEditorXR
             string startScene = EditorSceneManager.playModeStartScene != null
                 ? AssetDatabase.GetAssetPath(EditorSceneManager.playModeStartScene)
                 : SceneManager.GetActiveScene().path;
-            SessionState.SetBool(QuestPlayKey, startScene == QuestScene);
+            SessionState.SetBool(QuestPlayKey, startScene == QuestScene || startScene == SmokeScene);
         }
         else if (state == PlayModeStateChange.ExitingPlayMode)
             StopSession();
@@ -44,7 +47,8 @@ public static class JemparinganQuestEditorXR
         else if (state == PlayModeStateChange.EnteredPlayMode && _session != null)
         {
             if (_manager.activeLoader != null)
-                Debug.Log("Quest Editor XR started: " + _manager.activeLoader.GetType().Name);
+                Debug.Log("Quest Editor XR started: " + _manager.activeLoader.GetType().Name +
+                    ". This confirms loader startup, NOT simulator frame submission.");
             else
                 Debug.LogWarning("Quest Editor XR could not initialize an OpenXR runtime. Activate Meta XR Simulator or Quest Link before pressing Play.");
         }
