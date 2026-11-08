@@ -137,7 +137,7 @@ public static class JemparinganDesktopInputQA
         };
     }
 
-    private static void Save(object result) => File.WriteAllText(JemparinganQuestSetup.Evidence + "desktop-input-regression.json", JsonConvert.SerializeObject(result, Formatting.Indented));
+    private static void Save(object result) => File.WriteAllText(JemparinganQuestSetup.Evidence + "desktop-input-regression-stabilization.json", JsonConvert.SerializeObject(result, Formatting.Indented));
     private static async Task Wait(float seconds)
     {
         float until = Time.realtimeSinceStartup + seconds;
