@@ -1,0 +1,9 @@
+{
+  "method": "Latest Unity BuildReport inspected before the simulator fix",
+  "result": "Failed",
+  "errors": 1,
+  "warnings": 9,
+  "output": "Builds/QuestVRv1/JemparinganQuest-dev.apk",
+  "apkExists": false,
+  "messages": ["TaskCanceledException: A task was canceled."]
+}

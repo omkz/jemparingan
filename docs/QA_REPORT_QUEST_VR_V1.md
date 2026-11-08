@@ -19,10 +19,10 @@ Date: 2026-11-09 (Asia/Jakarta). **Scene and Editor runtime foundation verified.
 | Android tooling installed | PASS | Editor reports Android supported. Installed SDK platforms: 34, 35, 36, 37.0; NDK 27.2.12479018; OpenJDK 17.0.18. Tool presence does not prove a successful build. |
 | Android Unity OpenXR loader | PASS | Assigned `UnityEngine.XR.OpenXR.OpenXRLoader`, initialize on startup enabled. |
 | Stereo and platform configuration | PASS | Single Pass Instanced, Vulkan, ARM64, IL2CPP, minimum Android API 32, application ID `com.omkz.jemparingan`. |
-| Meta/hand OpenXR features | PASS | MetaXRFeature, MetaXRFoveationFeature, HandTracking, MetaHandTrackingAim, HandInteractionProfile enabled. Controller interaction profiles disabled for Android. |
+| Meta/hand OpenXR features | PASS | Baseline configuration enables MetaXRFeature, MetaXRFoveationFeature, HandTracking, MetaHandTrackingAim, HandInteractionProfile and disables Android controller profiles. The current local checkout also has a user change enabling the Android Oculus Touch profile; it is preserved and excluded from the simulator fix commit. Reapply the hands-only configuration before a submission build. |
 | Hands-only / no passthrough configuration | PASS | Meta project configuration: HandsOnly, Quest 3/3S targets, passthrough None. No passthrough implementation added. |
 | OpenXR project validation | PASS | Zero reported Android issues; see `validation/quest-vr-v1/configuration.json`. |
-| Desktop original scene preservation | PASS | Original scene is still open, clean and unchanged; file hash matches baseline. |
+| Desktop original scene preservation | PASS | Original scene file remains unchanged; file hash matches baseline. |
 | Existing gameplay rules | PASS | Unity MCP ran existing gameplay QA: **38/38** deterministic rule/hitbox checks passed. Does not replace Play Mode input testing. |
 | Existing Traditional target zones | PASS | Existing molo, jangga, awak, and miss checks passed through Unity MCP. |
 | Interrupted gesture gate | PASS | **17/17** synthetic checks execute the production C# gate through PowerShell Add-Type. Startup-held input, invalid tracking, reacquisition, dropping the bow with string held, and explicit interruption require neutral input before another gesture. No device input was tested. See `validation/quest-vr-v1/gesture-gate.json`. |
@@ -31,9 +31,12 @@ Date: 2026-11-09 (Asia/Jakarta). **Scene and Editor runtime foundation verified.
 | Environment/material preservation in Quest scene | PASS | All **561 original transforms**, their active states, renderer material references and light settings match the desktop scene. Copied scene has 579 transforms including the new XR hierarchy. See `environment-preservation.json`. |
 | Quest Editor visual smoke check | PASS | Seated camera and both gameplay modes captured and inspected: `quest-seated-edit.png`, `quest-traditional-play.png`, `quest-modern-play.png`. Runtime reports zero unsupported/error materials. No claim of device stereo or unchanged shared color-space rendering. |
 | Traditional/Modern runtime rounds with Quest rig | PASS | **12 shots per mode**, hit zones/rings, misses, all three stages and results passed in Play Mode. Near-target `Shoot` injection exercises actual projectile Update/collision/scoring, bypassing gestures and aiming. See `runtime-checks.json`. |
-| Ten consecutive desktop input-driven shots / exactly one arrow per release | PASS | Actual DesktopBowInput/game with virtual Input System devices: **10 releases in each mode**, no fire while held, one shot per release, R during held draw resets without a release shot. Original desktop scene unchanged. See `desktop-input-regression.json`. This is synthetic mouse/keyboard input. |
+| Ten consecutive desktop input-driven shots / exactly one arrow per release | FAIL (latest retry) | The original foundation run passed **10 releases per mode**, retained in `desktop-input-regression.json`. The 2026-11-09 simulator-fix retry selected the menu but recorded zero shots for all releases and failed held-reset checks; see `desktop-input-regression-retry.json`. Cause is not yet established. Desktop Play initially reported no active XR loader and its scene file is unchanged. Do not treat the earlier PASS as proof that this dirty checkout currently passes interaction regression. |
 | Exactly one arrow per tracked-hand pinch release | NOT TESTED | Gesture gate checks and unavailable-hand draw cancellation pass, but no end-to-end tracked pinch/device test. |
-| Android development APK | NOT TESTED | Build attempted through Unity MCP; first attempt canceled at Unity's unsupported Both-input warning. Input System compatibility fix applied; final build result pending below. |
+| Quest-only Editor OpenXR startup | PASS | `JemparinganQuestEditorXR` supplies transient Standalone startup settings for the Quest scene. Actual trials identify Meta XR Simulator and reach `XR_SESSION_STATE_FOCUSED`; saved desktop startup stays disabled. Standalone hand features enabled. |
+| Meta XR Simulator rendering on this host | FAIL | Simulator 207.1 on Intel UHD 620 / driver 31.0.101.2135: Direct3D 11 stalls before first frame; direct Vulkan frontend reports memory allocation `-2` and swapchain-image creation failure, then disconnects. Compatibility transfer and Operator opt-out trials did not fix it. See `validation/quest-vr-v1/simulator-checks.json` and `SIMULATOR_SETUP.md`. |
+| Simulator end-to-end left bow / right string gestures | NOT TESTED | Both simulator inputs set to Hand with shared input disabled, but no rendered frame or successfully verified tracked pinch shot. |
+| Android development APK | FAIL | Both-input warning fixed, but the subsequent actual build failed with one error / nine warnings: `TaskCanceledException: A task was canceled.` No APK exists at the requested output. See `validation/quest-vr-v1/android-build.json`. |
 | Headset/device/performance validation | NOT TESTED | Elevated `adb devices -l` returned an empty device list. No device deployment, real hand tracking, stereo image, comfort or frame-rate measurements. |
 
 ## Implementation
@@ -44,6 +47,7 @@ Date: 2026-11-09 (Asia/Jakarta). **Scene and Editor runtime foundation verified.
 2. **Create Quest Scene Copy** — executed. Copies the authored scene with `AssetDatabase.CopyAsset`; refuses to overwrite an existing Quest scene or discard unsaved scenes. It preserves environment/target content, disables desktop input and the original camera/listener only in the copy, and adds the SDK `OVRCameraRig` and two `OVRHandPrefab` instances. Uses OpenXR hand skeleton/mesh types and a separate URP material for the SDK-rendered hands.
 3. **Validate Open Quest Scene** — executed, PASS. Checks URP XR rendering, monoscopic off, one active listener, one rig, both adapter hand assignments, no enabled desktop input, no passthrough, missing scripts, Android validation errors, and the desktop scene hash (also accepts canonical LF content on other checkout platforms). Writes `scene-validation.json`.
 4. **Build Android Development APK** — validates first and builds an explicit Quest-only scene list to `Builds/QuestVRv1/JemparinganQuest-dev.apk`; does not replace the default desktop build scene. The default scene list retains desktop enabled and Quest disabled. Use this menu or an explicit Quest-only scene list, not an ordinary desktop build. The automated attempt uses Unity MCP `manage_build` with that same explicit list.
+5. **Configure Editor Simulator OpenXR** — enables Standalone OpenXR and hand features. Editor uses Standalone XR settings even with Android selected. The saved desktop startup flag is retained; the Quest-only Editor hook uses transient settings and cleans them up on Play exit/reload. This fixes missing XR initialization but does not resolve the simulator graphics failure on this host.
 
 The seated origin is the existing authored viewpoint `(0, 1.35, 1.25)`, with EyeLevel tracking and full positional/rotational tracking. This avoids adding physical floor-to-eye height twice. The center-eye camera is configured for URP XR; the per-eye cameras are disabled. Comfort and recenter behavior require a headset test.
 
@@ -55,7 +59,7 @@ Android requires a single input backend. `JemparinganDesktopControls` routes the
 
 ## Limitations and next steps
 
-The earlier scene-creation permission rejection was resolved by using the sandboxed local MCP connection. The separate scene now exists and validates successfully. Record the final Android build result before claiming APK availability.
+The separate Quest scene exists and validates successfully. The Android build was attempted and failed; APK availability remains blocked pending a successful rebuild.
 
 Shared project settings now include the existing Unity 6.3 migration and Meta/OpenXR initialization changes. Unity/Meta also serialized renderer/quality settings and linear color-space/stereo settings during setup. The desktop scene hash alone does **not** prove unchanged desktop rendering; perform a visual regression check before claiming desktop visual parity.
 
@@ -63,7 +67,7 @@ Next hands-only interaction step: on Quest 3/3S, calibrate the actual bow grip/s
 
 ## Reproduction and attribution
 
-- `Tools/Invoke-UnityMcp.ps1` talks to the installed Unity MCP Editor TCP bridge (default port 6400), using its documented framing from package source. Editor scene operations and existing QA menus use MCP. The local Pipeline bridge was used to start MCP and bootstrap compile symbols because no Unity MCP tool was initially exposed in the chat.
+- `Tools/Invoke-UnityMcp.ps1` talks to the installed Unity MCP Editor TCP bridge, discovering its port from per-project metadata (fallback 6400), using its documented framing from package source. Domain reload can stop the bridge; port discovery does not restart it. Editor scene operations and existing QA menus use MCP. The local Pipeline bridge was used to start MCP and bootstrap compile symbols because no Unity MCP tool was initially exposed in the chat.
 - `Tools/Invoke-Unity.ps1` discovers the local Pipeline descriptor and uses its token internally; it does not print credentials. `Tools/QuestVrBootstrap.cs` preserves the desktop hash and enables `META_XR_SDK` for Android/Standalone.
 - Run logic checks: `./Tools/Test-QuestGestureGate.ps1`.
 - Run preservation/runtime checks through the additional Quest VR v1 menus; the desktop input regression menu expects Play Mode in the original desktop scene. Tests use virtual Input System devices and restore them afterward.

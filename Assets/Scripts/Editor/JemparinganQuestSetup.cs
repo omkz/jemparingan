@@ -40,7 +40,8 @@ public static class JemparinganQuestSetup
         general.InitManagerOnStart = true;
         EditorUtility.SetDirty(general);
         EditorUtility.SetDirty(manager);
-        // Desktop scene must keep its ordinary mouse/keyboard launch without an HMD.
+        // Desktop players keep ordinary mouse/keyboard startup. The editor hook
+        // creates transient XR settings only when playing the Quest scene.
         var standalone = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(BuildTargetGroup.Standalone);
         if (standalone != null) { standalone.InitManagerOnStart = false; EditorUtility.SetDirty(standalone); }
 
@@ -80,6 +81,29 @@ public static class JemparinganQuestSetup
         AssetDatabase.SaveAssets();
         Write("configuration.json", Configuration());
         Debug.Log("Quest VR: Android OpenXR configured, hands only, immersive VR (no passthrough).");
+    }
+
+    [MenuItem("Tools/Jemparingan/Quest VR v1/Configure Editor Simulator OpenXR")]
+    public static void ConfigureEditorSimulator()
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode)
+            throw new InvalidOperationException("Stop Play Mode before configuring simulator XR.");
+        var general = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(BuildTargetGroup.Standalone);
+        if (general == null || general.Manager == null) throw new InvalidOperationException("Standalone XR settings are missing.");
+        if (!XRPackageMetadataStore.AssignLoader(general.Manager, "UnityEngine.XR.OpenXR.OpenXRLoader", BuildTargetGroup.Standalone))
+            throw new InvalidOperationException("Standalone OpenXR loader assignment failed.");
+        var settings = OpenXRSettings.GetSettingsForBuildTargetGroup(BuildTargetGroup.Standalone);
+        settings.renderMode = OpenXRSettings.RenderMode.SinglePassInstanced;
+        foreach (var feature in settings.GetFeatures())
+        {
+            if (!new[] { "MetaXRFeature", "MetaXRFoveationFeature", "HandTracking", "MetaHandTrackingAim", "HandInteractionProfile" }.Contains(feature.GetType().Name)) continue;
+            feature.enabled = true;
+            EditorUtility.SetDirty(feature);
+        }
+        EditorUtility.SetDirty(general.Manager);
+        EditorUtility.SetDirty(settings);
+        AssetDatabase.SaveAssets();
+        Debug.Log("Quest Editor simulator configured: Standalone OpenXR and hand features enabled. Quest-scene XR startup is transient; activate Meta XR Simulator before Play.");
     }
 
     [MenuItem("Tools/Jemparingan/Quest VR v1/Create Quest Scene Copy")]

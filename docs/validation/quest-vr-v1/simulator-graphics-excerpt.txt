@@ -1,0 +1,13 @@
+1794167218	I			XRSimulator	[arvr.simulation.openxr.compositor_readback]: Using VulkanBundle for device: Device: 86801759070000000000000000000000, Driver: 33312e302e3130312e32313335000000
+1794167218	E			XRSimulator	[arvr.simulation.openxr.vulkan_helpers]: Failed to allocate memory: -2
+1794167218	E			XRSimulator	[arvr.simulation.openxr.compositor_readback]: Error creating swapchain image
+1794167218	W			XRSimulator	[arvr.simulation.openxr.compositor_readback]: Failed to enumerate swapchains. Client may have disconnected.
+1794167332	I			XRSimulator	[arvr.simulation.openxr.compositor_readback]: Using VulkanBundle for device: Device: 86801759070000000000000000000000, Driver: 33312e302e3130312e32313335000000
+1794167332	E			XRSimulator	[arvr.simulation.openxr.vulkan_helpers]: Failed to allocate memory: -2
+1794167332	E			XRSimulator	[arvr.simulation.openxr.compositor_readback]: Error creating swapchain image
+1794167332	W			XRSimulator	[arvr.simulation.openxr.compositor_readback]: Failed to enumerate swapchains. Client may have disconnected.
+1794167490	I			XRSimulator	[arvr.simulation.openxr.compositor_readback]: Using VulkanBundle for device: Device: 86801759070000000000000000000000, Driver: 33312e302e3130312e32313335000000
+1794167490	E			XRSimulator	[arvr.simulation.openxr.vulkan_helpers]: Failed to allocate memory: -2
+1794167490	E			XRSimulator	[arvr.simulation.openxr.compositor_readback]: Error creating swapchain image
+1794167490	W			XRSimulator	[arvr.simulation.openxr.compositor_readback]: Failed to enumerate swapchains. Client may have disconnected.
+1794167754	I			XRSimulator	[arvr.simulation.openxr.compositor_readback]: Using VulkanBundle for device: Device: 86801759070000000000000000000000, Driver: 33312e302e3130312e32313335000000

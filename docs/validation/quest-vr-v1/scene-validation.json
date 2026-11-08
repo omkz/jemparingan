@@ -7,8 +7,8 @@
   "audioListeners": 1,
   "rigs": 1,
   "hands": [
-    "Right tracked hand | string pinch",
-    "Left tracked hand | bow pinch"
+    "Left tracked hand | bow pinch",
+    "Right tracked hand | string pinch"
   ],
   "missingScripts": 0,
   "desktopUnchanged": true,
@@ -28,6 +28,7 @@
       "UnityEngine.XR.Hands.OpenXR.MetaHandTrackingAim",
       "Meta.XR.MetaXRFeature",
       "Meta.XR.MetaXRFoveationFeature",
+      "UnityEngine.XR.OpenXR.Features.Interactions.OculusTouchControllerProfile",
       "UnityEngine.XR.Hands.OpenXR.HandTracking"
     ],
     "architecture": "ARM64",

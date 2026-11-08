@@ -1,0 +1,44 @@
+{
+  "date": "2026-11-09",
+  "host": {
+    "unity": "6000.3.27f1",
+    "simulator": "207.1",
+    "gpu": "Intel UHD Graphics 620",
+    "driver": "31.0.101.2135"
+  },
+  "startup": {
+    "before": "Standalone InitManagerOnStart=false; no loader or runtime in Quest Play",
+    "after": "Quest-only transient settings; OpenXRLoader; runtime Meta XR Simulator; XR_SESSION_STATE_FOCUSED",
+    "status": "PASS"
+  },
+  "graphicsTrials": [
+    {
+      "api": "Direct3D11",
+      "result": "FAIL",
+      "observed": "Editor stalls before first frame; simulator UI says No frames received from the OpenXR application"
+    },
+    {
+      "api": "Vulkan (-force-vulkan)",
+      "result": "FAIL",
+      "observed": [
+        "Unity remains responsive",
+        "Simulator frontend: Failed to allocate memory: -2",
+        "Error creating swapchain image",
+        "Failed to enumerate swapchains. Client may have disconnected.",
+        "Session exits and Play Mode stops"
+      ]
+    },
+    {
+      "api": "Direct3D11 with local disable_interop=true config",
+      "result": "FAIL",
+      "observed": "Config-specific native log created; session reaches focused; no frame; Editor stalls"
+    }
+  ],
+  "optionalOperatorOptOut": "Tried; did not resolve failure. Not shipped; global preference preserved.",
+  "endToEndSimulatedPinch": "NOT TESTED",
+  "headset": "NOT TESTED",
+  "performance": "NOT TESTED",
+  "sceneBeforeAfterSha256": "290cab57b6aa015cf7cdb914fee9803268e6571570dc708ca5277dc8ff6774da",
+  "preservation": "Quest scene user changes retained byte-for-byte across trials; original desktop scene unchanged",
+  "conclusion": "XR initialization fixed. Simulator frame output remains blocked. Logs establish graphics allocation failure on this host, not a confirmed hardware incompatibility or successful simulator test."
+}

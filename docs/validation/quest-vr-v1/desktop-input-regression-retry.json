@@ -1,0 +1,180 @@
+{
+  "pass": false,
+  "method": "Actual DesktopBowInput + JemparinganGame in original scene with virtual Input System mouse/keyboard; 10 releases per mode. No physical mouse or Quest input claim.",
+  "rows": [
+    {
+      "check": "Keyboard 1 selects Traditional",
+      "pass": true
+    },
+    {
+      "mode": "Traditional",
+      "shot": 1,
+      "before": 0,
+      "after": 0,
+      "heldDoesNotFire": true,
+      "pass": false
+    },
+    {
+      "mode": "Traditional",
+      "shot": 2,
+      "before": 0,
+      "after": 0,
+      "heldDoesNotFire": true,
+      "pass": false
+    },
+    {
+      "mode": "Traditional",
+      "shot": 3,
+      "before": 0,
+      "after": 0,
+      "heldDoesNotFire": true,
+      "pass": false
+    },
+    {
+      "mode": "Traditional",
+      "shot": 4,
+      "before": 0,
+      "after": 0,
+      "heldDoesNotFire": true,
+      "pass": false
+    },
+    {
+      "mode": "Traditional",
+      "shot": 5,
+      "before": 0,
+      "after": 0,
+      "heldDoesNotFire": true,
+      "pass": false
+    },
+    {
+      "mode": "Traditional",
+      "shot": 6,
+      "before": 0,
+      "after": 0,
+      "heldDoesNotFire": true,
+      "pass": false
+    },
+    {
+      "mode": "Traditional",
+      "shot": 7,
+      "before": 0,
+      "after": 0,
+      "heldDoesNotFire": true,
+      "pass": false
+    },
+    {
+      "mode": "Traditional",
+      "shot": 8,
+      "before": 0,
+      "after": 0,
+      "heldDoesNotFire": true,
+      "pass": false
+    },
+    {
+      "mode": "Traditional",
+      "shot": 9,
+      "before": 0,
+      "after": 0,
+      "heldDoesNotFire": true,
+      "pass": false
+    },
+    {
+      "mode": "Traditional",
+      "shot": 10,
+      "before": 0,
+      "after": 0,
+      "heldDoesNotFire": true,
+      "pass": false
+    },
+    {
+      "mode": "Traditional",
+      "check": "R during held draw resets without release shot",
+      "pass": false
+    },
+    {
+      "mode": "Modern",
+      "shot": 1,
+      "before": 0,
+      "after": 0,
+      "heldDoesNotFire": true,
+      "pass": false
+    },
+    {
+      "mode": "Modern",
+      "shot": 2,
+      "before": 0,
+      "after": 0,
+      "heldDoesNotFire": true,
+      "pass": false
+    },
+    {
+      "mode": "Modern",
+      "shot": 3,
+      "before": 0,
+      "after": 0,
+      "heldDoesNotFire": true,
+      "pass": false
+    },
+    {
+      "mode": "Modern",
+      "shot": 4,
+      "before": 0,
+      "after": 0,
+      "heldDoesNotFire": true,
+      "pass": false
+    },
+    {
+      "mode": "Modern",
+      "shot": 5,
+      "before": 0,
+      "after": 0,
+      "heldDoesNotFire": true,
+      "pass": false
+    },
+    {
+      "mode": "Modern",
+      "shot": 6,
+      "before": 0,
+      "after": 0,
+      "heldDoesNotFire": true,
+      "pass": false
+    },
+    {
+      "mode": "Modern",
+      "shot": 7,
+      "before": 0,
+      "after": 0,
+      "heldDoesNotFire": true,
+      "pass": false
+    },
+    {
+      "mode": "Modern",
+      "shot": 8,
+      "before": 0,
+      "after": 0,
+      "heldDoesNotFire": true,
+      "pass": false
+    },
+    {
+      "mode": "Modern",
+      "shot": 9,
+      "before": 0,
+      "after": 0,
+      "heldDoesNotFire": true,
+      "pass": false
+    },
+    {
+      "mode": "Modern",
+      "shot": 10,
+      "before": 0,
+      "after": 0,
+      "heldDoesNotFire": true,
+      "pass": false
+    },
+    {
+      "mode": "Modern",
+      "check": "R during held draw resets without release shot",
+      "pass": false
+    }
+  ]
+}
