@@ -114,7 +114,8 @@ public static class JemparinganDesktopInputQA
     private static object Snapshot(JemparinganGame game, Mouse testMouse)
     {
         var desktop = game.GetComponent<DesktopBowInput>();
-        bool hasPose = desktop != null && desktop.TryReadPose(out var pose);
+        JemparinganHandPose pose = default;
+        bool hasPose = desktop != null && desktop.TryReadPose(out pose);
         return new
         {
             frame = Time.frameCount,
