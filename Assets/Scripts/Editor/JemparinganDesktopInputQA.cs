@@ -37,11 +37,16 @@ public static class JemparinganDesktopInputQA
         bool arrowCam = (bool)Get(game, "modernEveryShotArrowCam");
         try
         {
+            // InputSystem.AddDevice does not guarantee that a synthetic device
+            // remains current when real mouse events or editor focus intervene.
+            mouse.MakeCurrent();
+            keyboard.MakeCurrent();
             Set(game, "modernEveryShotArrowCam", false);
             InputSystem.QueueStateEvent(mouse, new MouseState());
             InputSystem.QueueStateEvent(keyboard, new KeyboardState());
             await Wait(.15f);
             // Exercises menu selection through the keyboard path.
+            keyboard.MakeCurrent();
             InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Digit1));
             await Wait(.15f);
             InputSystem.QueueStateEvent(keyboard, new KeyboardState());
@@ -54,23 +59,37 @@ public static class JemparinganDesktopInputQA
                 for (int i = 0; i < 10; ++i)
                 {
                     int before = (int)Get(game, "_shots");
+                    mouse.MakeCurrent();
                     InputSystem.QueueStateEvent(mouse, new MouseState().WithButton(MouseButton.Left));
                     await Wait(.65f);
                     bool heldDoesNotFire = (int)Get(game, "_shots") == before;
+                    var heldState = Snapshot(game, mouse);
+                    mouse.MakeCurrent();
                     InputSystem.QueueStateEvent(mouse, new MouseState());
                     await Wait(3.4f);
                     int after = (int)Get(game, "_shots");
+                    var releasedState = Snapshot(game, mouse);
                     bool shotPass = heldDoesNotFire && after == before + 1;
                     pass &= shotPass;
-                    rows.Add(new { mode = mode.ToString(), shot = i + 1, before, after, heldDoesNotFire, pass = shotPass });
+                    rows.Add(new {
+                        mode = mode.ToString(), shot = i + 1, before, after,
+                        heldDoesNotFire, pass = shotPass,
+                        // Diagnostic evidence when zero shots occur; cannot
+                        // assume the gameplay logic is broken if input never
+                        // reached the adapter.
+                        heldState, releasedState
+                    });
                 }
                 // R while drawing must reset and require release before a new shot.
+                mouse.MakeCurrent();
                 InputSystem.QueueStateEvent(mouse, new MouseState().WithButton(MouseButton.Left));
                 await Wait(.3f);
+                keyboard.MakeCurrent();
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.R));
                 await Wait(.15f);
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState());
                 bool reset = (int)Get(game, "_shots") == 0 && (bool)Get(game, "_awaitStringRelease");
+                mouse.MakeCurrent();
                 InputSystem.QueueStateEvent(mouse, new MouseState());
                 await Wait(.2f);
                 reset &= (int)Get(game, "_shots") == 0;
@@ -90,6 +109,31 @@ public static class JemparinganDesktopInputQA
             originalKeyboard?.MakeCurrent();
             Application.runInBackground = background;
         }
+    }
+
+    private static object Snapshot(JemparinganGame game, Mouse testMouse)
+    {
+        var desktop = game.GetComponent<DesktopBowInput>();
+        bool hasPose = desktop != null && desktop.TryReadPose(out var pose);
+        return new
+        {
+            frame = Time.frameCount,
+            gameTime = Time.time,
+            ready = (bool)Get(game, "_ready"),
+            modeChosen = (bool)Get(game, "_modeChosen"),
+            questPreference = (bool)Get(game, "preferQuestHandsInEditor"),
+            desktopAdapterEnabled = desktop != null && desktop.isActiveAndEnabled,
+            testMouseIsCurrent = Mouse.current == testMouse,
+            activeMouseName = Mouse.current != null ? Mouse.current.name : null,
+            mousePressed = JemparinganDesktopControls.GetMouseButton(0),
+            hasPose,
+            poseStringPinched = hasPose && pose.StringPinched,
+            wasDrawing = (bool)Get(game, "_wasDrawing"),
+            wasBowHeld = (bool)Get(game, "_wasBowHeld"),
+            lastDraw = (float)Get(game, "_lastDraw"),
+            awaitStringRelease = (bool)Get(game, "_awaitStringRelease"),
+            shots = (int)Get(game, "_shots")
+        };
     }
 
     private static void Save(object result) => File.WriteAllText(JemparinganQuestSetup.Evidence + "desktop-input-regression.json", JsonConvert.SerializeObject(result, Formatting.Indented));
