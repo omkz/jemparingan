@@ -9,6 +9,8 @@ public class JemparinganGame : MonoBehaviour
     [Header("Input — keep from V0.1")]
     [SerializeField] private DesktopBowInput desktopInput;
     [SerializeField] private MetaQuestBowInput questInput;
+    // Serialized in both scene assets: false in desktop, true in Quest.
+    // Keep the field name to preserve existing scene data across upgrades.
     [SerializeField] private bool preferQuestHandsInEditor;
 
     public enum GameMode { Traditional = 1, Modern = 3 }
@@ -216,14 +218,18 @@ public class JemparinganGame : MonoBehaviour
     private int _lastPowerStep = -1;
     private bool _lastStableSignal;
 
-    // Desktop players and Web browser builds use mouse/keyboard. Keep Quest hand tracking
-    // reserved for native Quest builds and opt-in Editor tests.
+    // Android Quest always uses hands, WebGL always uses desktop input.
+    // The scene's serialized preference selects the adapter in Editor and
+    // Windows standalone simulator builds. Do not hard-code STANDALONE to
+    // desktop: a Quest scene can also run against a PC OpenXR simulator.
     private bool UsesDesktopInput()
     {
-#if (UNITY_WEBGL || UNITY_STANDALONE) && !UNITY_EDITOR
+#if UNITY_ANDROID && !UNITY_EDITOR
+        return false;
+#elif UNITY_WEBGL && !UNITY_EDITOR
         return true;
 #else
-        return Application.isEditor && !preferQuestHandsInEditor;
+        return !preferQuestHandsInEditor;
 #endif
     }
 
