@@ -40,9 +40,13 @@ public static class JemparinganXRIHandSmoke
         if (originPrefab == null || simulatorPrefab == null)
         {
             Debug.LogError(
-                "Required XRI sample prefabs are missing. In Window > Package Manager > XR Interaction Toolkit > Samples, " +
-                "import 'Starter Assets' and the simulator sample ('XR Device Simulator' or 'XR Interaction Simulator'). " +
-                "Then run this menu item again. No scene has been changed.");
+                "Missing XRI prefabs: " +
+                (originPrefab == null ? "[XR Origin (XR Rig) in Starter Assets] " : "") +
+                (simulatorPrefab == null ? "[XR Interaction Simulator prefab] " : "") +
+                ". Open Window > Package Manager > In Project > XR Interaction Toolkit > Samples, " +
+                "and Import BOTH 'Starter Assets' and 'XR Interaction Simulator' (NOT 'XR Device Simulator (Legacy)'). " +
+                "Check Assets/Samples/XR Interaction Toolkit/<version>/ for the imported prefabs, " +
+                "then run this menu again. No scene was changed.");
             return;
         }
 
