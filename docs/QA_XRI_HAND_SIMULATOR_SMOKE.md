@@ -6,7 +6,7 @@ This checks simulated **head/hands/pinch** without Meta XR Simulator, OpenXR fra
 
 1. Check out `feat/unity-xri-hand-simulator-smoke` and open Unity. Let Package Manager resolve `com.unity.xr.interaction.toolkit` **3.5.1** and `com.unity.xr.hands` **1.8.1**. Unity will refresh `Packages/packages-lock.json`; commit that lockfile only after local resolution.
 2. **Close Meta XR Simulator** and leave OpenXR runtime simulation disabled. This test uses Unity's simulated input in the Editor.
-3. `Window > Package Manager > XR Interaction Toolkit > Samples`: import **Starter Assets** and the **XR Device Simulator / XR Interaction Simulator** sample (sample name varies by version).
+3. `Window > Package Manager > XR Interaction Toolkit > Samples`: import **Starter Assets** and **XR Interaction Simulator** (do **not** import **XR Device Simulator (Legacy)** for this test).
 4. `Tools > Jemparingan > Simulator > Create/Open XRI Hand Smoke Scene`. The menu creates a separate `JemparinganXRIHandSmoke.unity` scene from the imported official prefabs, with a small grabbable cube. It refuses to overwrite existing scenes or discard unsaved changes.
 5. Press **Play** and focus **Game**. The simulator's on-screen controls show the current input bindings. Typically `Tab` changes modes, `[` and `]` select hands, pressing a bracket twice cycles Controller/Hand mode, and `M` toggles the hand pinch pose. Move the hands toward the cube and try grabbing it.
 
