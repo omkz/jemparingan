@@ -181,7 +181,7 @@ public static class JemparinganXRIHandSmoke
             "This does not exercise OVRHand or Quest device input.");
     }
 
-    private static GameObject FindSamplePrefab(string sampleFolder, string prefabName)
+    internal static GameObject FindSamplePrefab(string sampleFolder, string prefabName)
     {
         string[] guids = AssetDatabase.FindAssets("t:Prefab");
         foreach (string guid in guids)
@@ -197,7 +197,7 @@ public static class JemparinganXRIHandSmoke
         return null;
     }
 
-    private static bool EnsureScenesSaved()
+    internal static bool EnsureScenesSaved()
     {
         for (int i = 0; i < SceneManager.sceneCount; i++)
         {
