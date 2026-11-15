@@ -1,32 +1,15 @@
-# Jemparingan Editor playtest
+# Jemparingan XR Hands — Editor playtest
 
-Unity 6000.3; `feat/unity-xri-hand-simulator-smoke`. This is **Editor QA only**, not a Quest headset test.
+Use Unity 6000.3 on branch `feat/unity-xri-hand-simulator-smoke`. This is an **Editor test**, not a Quest headset test.
 
-## Setup
+1. Import XR Interaction Toolkit samples **Starter Assets**, **Hands Interaction Demo**, and **XR Interaction Simulator** (not Legacy); import **HandVisualizer** from XR Hands.
+2. Run **Tools > Jemparingan > Simulator > Create/Open Jemparingan XRI Playtest**. The playtest is a separate copy of the Quest scene, created once; existing scenes are not overwritten.
+3. Press **Play**, focus Game, and confirm both simulator devices show **Hand** in the overlay. Start with both pinches released.
+4. **Left pinch (Shift+M)** holds the bow; **right pinch (M)** holds the string; move the right hand backward with the simulator's movement keys; release right pinch to fire. Use the simulator overlay for current bindings.
+5. Set `initialOutdoorMode` on `JemparinganGame` in the playtest scene to test **Traditional** or **Modern**.
 
-1. Import **Hands Interaction Demo**, **XR Interaction Simulator**, and **Starter Assets** from XR Interaction Toolkit samples; import **HandVisualizer** from XR Hands samples.
-2. Run **Tools > Jemparingan > Simulator > Create/Open Jemparingan XRI Playtest**. It creates a separate copy of the Quest scene once. Existing scenes are never overwritten.
-3. **Stop Play** before switching input. Use one of the following menus (the choice is saved in the playtest scene):
+**Pass:** holding the left pinch shows the bow; right pinch draws; releasing right once fires at most one arrow; score and arrows update; tracking loss cancels the draw without shooting.
 
-| Mode | Menu | Test |
-| --- | --- | --- |
-| **Keyboard (easier)** | **Use Spacebar Test Mode** | Focus Game; **hold Space** ~0.6s to draw, **release** to fire |
-| **XR Hands** | **Use XR Hands Mode** | Left pinch holds bow; right pinch + hand movement draws; right release fires |
+**Notes:** This test reuses real projectile physics and scoring. The **desktop mouse controls** remain the straightforward way to test gameplay without gestures; a second keyboard shooting mode is intentionally not included. The original Quest scene, OVRHand adapter, Android settings, and desktop scene are unchanged. Meta native plugins may log `OVRPlugin`/`MetaXRAudioUnity` errors in Linux Editor. Do not modify PackageCache.
 
-Spacebar mode uses an **Editor-only** input adapter. It temporarily disables the XRI simulator to avoid its own `Space` shortcut; the actual projectile physics, targets, score and Traditional/Modern modes are unchanged. No hand tracking is tested in keyboard mode.
-
-To test **Traditional** or **Modern**, set `initialOutdoorMode` on `JemparinganGame` in the playtest scene Inspector before Play. The camera stays at the simulated seated viewpoint.
-
-## XR Hands controls
-
-Focus Game and confirm both simulated devices are **Hands** in the on-screen XRI overlay. The default overlay shows left **Shift+M** and right **M** for pinch. Move the selected hand with **WASD**. Start with both pinches released. Disabling or losing tracking cancels a draw; it never fires.
-
-## Checks
-
-- Keyboard: hold/release yields **one arrow per release**; `ARROWS` and score update; short presses do not shoot.
-- XR Hands: left pinch activates bow; right pinch draws; release shoots once; tracking loss cancels safely.
-- Desktop gameplay remains unchanged. Original Quest scene, Meta `OVRHand` adapter, and Android settings remain unchanged.
-
-**Known:** Meta native plugins may still log `OVRPlugin`/`MetaXRAudioUnity` errors on Linux independently of Editor keyboard input. Do not modify PackageCache.
-
-**Not yet verified:** Unity recompilation, an end-to-end Spacebar shot, Android build, or Quest device runtime.
+**Not verified:** Unity compilation after latest changes, end-to-end XR pinch shots, Android APK, or a real Quest device.
