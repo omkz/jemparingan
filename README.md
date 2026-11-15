@@ -8,7 +8,7 @@ A Unity archery game inspired by Javanese jemparingan. Two playable modes share 
 
 1. Open `Assets/Jemparingan/Scenes/JemparinganPlayableEnvironment_v05.unity`.
 2. Press **Play**; choose **1** (Traditional) or **2** (Modern).
-3. Hold **left mouse** to draw; release to shoot. Use **right mouse + move** to aim, **R** to restart, and **M** to return to mode selection where supported.
+3. Hold **left mouse + move mouse** to draw and aim; release to shoot. Press **R** to restart and **M** to return to mode selection where supported.
 
 Do not regenerate the authored scene to change gameplay code.
 
