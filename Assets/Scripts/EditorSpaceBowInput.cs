@@ -9,14 +9,15 @@ public sealed class EditorSpaceBowInput : MonoBehaviour, IJemparinganInput
 {
     [SerializeField, Range(0.2f, 1.5f)] private float fullDrawSeconds = 0.6f;
     private float _drawStartedAt;
-    private bool _armed, _drawing, _focused = true;
+    private bool _armed, _drawing, _focused = true, _cancelPending;
 
     private void OnEnable() { _armed = _drawing = false; }
     private void OnDisable() { _armed = _drawing = false; }
     private void OnApplicationFocus(bool focused)
     {
         _focused = focused;
-        if (!focused) _armed = _drawing = false;
+        _armed = _drawing = false;
+        _cancelPending = true;
     }
 
     public bool TryReadPose(out JemparinganHandPose pose)
@@ -24,6 +25,8 @@ public sealed class EditorSpaceBowInput : MonoBehaviour, IJemparinganInput
         pose = default;
         var cam = Camera.main;
         if (!isActiveAndEnabled || !_focused || cam == null) return false;
+        // Force gameplay to cancel a held draw after focus is restored.
+        if (_cancelPending) { _cancelPending = false; return false; }
 
 #if ENABLE_INPUT_SYSTEM
         bool pressed = Keyboard.current != null && Keyboard.current.spaceKey.isPressed;
