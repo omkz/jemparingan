@@ -912,7 +912,8 @@ public class JemparinganGame : MonoBehaviour
             HideDesktopPracticeSight();
             HidePreview();
             ClearDrawState();
-            SetInfo("Hand tracking unavailable. Try again.");
+            SetInfo(input is XRHandsBowInput xrHands
+                ? xrHands.FailureHint : "Hand tracking unavailable. Try again.");
             return;
         }
         if (_roundOver)
@@ -1221,7 +1222,10 @@ public class JemparinganGame : MonoBehaviour
             {
                 _lastPowerStep = step;
                 _lastStableSignal = calm;
-                SetInfo("DRAW " + (step * 10) + "%   |   " + (calm ? "RASA: STEADY" : "RASA: FOCUS"));
+                SetInfo(input is XRHandsBowInput xrHands && xrHands.HandsTooClose
+                    ? "PULL RIGHT HAND BACK"
+                    : "DRAW " + (step * 10) + "%   |   " +
+                        (calm ? "RASA: STEADY" : "RASA: FOCUS"));
             }
         }
         else
