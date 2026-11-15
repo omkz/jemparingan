@@ -10,6 +10,9 @@ public class JemparinganGame : MonoBehaviour
     [SerializeField] private DesktopBowInput desktopInput;
     [SerializeField] private MetaQuestBowInput questInput;
     [SerializeField] private XRHandsBowInput xrHandsInput;
+#if UNITY_EDITOR
+    [SerializeField] private EditorSpaceBowInput editorSpaceInput;
+#endif
     // Serialized in both scene assets: false in desktop, true in Quest.
     // Keep the field name to preserve existing scene data across upgrades.
     [SerializeField] private bool preferQuestHandsInEditor;
@@ -236,6 +239,10 @@ public class JemparinganGame : MonoBehaviour
 
     private IJemparinganInput ActiveInput()
     {
+#if UNITY_EDITOR
+        if (editorSpaceInput != null && editorSpaceInput.isActiveAndEnabled)
+            return editorSpaceInput;
+#endif
         if (UsesDesktopInput()) return desktopInput;
         return xrHandsInput != null && xrHandsInput.isActiveAndEnabled
             ? (IJemparinganInput)xrHandsInput : questInput;
@@ -304,12 +311,22 @@ public class JemparinganGame : MonoBehaviour
         if (desktopInput == null) desktopInput = GetComponent<DesktopBowInput>();
         if (questInput == null) questInput = GetComponent<MetaQuestBowInput>();
         if (xrHandsInput == null) xrHandsInput = GetComponent<XRHandsBowInput>();
+#if UNITY_EDITOR
+        if (editorSpaceInput == null) editorSpaceInput = GetComponent<EditorSpaceBowInput>();
+#endif
         yield return null;
         _ready = BuildScene();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         if (_ready) Debug.Log("Jemparingan input route: " +
-            (UsesDesktopInput() ? "desktop mouse/keyboard" :
-                xrHandsInput != null && xrHandsInput.isActiveAndEnabled ? "XR Hands" : "Quest OVR hands"));
+#if UNITY_EDITOR
+            (editorSpaceInput != null && editorSpaceInput.isActiveAndEnabled ? "Editor Spacebar" :
+#endif
+            UsesDesktopInput() ? "desktop mouse/keyboard" :
+                xrHandsInput != null && xrHandsInput.isActiveAndEnabled ? "XR Hands" : "Quest OVR hands"
+#if UNITY_EDITOR
+            )
+#endif
+            );
 #endif
         if (_ready && useOutdoorEnvironment)
         {
