@@ -36,7 +36,8 @@ public static class JemparinganXRIHandSmoke
         // The Starter Assets origin is controller-only. The Hands Interaction Demo setup
         // provides the hand modality, interactors and hand visualizer for this test.
         // Only accept prefabs from versioned XRI Samples, never similarly named Meta prefabs.
-        var originPrefab = FindSamplePrefab("Hands Interaction Demo", "XR Interaction Hands Setup");
+        var originPrefab = FindSamplePrefab("Hands Interaction Demo", "XR Interaction Hands Setup")
+            ?? FindSamplePrefab("Hands Interaction Demo", "XR Origin Hands (XR Rig)");
         var simulatorPrefab = FindSamplePrefab("XR Device Simulator", "XR Interaction Simulator")
             ?? FindSamplePrefab("XR Interaction Simulator", "XR Interaction Simulator");
 
@@ -44,7 +45,7 @@ public static class JemparinganXRIHandSmoke
         {
             Debug.LogError(
                 "Missing XRI prefabs: " +
-                (originPrefab == null ? "[XR Interaction Hands Setup in Hands Interaction Demo] " : "") +
+                (originPrefab == null ? "[Hands Interaction Demo: XR Origin Hands (XR Rig)] " : "") +
                 (simulatorPrefab == null ? "[XR Interaction Simulator prefab] " : "") +
                 ". Open Window > Package Manager > In Project > XR Interaction Toolkit > Samples, " +
                 "and import 'Starter Assets', 'Hands Interaction Demo', and 'XR Interaction Simulator' (not Legacy). " +
@@ -131,7 +132,8 @@ public static class JemparinganXRIHandSmoke
 
         if (!EnsureScenesSaved()) return;
 
-        var handsSetupPrefab = FindSamplePrefab("Hands Interaction Demo", "XR Interaction Hands Setup");
+        var handsSetupPrefab = FindSamplePrefab("Hands Interaction Demo", "XR Interaction Hands Setup")
+            ?? FindSamplePrefab("Hands Interaction Demo", "XR Origin Hands (XR Rig)");
         if (handsSetupPrefab == null)
         {
             Debug.LogError("XR Interaction Hands Setup prefab missing. Import XR Interaction Toolkit > Samples > " +
