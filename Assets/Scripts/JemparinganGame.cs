@@ -9,6 +9,7 @@ public class JemparinganGame : MonoBehaviour
     [Header("Input — keep from V0.1")]
     [SerializeField] private DesktopBowInput desktopInput;
     [SerializeField] private MetaQuestBowInput questInput;
+    [SerializeField] private XRHandsBowInput xrHandsInput;
     // Serialized in both scene assets: false in desktop, true in Quest.
     // Keep the field name to preserve existing scene data across upgrades.
     [SerializeField] private bool preferQuestHandsInEditor;
@@ -233,6 +234,13 @@ public class JemparinganGame : MonoBehaviour
 #endif
     }
 
+    private IJemparinganInput ActiveInput()
+    {
+        if (UsesDesktopInput()) return desktopInput;
+        return xrHandsInput != null && xrHandsInput.isActiveAndEnabled
+            ? (IJemparinganInput)xrHandsInput : questInput;
+    }
+
     // LMB alone holds the string and aims with the mouse. Once the fast
     // draw animation reaches full power, settle into the calibrated sight.
     // The axis marker is a temporary debug reference, not a ballistic sight.
@@ -295,11 +303,13 @@ public class JemparinganGame : MonoBehaviour
     {
         if (desktopInput == null) desktopInput = GetComponent<DesktopBowInput>();
         if (questInput == null) questInput = GetComponent<MetaQuestBowInput>();
+        if (xrHandsInput == null) xrHandsInput = GetComponent<XRHandsBowInput>();
         yield return null;
         _ready = BuildScene();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         if (_ready) Debug.Log("Jemparingan input route: " +
-            (UsesDesktopInput() ? "desktop mouse/keyboard" : "Quest hands"));
+            (UsesDesktopInput() ? "desktop mouse/keyboard" :
+                xrHandsInput != null && xrHandsInput.isActiveAndEnabled ? "XR Hands" : "Quest OVR hands"));
 #endif
         if (_ready && useOutdoorEnvironment)
         {
@@ -892,8 +902,7 @@ public class JemparinganGame : MonoBehaviour
             if (!anyFlying) { FinishRound(); return; }
         }
 
-        IJemparinganInput input = UsesDesktopInput()
-            ? (IJemparinganInput)desktopInput : questInput;
+        IJemparinganInput input = ActiveInput();
         if (input == null || !input.TryReadPose(out JemparinganHandPose pose))
         {
             HideTraditionalArms();
@@ -1255,8 +1264,7 @@ public class JemparinganGame : MonoBehaviour
     // Editor also supports R as an immediate debug shortcut.
     private void HandleResultInput()
     {
-        IJemparinganInput input = UsesDesktopInput()
-            ? (IJemparinganInput)desktopInput : questInput;
+        IJemparinganInput input = ActiveInput();
         JemparinganHandPose pose;
         if (input == null || !input.TryReadPose(out pose) || !pose.BowPinched)
         {
