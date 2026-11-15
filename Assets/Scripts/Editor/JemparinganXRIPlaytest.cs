@@ -132,65 +132,6 @@ public static class JemparinganXRIPlaytest
             "Close Meta XR Simulator, press Play, select both simulated Hands, " +
             "pinch left to hold bow and right to draw/release.");
     }
-    [MenuItem("Tools/Jemparingan/Simulator/Use Spacebar Test Mode")]
-    public static void UseSpacebarTestMode() { SetEditorInputMode(true); }
-
-    [MenuItem("Tools/Jemparingan/Simulator/Use XR Hands Mode")]
-    public static void UseXRHandsMode() { SetEditorInputMode(false); }
-
-    private static void SetEditorInputMode(bool spacebar)
-    {
-        if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling)
-        {
-            Debug.LogError("Stop Play Mode before switching Jemparingan input.");
-            return;
-        }
-
-        Scene scene = SceneManager.GetActiveScene();
-        if (scene.path != PlaytestScene)
-        {
-            Debug.LogError("Open " + PlaytestScene + " before switching input.");
-            return;
-        }
-
-        var game = UnityEngine.Object.FindFirstObjectByType<JemparinganGame>();
-        var hands = game != null ? game.GetComponent<XRHandsBowInput>() : null;
-        GameObject simulator = null;
-        foreach (var root in scene.GetRootGameObjects())
-            if (root.name == "Jemparingan | XR Interaction Simulator")
-                simulator = root;
-
-        if (hands == null || simulator == null)
-        {
-            Debug.LogError("Expected the generated Jemparingan XRI playtest with XR Hands and simulator. No changes made.");
-            return;
-        }
-
-        var keyboard = game.GetComponent<EditorSpaceBowInput>();
-        if (spacebar && keyboard == null)
-            keyboard = Undo.AddComponent<EditorSpaceBowInput>(game.gameObject);
-
-        if (keyboard != null)
-        {
-            Undo.RecordObject(keyboard, "Set Jemparingan Editor input");
-            keyboard.enabled = spacebar;
-        }
-        Undo.RecordObject(hands, "Set Jemparingan XR input");
-        hands.enabled = !spacebar;
-        Undo.RecordObject(simulator, "Set Jemparingan XR simulator");
-        simulator.SetActive(!spacebar);
-
-        EditorSceneManager.MarkSceneDirty(scene);
-        if (!EditorSceneManager.SaveScene(scene, PlaytestScene))
-        {
-            Debug.LogError("Input switched, but the playtest scene could not be saved.");
-            return;
-        }
-
-        Debug.Log(spacebar
-            ? "Jemparingan Editor Spacebar active. Press Play, focus Game, hold Space to draw and release to fire."
-            : "Jemparingan XR Hands active. Press Play and use the XR Interaction Simulator.");
-    }
 
 }
 #endif
