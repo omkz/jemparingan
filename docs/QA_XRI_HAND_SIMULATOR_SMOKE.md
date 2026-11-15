@@ -2,19 +2,21 @@
 
 This checks simulated **head/hands/pinch** without Meta XR Simulator, OpenXR frame submission, or Jemparingan's `OVRHand` adapter. Do **not** treat it as Quest device QA.
 
-## Setup (Unity 6000.3)
+## Setup (Unity 6000.3, Linux or Windows)
 
-1. Check out `feat/unity-xri-hand-simulator-smoke` and open Unity. Let Package Manager resolve `com.unity.xr.interaction.toolkit` **3.5.1** and `com.unity.xr.hands` **1.8.1**. Unity will refresh `Packages/packages-lock.json`; commit that lockfile only after local resolution.
-2. **Close Meta XR Simulator** and leave OpenXR runtime simulation disabled. This test uses Unity's simulated input in the Editor.
-3. `Window > Package Manager > XR Interaction Toolkit > Samples`: import **Starter Assets** and **XR Interaction Simulator** (do **not** import **XR Device Simulator (Legacy)** for this test).
-4. `Tools > Jemparingan > Simulator > Create/Open XRI Hand Smoke Scene`. The menu creates a separate `JemparinganXRIHandSmoke.unity` scene from the imported official prefabs, with a small grabbable cube. It refuses to overwrite existing scenes or discard unsaved changes.
-5. Press **Play** and focus **Game**. The simulator's on-screen controls show the current input bindings. Typically `Tab` changes modes, `[` and `]` select hands, pressing a bracket twice cycles Controller/Hand mode, and `M` toggles the hand pinch pose. Move the hands toward the cube and try grabbing it.
+1. Check out `feat/unity-xri-hand-simulator-smoke`, open Unity, and allow Package Manager to resolve `com.unity.xr.interaction.toolkit` **3.5.1** and `com.unity.xr.hands` **1.8.1**. Commit `Packages/packages-lock.json` only after local resolution.
+2. Do **not** launch Meta XR Simulator. In Linux, the Meta `OVRPlugin` native library can throw `DllNotFoundException`; this separate smoke test does not require OVRHand.
+3. In `Window > Package Manager > XR Interaction Toolkit > Samples`, import **Starter Assets**, **Hands Interaction Demo**, and **XR Interaction Simulator** (not **XR Device Simulator (Legacy)**). In `XR Hands > Samples`, also import **HandVisualizer**.
+4. If you already created `Assets/Jemparingan/Scenes/JemparinganXRIHandSmoke.unity` using the old controller-only prefab: **Stop Play**, save any scene changes, open that scene, then run `Tools > Jemparingan > Simulator > Upgrade Open XRI Smoke Scene to Hands`. This replaces only the controller-only XR Origin with the official **XR Interaction Hands Setup** prefab.
+5. For a new project workspace without a smoke scene: use `Tools > Jemparingan > Simulator > Create/Open XRI Hand Smoke Scene`; it now requires **XR Interaction Hands Setup** to prevent creating a controller-only test.
+6. Press **Play**, focus **Game**, press `Tab` to enter device manipulation mode, then press `[` twice in succession to cycle the left device from Controller to Hand; `]` twice similarly for the right device. Select a hand and press `M` to toggle pinch. Use the on-screen simulator overlay to confirm whether the active device reads **Hand**, and try the cube. The key map can be customized in the imported sample.
 
-**Pass:** Game View renders and simulated hands respond to position changes and pinch. **Fail:** compile errors, no hands, no hand pose change, or frozen Editor; capture `Editor.log` and the first Console error.
+**Pass:** active hand mode is shown, visible simulated hands move, pinch occurs, and the grabbable cube responds. **Fail:** no hand mode, no hand visuals, no hand movement, compile errors, or frozen Editor; send the first Console error and note which symptom occurred.
 
 ## Scope / constraints
 
 - Does **not** modify the desktop gameplay scene, the Quest scene, `MetaQuestBowInput`, Android build settings, or the global `Use XR Interaction Simulator in scenes` setting.
+- An existing smoke scene is deliberately **not** overwritten when opened. Use the explicit upgrade command to switch the old controller-only rig to the hands-enabled rig.
 - The current Quest input reads **Meta OVRHand**, not Unity **XR Hands**. Simulated hands in this scene **will not control the Jemparingan bow** yet. Only after this smoke passes should we add a separate XR Hands input adapter to the actual bow logic.
 - The scene builder depends on official sample assets imported locally under `Assets/Samples/XR Interaction Toolkit/...`. Do not commit large imported samples unless the team intentionally decides to vendor them.
 - Physical Quest headset testing still required for validation of tracking confidence, real pinch ergonomics, and XR rendering.
