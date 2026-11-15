@@ -86,6 +86,9 @@ public static class JemparinganXRIPlaytest
             Debug.LogError("XR Interaction Hands Setup sample has an incomplete XR Origin. Playtest copy not saved.");
             return;
         }
+        // The authored Quest viewpoint is already seated at Y=1.35 m.
+        // Do not add the sample rig's standing-height camera offset again.
+        origin.CameraYOffset = 0f;
         origin.Camera.tag = "MainCamera";
 
         var simulator = (GameObject)PrefabUtility.InstantiatePrefab(simulatorPrefab);
