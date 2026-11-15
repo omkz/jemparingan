@@ -59,7 +59,14 @@ public static class JemparinganDesktopControls
     private static ButtonControl MouseButton(int button)
     {
         var mouse = Mouse.current;
-        return mouse == null ? null : button == 0 ? mouse.leftButton : button == 1 ? mouse.rightButton : button == 2 ? mouse.middleButton : null;
+        if (mouse == null) return null;
+        switch (button)
+        {
+            case 0: return mouse.leftButton;
+            case 1: return mouse.rightButton;
+            case 2: return mouse.middleButton;
+            default: return null;
+        }
     }
 
     private static KeyControl KeyboardKey(KeyCode code)
