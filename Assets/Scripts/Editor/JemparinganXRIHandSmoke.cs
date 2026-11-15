@@ -13,6 +13,8 @@ using UnityEngine.XR.Interaction.Toolkit.Interactables;
 public static class JemparinganXRIHandSmoke
 {
     public const string ScenePath = "Assets/Jemparingan/Scenes/JemparinganXRIHandSmoke.unity";
+    private const string OldRigName = "XRI Smoke | XR Origin (official sample)";
+    private const string HandsRigName = "XRI Smoke | XR Hands Setup (official sample)";
 
     [MenuItem("Tools/Jemparingan/Simulator/Create/Open XRI Hand Smoke Scene")]
     public static void CreateOrOpen()
@@ -31,9 +33,10 @@ public static class JemparinganXRIHandSmoke
             return;
         }
 
-        // Import these two official samples using Package Manager > XR Interaction Toolkit > Samples.
-        // Only accept prefabs from the versioned XRI sample folders, never similarly named Meta prefabs.
-        var originPrefab = FindSamplePrefab("Starter Assets", "XR Origin (XR Rig)");
+        // The Starter Assets origin is controller-only. The Hands Interaction Demo setup
+        // provides the hand modality, interactors and hand visualizer for this test.
+        // Only accept prefabs from versioned XRI Samples, never similarly named Meta prefabs.
+        var originPrefab = FindSamplePrefab("Hands Interaction Demo", "XR Interaction Hands Setup");
         var simulatorPrefab = FindSamplePrefab("XR Device Simulator", "XR Interaction Simulator")
             ?? FindSamplePrefab("XR Interaction Simulator", "XR Interaction Simulator");
 
@@ -41,10 +44,11 @@ public static class JemparinganXRIHandSmoke
         {
             Debug.LogError(
                 "Missing XRI prefabs: " +
-                (originPrefab == null ? "[XR Origin (XR Rig) in Starter Assets] " : "") +
+                (originPrefab == null ? "[XR Interaction Hands Setup in Hands Interaction Demo] " : "") +
                 (simulatorPrefab == null ? "[XR Interaction Simulator prefab] " : "") +
                 ". Open Window > Package Manager > In Project > XR Interaction Toolkit > Samples, " +
-                "and Import BOTH 'Starter Assets' and 'XR Interaction Simulator' (NOT 'XR Device Simulator (Legacy)'). " +
+                "and import 'Starter Assets', 'Hands Interaction Demo', and 'XR Interaction Simulator' (not Legacy). " +
+                "Also import XR Hands > Samples > HandVisualizer. " +
                 "Check Assets/Samples/XR Interaction Toolkit/<version>/ for the imported prefabs, " +
                 "then run this menu again. No scene was changed.");
             return;
@@ -55,12 +59,12 @@ public static class JemparinganXRIHandSmoke
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         var origin = (GameObject)PrefabUtility.InstantiatePrefab(originPrefab);
         var simulator = (GameObject)PrefabUtility.InstantiatePrefab(simulatorPrefab);
-        origin.name = "XRI Smoke | XR Origin (official sample)";
+        origin.name = HandsRigName;
         simulator.name = "XRI Smoke | XR Interaction Simulator (official sample)";
 
         if (origin.GetComponentsInChildren<Camera>(true).Length == 0)
         {
-            Debug.LogError("The imported XR Origin prefab contains no camera. Verify Starter Assets in Package Manager.");
+            Debug.LogError("The imported XR Interaction Hands Setup has no camera. Verify Hands Interaction Demo sample.");
             return;
         }
 
@@ -101,9 +105,80 @@ public static class JemparinganXRIHandSmoke
             return;
         }
 
-        Debug.Log("Created XRI smoke scene at " + ScenePath +
+        Debug.Log("Created hands-enabled XRI smoke scene at " + ScenePath +
             ". Close Meta XR Simulator, press Play, use the XRI simulator controls to switch to Hands and test Pinch. " +
             "This does NOT validate OVRHand input or Quest device rendering.");
+    }
+
+    // Existing generated scenes retain their old controller-only rig when reopened.
+    // This upgrade explicitly replaces ONLY that rig, preserving the cube, floor,
+    // simulator and the rest of the separate smoke scene.
+    [MenuItem("Tools/Jemparingan/Simulator/Upgrade Open XRI Smoke Scene to Hands")]
+    public static void UpgradeOpenSceneToHands()
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isCompiling)
+        {
+            Debug.LogError("Stop Play Mode and compilation before upgrading the XRI smoke scene.");
+            return;
+        }
+
+        var scene = SceneManager.GetActiveScene();
+        if (scene.path != ScenePath)
+        {
+            Debug.LogError("Open " + ScenePath + " first; this action cannot modify other scenes.");
+            return;
+        }
+
+        if (!EnsureScenesSaved()) return;
+
+        var handsSetupPrefab = FindSamplePrefab("Hands Interaction Demo", "XR Interaction Hands Setup");
+        if (handsSetupPrefab == null)
+        {
+            Debug.LogError("XR Interaction Hands Setup prefab missing. Import XR Interaction Toolkit > Samples > " +
+                "Hands Interaction Demo and XR Hands > Samples > HandVisualizer. Scene unchanged.");
+            return;
+        }
+
+        GameObject oldRig = null;
+        foreach (var root in scene.GetRootGameObjects())
+        {
+            if (root.name == HandsRigName)
+            {
+                Debug.Log("The XRI smoke scene already uses the hands-enabled setup. " +
+                    "Activate hand mode in the simulator and try M for pinch.");
+                return;
+            }
+
+            if (root.name == OldRigName)
+                oldRig = root;
+        }
+
+        if (oldRig == null)
+        {
+            Debug.LogError("The controller-only smoke rig could not be found. Scene unchanged.");
+            return;
+        }
+
+        var newRig = (GameObject)PrefabUtility.InstantiatePrefab(handsSetupPrefab);
+        if (newRig == null || newRig.GetComponentsInChildren<Camera>(true).Length == 0)
+        {
+            if (newRig != null) UnityEngine.Object.DestroyImmediate(newRig);
+            Debug.LogError("Hands setup prefab has no usable XR camera. Scene unchanged.");
+            return;
+        }
+
+        newRig.name = HandsRigName;
+        UnityEngine.Object.DestroyImmediate(oldRig);
+        EditorSceneManager.MarkSceneDirty(scene);
+        if (!EditorSceneManager.SaveScene(scene, ScenePath))
+        {
+            Debug.LogError("Replaced controller rig, but saving the smoke scene failed. Save it manually.");
+            return;
+        }
+
+        Debug.Log("Upgraded XRI smoke scene to the official XR Interaction Hands Setup. " +
+            "Press Play; select a hand in the XR Interaction Simulator, then use M for pinch. " +
+            "This does not exercise OVRHand or Quest device input.");
     }
 
     private static GameObject FindSamplePrefab(string sampleFolder, string prefabName)
