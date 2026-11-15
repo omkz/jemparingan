@@ -1230,7 +1230,9 @@ public class JemparinganGame : MonoBehaviour
             UpdateBowStrings(0f);
             UpdateNockedArrow(0f, true);
             HidePreview();
-            SetInfo("READY  •  Hold left mouse to draw; release to shoot. Hold right mouse to aim.");
+            SetInfo(UsesDesktopInput()
+                ? "READY  •  Hold left mouse to draw; release to shoot. Hold right mouse to aim."
+                : "READY  •  Left pinch: hold bow. Right pinch: draw and release.");
         }
 
         // The contact targets must be current before posing hands. The old
