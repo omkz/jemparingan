@@ -317,16 +317,16 @@ public class JemparinganGame : MonoBehaviour
         yield return null;
         _ready = BuildScene();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-        if (_ready) Debug.Log("Jemparingan input route: " +
+        if (_ready)
+        {
+            string route = UsesDesktopInput() ? "desktop mouse/keyboard" :
+                xrHandsInput != null && xrHandsInput.isActiveAndEnabled ? "XR Hands" : "Quest OVR hands";
 #if UNITY_EDITOR
-            (editorSpaceInput != null && editorSpaceInput.isActiveAndEnabled ? "Editor Spacebar" :
+            if (editorSpaceInput != null && editorSpaceInput.isActiveAndEnabled)
+                route = "Editor Spacebar";
 #endif
-            UsesDesktopInput() ? "desktop mouse/keyboard" :
-                xrHandsInput != null && xrHandsInput.isActiveAndEnabled ? "XR Hands" : "Quest OVR hands"
-#if UNITY_EDITOR
-            )
-#endif
-            );
+            Debug.Log("Jemparingan input route: " + route);
+        }
 #endif
         if (_ready && useOutdoorEnvironment)
         {
