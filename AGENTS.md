@@ -1,37 +1,25 @@
-# Instructions for coding agents — JEMPARINGAN: RASA
+# Jemparingan — agent guidance
 
-You are building a **Meta Quest 3 / Quest 3S mixed-reality archery game** for the 2026 Meta VR Start Developer Competition.
+Unity **6000.3.27f1**, URP, OpenXR. Two game modes: **Traditional** and **Modern**.
 
-## Hard constraints
-- Unity 6.1+, URP, **Unity OpenXR** (not deprecated Oculus XR Plugin).
-- Hands-first end-to-end. On Quest both-hand pinch/gesture must work without controllers.
-- Make the experience comfortable while seated; keep gestures within a small reach envelope.
-- Scope a 3-minute polished loop first. No unnecessary backends, logins or AI services.
-- Maintain >= 60 FPS on Quest 3/3S where possible; do not claim performance without measurements.
-- Use assets with clear usage rights and preserve source/license attribution.
-- Do not claim working APK or Quest testing unless actually built/tested.
+## Preserve
+- Desktop scene: `Assets/Jemparingan/Scenes/JemparinganPlayableEnvironment_v05.unity`.
+- Quest scene: `Assets/Jemparingan/Scenes/JemparinganQuest.unity`.
+- XRI Editor playtest is a **separate, generated scene**; never overwrite source scenes.
+- `IJemparinganInput` is shared by desktop mouse, Unity XR Hands, and Meta OVRHand. Keep projectile physics, scoring, and game rules shared.
+- Hands-only Quest interaction remains **unverified on a physical device**.
 
-## Current structure
-- `DesktopBowInput` = editor mock input. NOT intended for Quest submission.
-- `MetaQuestBowInput` = OVRHand pinch adapter; active only with `META_XR_SDK` defined after installing Meta SDK.
-- `JemparinganGame` = generates placeholder bandulan and arrows; input and basic scoring.
-- `JemparinganArrow` = minimal projectile mechanics.
+## Work
+- Prefer small, focused diffs and existing helpers over new abstractions.
+- No dead code, duplicate features, speculative workarounds, or unnecessary dependencies.
+- Keep comments, README, and docs concise; describe actual behavior and limitations, not task history.
+- Preserve Unity `.meta` GUIDs, scene references, and serialized field names when refactoring.
+- Never regenerate an authored scene, delete QA evidence, or merge to `main` without approval.
 
-## Build order
-1. Confirm Unity project compiles on target Editor version. Fix errors without switching to obsolete SDKs.
-2. Set up `OVRCameraRig`, Meta hand prefabs, and passthrough (official Meta instructions); ensure there is no duplicate camera.
-3. In headset/simulator, validate left pinch holds bow and right pinch pulls/releases, including tracking-loss fallback.
-4. Make bow aiming independent of head direction, with forgiving assist and clear visual cue.
-5. Add proper bandulan, arena/pendopo stylized low-poly art, audio and onboarding. Prioritize polish over feature count.
-6. Run on device with no controller; record actual gameplay and produce APK for Meta release channel `Competition`.
+## Verify
+- Compile in Unity; run **Tools > Jemparingan > Run Gameplay QA (Traditional + Modern)**.
+- Playtest both desktop modes: shoot, hit/miss, restart, and 12-arrow results.
+- For XR, validate pinch/release and tracking-loss cancellation separately. Editor simulation is **not** proof of Quest device or APK success.
+- Record tests as *passed*, *failed*, or *not run*. Never claim runtime, headset, or performance success from source review alone.
 
-## Acceptance tests for stage 1
-- Scene opens, editor can fire 10 consecutive arrows; hit increments score.
-- Quest end-to-end interaction works with hands only; controls never require a controller.
-- Pinch release fires exactly one arrow. Tracking loss never fires an unintended shot.
-- Hit detection is robust for a moving target; gameplay continues after a miss.
-
-## Links
-- Competition: https://start-developer-competition-26.devpost.com/
-- Unity setup: https://developers.meta.com/vr/documentation/unity/unity-tutorial-hello-world-manual-steps/
-- Hands: https://developers.meta.com/vr/documentation/unity/unity-handtracking-hands-setup/
+Current setup: [README.md](README.md). QA and historical guides: [docs/README.md](docs/README.md).
