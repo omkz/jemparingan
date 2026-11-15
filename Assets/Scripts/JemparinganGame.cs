@@ -2,11 +2,10 @@ using System.Collections;
 using UnityEngine;
 using Input = JemparinganDesktopControls;
 
-// V0.9: regression hardening, deterministic scoring, and safer shot pool lifecycle.
-// Quest integration is deliberately left for the later phase.
+// Shared gameplay for desktop and XR input adapters.
 public class JemparinganGame : MonoBehaviour
 {
-    [Header("Input — keep from V0.1")]
+    [Header("Input")]
     [SerializeField] private DesktopBowInput desktopInput;
     [SerializeField] private MetaQuestBowInput questInput;
     [SerializeField] private XRHandsBowInput xrHandsInput;
@@ -1215,7 +1214,7 @@ public class JemparinganGame : MonoBehaviour
             UpdateBowStrings(pull);
             UpdateNockedArrow(pull, true);
             ShowPreview(bowOrigin + aim * 0.25f, launchAim, power);
-                int step = Mathf.RoundToInt(power * 10f);
+            int step = Mathf.RoundToInt(power * 10f);
             bool calm = Time.time <= _focusReadyUntil;
             // RASA must update even at constant draw power.
             if (step != _lastPowerStep || calm != _lastStableSignal)
