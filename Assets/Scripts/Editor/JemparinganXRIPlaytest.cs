@@ -34,11 +34,16 @@ public static class JemparinganXRIPlaytest
         GameObject handsPrefab = JemparinganXRIHandSmoke.FindSamplePrefab(
             "Hands Interaction Demo", "XR Interaction Hands Setup");
         GameObject simulatorPrefab = JemparinganXRIHandSmoke.FindSamplePrefab(
-            "XR Interaction Simulator", "XR Interaction Simulator");
+            "XR Device Simulator", "XR Interaction Simulator")
+            ?? JemparinganXRIHandSmoke.FindSamplePrefab(
+                "XR Interaction Simulator", "XR Interaction Simulator");
         if (handsPrefab == null || simulatorPrefab == null)
         {
-            Debug.LogError("Import XR Interaction Toolkit samples 'Hands Interaction Demo' and " +
-                "'XR Interaction Simulator' in Package Manager first. No scene was changed.");
+            Debug.LogError("Missing XRI prefabs: " +
+                (handsPrefab == null ? "[XR Interaction Hands Setup in Hands Interaction Demo] " : "") +
+                (simulatorPrefab == null ? "[XR Interaction Simulator prefab] " : "") +
+                ". Import the named sample(s) in Package Manager > XR Interaction Toolkit > Samples. " +
+                "No scene was changed.");
             return;
         }
 
