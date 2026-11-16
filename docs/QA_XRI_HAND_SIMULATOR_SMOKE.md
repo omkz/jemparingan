@@ -1,6 +1,6 @@
 # XR Hands playtest (Unity Editor)
 
-Open the existing `Assets/Jemparingan/Scenes/JemparinganXRIPlaytest.unity` locally on branch `chore/jemparingan-cleanup-v1`. To create it the first time, use **Tools > Jemparingan > Simulator > Create/Open Jemparingan XRI Playtest**. Original desktop and Quest scenes are not overwritten.
+On branch `chore/jemparingan-cleanup-v1`, stop Play Mode and run **Tools > Jemparingan > Simulator > Create/Open Jemparingan XRI Playtest**. This creates the playtest once or repairs missing XR Hands input/simulator in the existing local playtest scene. It does not edit the original desktop or Quest scenes. The Console should show `XRI PLAYTEST READY` before pressing Play.
 
 **Requires:** XR Interaction Toolkit 3.5, XR Hands 1.8; import XRI samples **Starter Assets**, **Hands Interaction Demo**, **XR Interaction Simulator**, and XR Hands sample **HandVisualizer**.
 
