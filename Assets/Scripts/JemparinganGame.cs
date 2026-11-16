@@ -217,10 +217,12 @@ public class JemparinganGame : MonoBehaviour
     private string _lastInfo = "";
 #if UNITY_EDITOR
     private float _xriGuideLastShotAt = -100f;
-    private static bool IsXRIPlaytestScene()
+    private bool IsXRIEditorPlaytest()
     {
-        return UnityEngine.SceneManagement.SceneManager.GetActiveScene().path ==
-            "Assets/Jemparingan/Scenes/JemparinganXRIOnly.unity";
+        // A local playtest may use either the original or the XR-only scene.
+        // Follow the selected live XR Hands input, not a particular scene path.
+        return !UsesDesktopInput() && xrHandsInput != null &&
+            xrHandsInput.isActiveAndEnabled;
     }
 #endif
     private int _lastPowerStep = -1;
@@ -319,6 +321,12 @@ public class JemparinganGame : MonoBehaviour
             string route = UsesDesktopInput() ? "desktop mouse/keyboard" :
                 xrHandsInput != null && xrHandsInput.isActiveAndEnabled ? "XR Hands" : "Quest OVR hands";
             Debug.Log("Jemparingan input route: " + route);
+#if UNITY_EDITOR
+            Debug.Log("Jemparingan XR contextual guide: " +
+                (IsXRIEditorPlaytest() ? "ENABLED" : "DISABLED") +
+                " | scene: " +
+                UnityEngine.SceneManagement.SceneManager.GetActiveScene().path);
+#endif
         }
 #endif
         if (_ready && useOutdoorEnvironment)
@@ -940,7 +948,7 @@ public class JemparinganGame : MonoBehaviour
             HidePreview();
             ClearDrawState();
 #if UNITY_EDITOR
-            if (IsXRIPlaytestScene())
+            if (IsXRIEditorPlaytest())
                 SetInfo("STEP 1/4 | HOLD BOW WITH LEFT HAND\n" +
                     "Tap Shift+M once; keep left pinch ON.");
             else
@@ -955,7 +963,7 @@ public class JemparinganGame : MonoBehaviour
             if (pose.StringPinched)
             {
 #if UNITY_EDITOR
-                if (IsXRIPlaytestScene())
+                if (IsXRIEditorPlaytest())
                     SetInfo("RELEASE RIGHT PINCH TO CONTINUE\n" +
                         "Tap M once; keep left pinch ON.");
                 else
@@ -1239,7 +1247,7 @@ public class JemparinganGame : MonoBehaviour
             bool calm = Time.time <= _focusReadyUntil;
             // Keep the native help label current during the simulated XR tutorial.
 #if UNITY_EDITOR
-            if (IsXRIPlaytestScene())
+            if (IsXRIEditorPlaytest())
             {
                 if (input is XRHandsBowInput closeHands && closeHands.HandsTooClose)
                     SetInfo("STEP 3/4 | MOVE HANDS APART\n" +
@@ -1273,7 +1281,7 @@ public class JemparinganGame : MonoBehaviour
             UpdateNockedArrow(0f, true);
             HidePreview();
 #if UNITY_EDITOR
-            if (IsXRIPlaytestScene())
+            if (IsXRIEditorPlaytest())
                 SetInfo("STEP 2/4 | GRAB STRING WITH RIGHT\n" +
                     "Tap M once; keep left pinch ON.");
             else
@@ -1683,7 +1691,7 @@ public class JemparinganGame : MonoBehaviour
         _shots++;
 #if UNITY_EDITOR
         _xriGuideLastShotAt = Time.time;
-        if (IsXRIPlaytestScene())
+        if (IsXRIEditorPlaytest())
             Debug.Log("Jemparingan XR: SHOT #" + _shots + " LAUNCHED", this);
 #endif
         if (UsesSharedDesktopBow() && modernLightweightGameFeel)
@@ -2065,7 +2073,7 @@ public class JemparinganGame : MonoBehaviour
     private void SetInfo(string value)
     {
 #if UNITY_EDITOR
-        if (IsXRIPlaytestScene())
+        if (IsXRIEditorPlaytest())
         {
             // Preserve the existing help-label location and explain recovery
             // without adding a second overlay or changing gesture logic.
@@ -2370,7 +2378,7 @@ public class JemparinganGame : MonoBehaviour
         _infoLabel.fontSize = 96;
         _infoLabel.fontStyle = FontStyle.Bold;
 #if UNITY_EDITOR
-        if (IsXRIPlaytestScene())
+        if (IsXRIEditorPlaytest())
         {
             // Two short lines fit the existing world-space help location.
             _infoLabel.characterSize = .0051f;
