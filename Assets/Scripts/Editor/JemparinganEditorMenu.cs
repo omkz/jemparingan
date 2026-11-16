@@ -355,9 +355,12 @@ public static class JemparinganEditorMenu
         var origin = Object.FindFirstObjectByType<Unity.XR.CoreUtils.XROrigin>();
         var game = Object.FindFirstObjectByType<JemparinganGame>();
         var hands = Object.FindFirstObjectByType<XRHandsBowInput>();
-        var simulator = Object.FindFirstObjectByType<
-            UnityEngine.XR.Interaction.Toolkit.Inputs.Simulation.XRInteractionSimulator>();
-        if (origin == null || origin.Camera == null || game == null || hands == null || simulator == null)
+        bool hasSimulator = false;
+        foreach (GameObject root in scene.GetRootGameObjects())
+            if (root.name == "Jemparingan | XR Interaction Simulator" ||
+                root.name == "XR Interaction Simulator")
+                hasSimulator = true;
+        if (origin == null || origin.Camera == null || game == null || hands == null || !hasSimulator)
         {
             Debug.LogError("XR scene incomplete: requires XROrigin, JemparinganGame, XRHandsBowInput and XR Interaction Simulator.");
             return;
