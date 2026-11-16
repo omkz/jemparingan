@@ -1,5 +1,8 @@
 using System.Collections;
 using UnityEngine;
+#if UNITY_EDITOR
+using Unity.XR.CoreUtils;
+#endif
 using Input = JemparinganDesktopControls;
 
 // Shared gameplay for desktop and XR input adapters.
@@ -224,6 +227,53 @@ public class JemparinganGame : MonoBehaviour
         return !UsesDesktopInput() && xrHandsInput != null &&
             xrHandsInput.isActiveAndEnabled;
     }
+
+    // Restore the authored desktop viewpoint in XR simulation. The prefab rig
+    // was originally copied to the desktop eye location, then HMD tracking
+    // added its own height and rotation on top. Never move the tracked camera.
+    private void AlignXRIEditorPlaytestView()
+    {
+        if (!IsXRIEditorPlaytest()) return;
+        Camera xrCamera = Camera.main;
+        if (xrCamera == null) return;
+        XROrigin origin = xrCamera.GetComponentInParent<XROrigin>();
+        if (origin == null || origin.Camera != xrCamera) return;
+
+        Camera desktopReference = null;
+        foreach (Camera candidate in FindObjectsByType<Camera>(
+            FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (candidate == null || candidate == xrCamera ||
+                candidate.gameObject.activeInHierarchy ||
+                candidate.gameObject.scene != gameObject.scene ||
+                !candidate.CompareTag("MainCamera"))
+                continue;
+
+            desktopReference = candidate;
+            break;
+        }
+        if (desktopReference == null)
+        {
+            Debug.LogWarning("Jemparingan XR view: no disabled desktop MainCamera reference; " +
+                "view left unchanged.", this);
+            return;
+        }
+
+        Vector3 forward = outdoorTargetAnchor != null
+            ? outdoorTargetAnchor.position - desktopReference.transform.position
+            : desktopReference.transform.forward;
+        forward = Vector3.ProjectOnPlane(forward, Vector3.up);
+        if (forward.sqrMagnitude < 0.01f)
+            forward = Vector3.ProjectOnPlane(
+                desktopReference.transform.forward, Vector3.up);
+
+        if (forward.sqrMagnitude > 0.01f)
+            origin.MatchOriginUpCameraForward(Vector3.up, forward.normalized);
+        bool moved = origin.MoveCameraToWorldLocation(desktopReference.transform.position);
+        Debug.Log("Jemparingan XR view: " + (moved ? "ALIGNED" : "ALIGN FAILED") +
+            " | eye " + xrCamera.transform.position.ToString("F2") +
+            " | forward " + xrCamera.transform.forward.ToString("F2"), this);
+    }
 #endif
     private int _lastPowerStep = -1;
     private bool _lastStableSignal;
@@ -314,6 +364,9 @@ public class JemparinganGame : MonoBehaviour
         if (questInput == null) questInput = GetComponent<MetaQuestBowInput>();
         if (xrHandsInput == null) xrHandsInput = GetComponent<XRHandsBowInput>();
         yield return null;
+#if UNITY_EDITOR
+        AlignXRIEditorPlaytestView();
+#endif
         _ready = BuildScene();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         if (_ready)
@@ -2216,7 +2269,12 @@ public class JemparinganGame : MonoBehaviour
 
     private void ShowPreview(Vector3 origin, Vector3 rawAim, float power)
     {
+#if UNITY_EDITOR
+        // Always expose the actual ballistic path in the hand simulator.
+        if (!trajectoryPreview && !IsXRIEditorPlaytest()) return;
+#else
         if (!trajectoryPreview) return;
+#endif
         float speed = Mathf.Lerp(minimumArrowSpeed, maximumArrowSpeed, power);
         Vector3 velocity = GetAssistedAim(origin, rawAim, speed) * speed;
         for (int i = 0; i < _previewDots.Length; i++)
@@ -2939,8 +2997,13 @@ public class JemparinganGame : MonoBehaviour
         var parent = new GameObject("Aim Path Preview").transform;
         for (int i = 0; i < PreviewDotCount; i++)
         {
+            float dotSize = .017f - i * .0009f;
+#if UNITY_EDITOR
+            // Larger guide dots are temporary XR-simulator affordances.
+            if (IsXRIEditorPlaytest()) dotSize = .052f - i * .002f;
+#endif
             _previewDots[i] = JemparinganArt.Part("Guide " + i, PrimitiveType.Sphere, parent,
-                Vector3.zero, Vector3.one * (.017f - i * .0009f), JemparinganArt.Tone.Jade).transform;
+                Vector3.zero, Vector3.one * dotSize, JemparinganArt.Tone.Jade).transform;
             _previewDots[i].gameObject.SetActive(false);
         }
     }
