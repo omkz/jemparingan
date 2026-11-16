@@ -6,6 +6,8 @@ On branch `chore/jemparingan-cleanup-v1`, stop Play Mode and run **Tools > Jempa
 
 ## Test
 
+The XR-only Editor scene shows a temporary on-screen four-step shooting guide. The **SHOTS** count and `Jemparingan XR: SHOT #... LAUNCHED` Console message confirm that a projectile was actually spawned; **DRAW 100% alone does not mean a shot fired**.
+
 1. Press **Play**; focus Game view. Confirm the simulator overlay shows **Hand** for both left and right devices.
 2. Begin with **both pinches released**. Press **Shift+M** for left pinch: the bow should appear.
 3. Press **M** for right pinch. Move the right hand backward (select with `]`, then `S`) while keeping left pinch held; a close starting position should no longer cancel the gesture.
