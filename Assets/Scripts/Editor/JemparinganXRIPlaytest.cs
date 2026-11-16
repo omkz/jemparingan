@@ -12,6 +12,23 @@ public static class JemparinganXRIPlaytest
     private const string SourceScene = "Assets/Jemparingan/Scenes/JemparinganPlayableEnvironment_v05.unity";
     private const string PlaytestScene = "Assets/Jemparingan/Scenes/JemparinganXRIOnly.unity";
 
+    [MenuItem("Tools/Jemparingan/Simulator/Recenter Seated XR View (Play Mode)")]
+    public static void RecenterSeatedView()
+    {
+        if (!EditorApplication.isPlaying)
+        {
+            Debug.LogWarning("Enter Play Mode before recentering the XR view.");
+            return;
+        }
+        JemparinganGame game = Object.FindFirstObjectByType<JemparinganGame>();
+        if (game == null)
+        {
+            Debug.LogWarning("No active JemparinganGame found for XR view recenter.");
+            return;
+        }
+        game.RecenterXRIEditorView();
+    }
+
     [MenuItem("Tools/Jemparingan/Simulator/Create/Open Jemparingan XRI Playtest")]
     public static void CreateOrOpen()
     {
