@@ -1,6 +1,6 @@
 # XR Hands playtest (Unity Editor)
 
-On branch `chore/jemparingan-cleanup-v1`, stop Play Mode and run **Tools > Jemparingan > Simulator > Create/Open Jemparingan XRI Playtest**. This creates the playtest once or repairs missing XR Hands input/simulator in the existing local playtest scene. It does not edit the original desktop or Quest scenes. The Console should show `XRI PLAYTEST READY` before pressing Play.
+On branch `chore/jemparingan-cleanup-v1`, stop Play Mode and run **Tools > Jemparingan > Simulator > Create/Open Jemparingan XRI Playtest**. This creates or opens the **new** `JemparinganXRIOnly.unity` from the desktop scene. The old Meta/Quest/XRI scenes are untouched. Expect `XRI PLAYTEST READY` in Console.
 
 **Requires:** XR Interaction Toolkit 3.5, XR Hands 1.8; import XRI samples **Starter Assets**, **Hands Interaction Demo**, **XR Interaction Simulator**, and XR Hands sample **HandVisualizer**.
 
@@ -20,4 +20,4 @@ On branch `chore/jemparingan-cleanup-v1`, stop Play Mode and run **Tools > Jempa
 - **LEFT/RIGHT FINGERS NOT TRACKED** — pinch-joint data is unavailable.
 - **HANDS TOO FAR - RESET PINCHES** — hand separation exceeds 1 m; release both and reposition.
 
-The desktop mouse mode is the existing gameplay test; this scene tests **XR gesture input**, not a second keyboard shooting scheme. Meta native plugin errors on Linux may still be unrelated. **Editor simulation is not proof of an Android APK or Quest device tracking.**
+The desktop mouse mode remains the gameplay baseline. This scene tests **XR gesture input**, not a second keyboard shooting mode. The Meta XR SDK is not required. **Editor simulation is not proof of an Android APK or Quest device tracking.**
