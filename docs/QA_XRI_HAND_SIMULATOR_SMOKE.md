@@ -6,7 +6,7 @@ On branch `chore/jemparingan-cleanup-v1`, stop Play Mode and run **Tools > Jempa
 
 ## Test
 
-The XR-only Editor scene reuses the **Hold bow with left hand** world-space text location; no separate panel appears. It shows two-line contextual steps: **Shift+M** to hold the bow, **M** to grab the string, **]** to select the right hand and **S / A / D** to draw/aim, then **M** to release the right pinch while the left remains held. Tracking and invalid gesture messages include recovery instructions (release both pinches to reset). After a real shot the same label briefly displays **SHOT #N LAUNCHED**, with a matching Console log. **DRAW 100% does not confirm a shot.**
+When the **XR Hands input adapter is active** in an Editor playtest (including older local XRI playtest scenes), the game reuses the **Hold bow with left hand** world-space text location; no separate panel appears. Unity Console logs `Jemparingan XR contextual guide: ENABLED` to confirm activation. It shows two-line contextual steps: **Shift+M** to hold the bow, **M** to grab the string, **]** to select the right hand and **S / A / D** to draw/aim, then **M** to release the right pinch while the left remains held. Tracking and invalid gesture messages include recovery instructions (release both pinches to reset). After a real shot the same label briefly displays **SHOT #N LAUNCHED**, with a matching Console log. **DRAW 100% does not confirm a shot.**
 
 1. Press **Play**; focus Game view. Confirm the simulator overlay shows **Hand** for both left and right devices.
 2. Begin with **both pinches released**. Press **Shift+M** for left pinch: the bow should appear.
