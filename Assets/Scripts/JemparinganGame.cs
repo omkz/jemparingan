@@ -215,6 +215,11 @@ public class JemparinganGame : MonoBehaviour
     private float _traditionalImpactAt = -1f;
     private JemparinganTarget.TraditionalZone _traditionalImpactZone;
     private string _lastInfo = "";
+#if UNITY_EDITOR
+    private bool _xriGuidePoseValid, _xriGuideLeftPinched, _xriGuideRightPinched;
+    private string _xriGuideTrackingHint = "WAITING FOR HAND TRACKING";
+    private float _xriGuideLastShotAt = -100f;
+#endif
     private int _lastPowerStep = -1;
     private bool _lastStableSignal;
 
@@ -330,6 +335,14 @@ public class JemparinganGame : MonoBehaviour
 
     private void OnGUI()
     {
+#if UNITY_EDITOR
+        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().path ==
+            "Assets/Jemparingan/Scenes/JemparinganXRIOnly.unity")
+        {
+            DrawXRIPlaytestGuide();
+            return;
+        }
+#endif
         if (!_ready || !useOutdoorEnvironment || !UsesDesktopInput())
             return;
 
@@ -342,6 +355,83 @@ public class JemparinganGame : MonoBehaviour
         if (_finished) DrawModernResultsGUI();
         else DrawModernInGameHUD();
     }
+
+#if UNITY_EDITOR
+    // Temporary, scene-specific simulator guide; never shown in desktop or Quest builds.
+    private void DrawXRIPlaytestGuide()
+    {
+        float width = Mathf.Min(460f, Screen.width - 24f);
+        if (width <= 0f) return;
+        Rect panel = new Rect(12f, 12f, width, 216f);
+        GUI.Box(panel, "");
+
+        GUIStyle title = new GUIStyle(GUI.skin.label);
+        title.fontStyle = FontStyle.Bold;
+        title.fontSize = 15;
+        GUI.Label(new Rect(24f, 19f, width - 24f, 23f),
+            "XR HANDS | SHOOTING GUIDE (EDITOR ONLY)", title);
+
+        int activeStep = 0;
+        string status;
+        if (!_ready)
+            status = "Initializing gameplay...";
+        else if (_finished || _roundOver)
+            status = "ROUND COMPLETE | Shots: " + _shots;
+        else if (Time.time - _xriGuideLastShotAt < 2.5f)
+            status = "SHOT #" + _shots + " LAUNCHED | Watch the target";
+        else if (!_xriGuidePoseValid)
+            status = "TRACKING: " + _xriGuideTrackingHint;
+        else if (!_xriGuideLeftPinched)
+        {
+            activeStep = 1;
+            status = "Waiting for LEFT pinch";
+        }
+        else if (!_xriGuideRightPinched)
+        {
+            activeStep = 2;
+            status = "Bow held | Waiting for RIGHT pinch";
+        }
+        else if (_lastDraw < minimumDraw ||
+                 Time.time - _drawStartedAt < minimumHoldSeconds)
+        {
+            activeStep = 3;
+            status = "Drawing | Move right hand back";
+        }
+        else
+        {
+            activeStep = 4;
+            status = "READY TO SHOOT | Press M once";
+        }
+
+        string[] steps =
+        {
+            "1. Shift + M once: pinch LEFT (hold bow)",
+            "2. M once: pinch RIGHT (grab string)",
+            "3. Select right hand (]); move back (S) and aim",
+            "4. M again: release RIGHT pinch to shoot"
+        };
+        GUIStyle normal = new GUIStyle(GUI.skin.label);
+        normal.fontSize = 12;
+        GUIStyle highlighted = new GUIStyle(normal);
+        highlighted.fontStyle = FontStyle.Bold;
+        highlighted.normal.textColor = new Color(.35f, .95f, .55f);
+        for (int i = 0; i < steps.Length; i++)
+            GUI.Label(new Rect(24f, 45f + i * 25f, width - 24f, 24f),
+                steps[i], activeStep == i + 1 ? highlighted : normal);
+
+        int power = _xriGuideRightPinched
+            ? Mathf.RoundToInt(Mathf.InverseLerp(minimumDraw, maximumDraw, _lastDraw) * 100f)
+            : 0;
+        GUI.Label(new Rect(24f, 151f, width - 24f, 22f),
+            "LEFT: " + (_xriGuideLeftPinched ? "ON" : "OFF") +
+            "   RIGHT: " + (_xriGuideRightPinched ? "ON" : "OFF") +
+            "   DRAW: " + power + "%   SHOTS: " + _shots, normal);
+        GUI.Label(new Rect(24f, 175f, width - 24f, 23f), status,
+            activeStep == 4 ? highlighted : normal);
+        GUI.Label(new Rect(24f, 195f, width - 24f, 20f),
+            "Pinch keys toggle; do not hold. Reset: release both pinches.", normal);
+    }
+#endif
 
     private void DrawMainModeSelectGUI()
     {
@@ -907,6 +997,12 @@ public class JemparinganGame : MonoBehaviour
         IJemparinganInput input = ActiveInput();
         if (input == null || !input.TryReadPose(out JemparinganHandPose pose))
         {
+#if UNITY_EDITOR
+            _xriGuidePoseValid = false;
+            _xriGuideLeftPinched = _xriGuideRightPinched = false;
+            _xriGuideTrackingHint = input is XRHandsBowInput failedHands
+                ? failedHands.FailureHint : "INPUT UNAVAILABLE";
+#endif
             HideTraditionalArms();
             if (_bow != null) _bow.gameObject.SetActive(false);
             HideDesktopPracticeSight();
@@ -916,6 +1012,11 @@ public class JemparinganGame : MonoBehaviour
                 ? xrHands.FailureHint : "Hand tracking unavailable. Try again.");
             return;
         }
+#if UNITY_EDITOR
+        _xriGuidePoseValid = true;
+        _xriGuideLeftPinched = pose.BowPinched;
+        _xriGuideRightPinched = pose.StringPinched;
+#endif
         if (_roundOver)
         {
             HideTraditionalArms();
@@ -1639,6 +1740,12 @@ public class JemparinganGame : MonoBehaviour
             }
         }
         _shots++;
+#if UNITY_EDITOR
+        _xriGuideLastShotAt = Time.time;
+        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().path ==
+            "Assets/Jemparingan/Scenes/JemparinganXRIOnly.unity")
+            Debug.Log("Jemparingan XR: SHOT #" + _shots + " LAUNCHED", this);
+#endif
         if (UsesSharedDesktopBow() && modernLightweightGameFeel)
         {
             _modernReleaseFeedbackAt = Time.time;
@@ -1910,6 +2017,9 @@ public class JemparinganGame : MonoBehaviour
         SetModernDesktopMouseControl(UsesSharedDesktopBow());
         for (int i = 0; i < _arrows.Length; i++) _arrows[i].Cancel();
         _shots = _hits = _score = _poolCursor = 0;
+#if UNITY_EDITOR
+        _xriGuideLastShotAt = -100f;
+#endif
         _stage = 0;
         _stageIntroStartedAt = -1f;
         _stageIntroUntil = -1f;
