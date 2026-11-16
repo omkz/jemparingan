@@ -362,13 +362,14 @@ public class JemparinganGame : MonoBehaviour
     {
         float width = Mathf.Min(460f, Screen.width - 24f);
         if (width <= 0f) return;
-        Rect panel = new Rect(12f, 12f, width, 216f);
+        float panelTop = Mathf.Max(12f, Screen.height - 228f);
+        Rect panel = new Rect(12f, panelTop, width, 216f);
         GUI.Box(panel, "");
 
         GUIStyle title = new GUIStyle(GUI.skin.label);
         title.fontStyle = FontStyle.Bold;
         title.fontSize = 15;
-        GUI.Label(new Rect(24f, 19f, width - 24f, 23f),
+        GUI.Label(new Rect(24f, panelTop + 7f, width - 24f, 23f),
             "XR HANDS | SHOOTING GUIDE (EDITOR ONLY)", title);
 
         int activeStep = 0;
@@ -416,19 +417,19 @@ public class JemparinganGame : MonoBehaviour
         highlighted.fontStyle = FontStyle.Bold;
         highlighted.normal.textColor = new Color(.35f, .95f, .55f);
         for (int i = 0; i < steps.Length; i++)
-            GUI.Label(new Rect(24f, 45f + i * 25f, width - 24f, 24f),
+            GUI.Label(new Rect(24f, panelTop + 33f + i * 25f, width - 24f, 24f),
                 steps[i], activeStep == i + 1 ? highlighted : normal);
 
         int power = _xriGuideRightPinched
             ? Mathf.RoundToInt(Mathf.InverseLerp(minimumDraw, maximumDraw, _lastDraw) * 100f)
             : 0;
-        GUI.Label(new Rect(24f, 151f, width - 24f, 22f),
+        GUI.Label(new Rect(24f, panelTop + 139f, width - 24f, 22f),
             "LEFT: " + (_xriGuideLeftPinched ? "ON" : "OFF") +
             "   RIGHT: " + (_xriGuideRightPinched ? "ON" : "OFF") +
             "   DRAW: " + power + "%   SHOTS: " + _shots, normal);
-        GUI.Label(new Rect(24f, 175f, width - 24f, 23f), status,
+        GUI.Label(new Rect(24f, panelTop + 163f, width - 24f, 23f), status,
             activeStep == 4 ? highlighted : normal);
-        GUI.Label(new Rect(24f, 195f, width - 24f, 20f),
+        GUI.Label(new Rect(24f, panelTop + 183f, width - 24f, 20f),
             "Pinch keys toggle; do not hold. Reset: release both pinches.", normal);
     }
 #endif
