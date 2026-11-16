@@ -14,12 +14,12 @@ Do not regenerate the authored scene to change gameplay code.
 
 ## XR development
 
-The XR implementation is **experimental**, not a validated Quest release.
+**Active Editor test:** run **Tools > Jemparingan > Simulator > Create/Open Jemparingan XRI Playtest**. It creates or opens `Assets/Jemparingan/Scenes/JemparinganXRIOnly.unity`, copied from the desktop scene with an XRI hands rig and simulator. The old XRI/Meta scenes are never overwritten.
 
-- `Assets/Jemparingan/Scenes/JemparinganQuest.unity` uses the existing Meta `OVRHand` adapter and OpenXR configuration.
-- **XR Hands Editor playtest:** use **Tools > Jemparingan > Simulator > Create/Open Jemparingan XRI Playtest** to create a *separate local copy* from the Quest scene, then press Play. Follow [XR Hands playtest](docs/QA_XRI_HAND_SIMULATOR_SMOKE.md).
-- `DesktopBowInput`, `XRHandsBowInput`, and `MetaQuestBowInput` implement the same `IJemparinganInput` contract; the game keeps a single shot/scoring path.
-- The XR simulator is **not** evidence of a working Android APK or headset tracking. Physical Quest validation is still required.
+- Packages: Unity **OpenXR**, **XR Hands**, **XR Interaction Toolkit**. No Meta XR SDK dependency.
+- Input: `DesktopBowInput` for desktop; `XRHandsBowInput` for XR. `MetaQuestBowInput` is an inert compatibility component for the archived Quest scene.
+- The original `JemparinganQuest.unity` and earlier `JemparinganXRIPlaytest.unity` may contain now-missing Meta components. They are **historical**, not the supported XR-only playtest.
+- [XR Hands playtest](docs/QA_XRI_HAND_SIMULATOR_SMOKE.md). Editor simulation is not an APK or headset test.
 
 ## Verification
 
