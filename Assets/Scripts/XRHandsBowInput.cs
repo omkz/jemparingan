@@ -19,6 +19,17 @@ public sealed class XRHandsBowInput : MonoBehaviour, IJemparinganInput
     private bool _leftPinched, _rightPinched, _hasAim, _focused = true, _paused;
     private Vector3 _lastAim;
 
+#if UNITY_EDITOR
+    private string _lastDebugState;
+
+    private void ReportState(string state)
+    {
+        if (_lastDebugState == state) return;
+        _lastDebugState = state;
+        Debug.Log("Jemparingan XR Hands: " + state, this);
+    }
+#endif
+
     public string FailureHint { get; private set; } = "HAND TRACKING LOST";
     public bool HandsTooClose { get; private set; }
 
@@ -46,6 +57,9 @@ public sealed class XRHandsBowInput : MonoBehaviour, IJemparinganInput
     private bool Invalid(string reason)
     {
         FailureHint = reason;
+#if UNITY_EDITOR
+        ReportState(reason);
+#endif
         Cancel();
         return false;
     }
@@ -85,6 +99,9 @@ public sealed class XRHandsBowInput : MonoBehaviour, IJemparinganInput
         if (!_gate.Accept(true, leftPinch, rightPinch))
         {
             FailureHint = "RELEASE BOTH PINCHES";
+#if UNITY_EDITOR
+            ReportState(FailureHint);
+#endif
             return false;
         }
 
@@ -112,6 +129,10 @@ public sealed class XRHandsBowInput : MonoBehaviour, IJemparinganInput
             aim = camera.transform.forward;
         }
 
+#if UNITY_EDITOR
+        ReportState("TRACKED | left pinch=" + leftPinch + " | right pinch=" +
+            rightPinch + (HandsTooClose ? " | move right hand back" : ""));
+#endif
         pose = new JemparinganHandPose
         {
             BowPinched = leftPinch,
