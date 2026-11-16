@@ -1229,13 +1229,13 @@ public class JemparinganGame : MonoBehaviour
 #if UNITY_EDITOR
             if (IsXRIPlaytestScene())
             {
-                if (input is XRHandsBowInput xrHands && xrHands.HandsTooClose)
-                    SetInfo("3/4 PULL RIGHT HAND BACK (SELECT ], THEN S)");
+                if (input is XRHandsBowInput closeHands && closeHands.HandsTooClose)
+                    SetInfo("3/4 MOVE RIGHT HAND BACK (] THEN S)");
                 else if (_lastDraw < minimumDraw ||
                          Time.time - _drawStartedAt < minimumHoldSeconds)
                     SetInfo("3/4 DRAW AND AIM | " + (step * 10) + "%");
                 else
-                    SetInfo("4/4 RELEASE RIGHT PINCH (M) TO SHOOT | DRAW " +
+                    SetInfo("4/4 RELEASE RIGHT PINCH (M) | DRAW " +
                         (step * 10) + "%");
             }
             else
