@@ -1,7 +1,6 @@
 {
   "dependencies": {
     "com.coplaydev.unity-mcp": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#main",
-    "com.meta.xr.sdk.all": "207.0.1",
     "com.unity.inputsystem": "1.20.1",
     "com.unity.multiplayer.center": "1.0.1",
     "com.unity.pipeline": "0.10.0-exp.1",
