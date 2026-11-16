@@ -939,7 +939,13 @@ public class JemparinganGame : MonoBehaviour
             HideDesktopPracticeSight();
             HidePreview();
             ClearDrawState();
-            SetInfo("Hold the bow with your left hand.");
+#if UNITY_EDITOR
+            if (IsXRIPlaytestScene())
+                SetInfo("STEP 1/4 | HOLD BOW WITH LEFT HAND\n" +
+                    "Tap Shift+M once; keep left pinch ON.");
+            else
+#endif
+                SetInfo("Hold the bow with your left hand.");
             return;
         }
 
@@ -948,7 +954,13 @@ public class JemparinganGame : MonoBehaviour
         {
             if (pose.StringPinched)
             {
-                SetInfo("RELEASE STRING TO START");
+#if UNITY_EDITOR
+                if (IsXRIPlaytestScene())
+                    SetInfo("RELEASE RIGHT PINCH TO CONTINUE\n" +
+                        "Tap M once; keep left pinch ON.");
+                else
+#endif
+                    SetInfo("RELEASE STRING TO START");
                 return;
             }
             _awaitStringRelease = false;
@@ -1230,13 +1242,15 @@ public class JemparinganGame : MonoBehaviour
             if (IsXRIPlaytestScene())
             {
                 if (input is XRHandsBowInput closeHands && closeHands.HandsTooClose)
-                    SetInfo("3/4 MOVE RIGHT HAND BACK (] THEN S)");
+                    SetInfo("STEP 3/4 | MOVE HANDS APART\n" +
+                        "Select RIGHT (]); press S to pull back.");
                 else if (_lastDraw < minimumDraw ||
                          Time.time - _drawStartedAt < minimumHoldSeconds)
-                    SetInfo("3/4 DRAW AND AIM | " + (step * 10) + "%");
+                    SetInfo("STEP 3/4 | DRAW AND AIM: " + (step * 10) + "%\n" +
+                        "RIGHT (]); S back, A/D to adjust aim.");
                 else
-                    SetInfo("4/4 RELEASE RIGHT PINCH (M) | DRAW " +
-                        (step * 10) + "%");
+                    SetInfo("STEP 4/4 | READY TO SHOOT: " + (step * 10) + "%\n" +
+                        "Keep LEFT pinch ON; tap M to release RIGHT.");
             }
             else
 #endif
@@ -1260,7 +1274,8 @@ public class JemparinganGame : MonoBehaviour
             HidePreview();
 #if UNITY_EDITOR
             if (IsXRIPlaytestScene())
-                SetInfo("2/4 PINCH RIGHT HAND (M) TO GRAB STRING");
+                SetInfo("STEP 2/4 | GRAB STRING WITH RIGHT\n" +
+                    "Tap M once; keep left pinch ON.");
             else
 #endif
                 SetInfo(UsesDesktopInput()
@@ -2052,12 +2067,40 @@ public class JemparinganGame : MonoBehaviour
 #if UNITY_EDITOR
         if (IsXRIPlaytestScene())
         {
-            if (value.StartsWith("Hold the bow"))
-                value = "1/4 HOLD BOW WITH LEFT HAND (SHIFT + M)";
-            // The shot notification is grounded in Shoot(), not the draw meter.
-            if (Time.time - _xriGuideLastShotAt < 2f &&
-                (value.StartsWith("1/4 ") || value.StartsWith("2/4 ")))
-                value = "SHOT #" + _shots + " LAUNCHED | WATCH THE TARGET";
+            // Preserve the existing help-label location and explain recovery
+            // without adding a second overlay or changing gesture logic.
+            switch (value)
+            {
+                case "RELEASE BOTH PINCHES":
+                    value = "RELEASE BOTH PINCHES TO RESET\n" +
+                        "Toggle Shift+M and M OFF, then retry.";
+                    break;
+                case "HANDS TOO FAR - RESET PINCHES":
+                    value = "HANDS TOO FAR APART\n" +
+                        "Release both pinches; move hands closer.";
+                    break;
+                case "XR HANDS NOT RUNNING":
+                    value = "XR HAND TRACKING NOT RUNNING\n" +
+                        "Check both devices use Hand mode.";
+                    break;
+                case "LEFT HAND NOT TRACKED":
+                case "RIGHT HAND NOT TRACKED":
+                case "LEFT FINGERS NOT TRACKED":
+                case "RIGHT FINGERS NOT TRACKED":
+                    value += "\nEnable both simulated hands.";
+                    break;
+                case "XR INPUT NOT READY":
+                    value = "XR INPUT NOT READY\n" +
+                        "Check XR Hands rig and Game view focus.";
+                    break;
+            }
+
+            // A real launched projectile briefly takes priority over steps.
+            if (Time.time - _xriGuideLastShotAt < 2.5f &&
+                (value.StartsWith("STEP 1/4") || value.StartsWith("STEP 2/4")))
+                value = "SHOT #" + _shots + " LAUNCHED\n" +
+                    "Watch target. Tap M to draw again.";
+
             if (_infoLabel != null && _lastInfo != value)
             {
                 _lastInfo = value;
@@ -2326,6 +2369,14 @@ public class JemparinganGame : MonoBehaviour
         _infoLabel.characterSize = .0066f;
         _infoLabel.fontSize = 96;
         _infoLabel.fontStyle = FontStyle.Bold;
+#if UNITY_EDITOR
+        if (IsXRIPlaytestScene())
+        {
+            // Two short lines fit the existing world-space help location.
+            _infoLabel.characterSize = .0051f;
+            _infoLabel.lineSpacing = 1.15f;
+        }
+#endif
 
         foreach (TextMesh label in hud.GetComponentsInChildren<TextMesh>(true))
         {
