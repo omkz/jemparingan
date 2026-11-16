@@ -12,6 +12,7 @@ EditorBuildSettings:
     path: Assets/Jemparingan/Scenes/JemparinganQuest.unity
     guid: 2c923a0a214822542a8078d4ddacffda
   m_configObjects:
+    com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: a333347d293511d48a2b57ed9478d15d, type: 2}
     com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 361b3ecded2f5b74da589f8bc336b7ac, type: 2}
   m_UseUCBPForAssetBundles: 0

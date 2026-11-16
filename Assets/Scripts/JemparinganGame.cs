@@ -311,6 +311,11 @@ public class JemparinganGame : MonoBehaviour
 #endif
     private int _lastPowerStep = -1;
     private bool _lastStableSignal;
+#if UNITY_EDITOR
+    private JemparinganXRDemoInput _xriDemoInput;
+    internal float DemoMaximumArrowSpeed => maximumArrowSpeed;
+    internal float DemoArrowGravity => simulatedGravity;
+#endif
 
     // Android Quest always uses hands, WebGL always uses desktop input.
     // The scene's serialized preference selects the adapter in Editor and
@@ -330,6 +335,10 @@ public class JemparinganGame : MonoBehaviour
     private IJemparinganInput ActiveInput()
     {
         if (UsesDesktopInput()) return desktopInput;
+#if UNITY_EDITOR
+        if (_xriDemoInput != null && _xriDemoInput.IsPlaying)
+            return _xriDemoInput;
+#endif
         return xrHandsInput != null && xrHandsInput.isActiveAndEnabled
             ? (IJemparinganInput)xrHandsInput : questInput;
     }
@@ -397,6 +406,9 @@ public class JemparinganGame : MonoBehaviour
         if (desktopInput == null) desktopInput = GetComponent<DesktopBowInput>();
         if (questInput == null) questInput = GetComponent<MetaQuestBowInput>();
         if (xrHandsInput == null) xrHandsInput = GetComponent<XRHandsBowInput>();
+#if UNITY_EDITOR
+        _xriDemoInput = GetComponent<JemparinganXRDemoInput>();
+#endif
         yield return null;
         _ready = BuildScene();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR

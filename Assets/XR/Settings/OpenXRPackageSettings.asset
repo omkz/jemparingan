@@ -59,13 +59,14 @@ MonoBehaviour:
   m_enabled: 1
   nameUi: Hand Tracking Subsystem
   version: 0.0.1
-  featureIdInternal: com.unity.openxr.feature.input.handtracking
+  featureIdInternal: com.unity.openxr.feature.input.handtrackingsubsystem
   openxrExtensionStrings: XR_EXT_hand_tracking
   company: Unity
   priority: -100
   targetOpenXRApiVersion: 
   required: 0
   customRuntimeLoaderName: 
+  m_AutoStartSubsystem: 1
 --- !u!114 &-8027810583369999355
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -195,13 +196,14 @@ MonoBehaviour:
   m_enabled: 1
   nameUi: Hand Tracking Subsystem
   version: 0.0.1
-  featureIdInternal: com.unity.openxr.feature.input.handtracking
+  featureIdInternal: com.unity.openxr.feature.input.handtrackingsubsystem
   openxrExtensionStrings: XR_EXT_hand_tracking
   company: Unity
   priority: -100
   targetOpenXRApiVersion: 
   required: 0
   customRuntimeLoaderName: 
+  m_AutoStartSubsystem: 1
 --- !u!114 &-5366398071929625279
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -729,7 +731,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: feeef8d85de8db242bdda70cc7ff5acd, type: 3}
   m_Name: OculusTouchControllerProfile Android
   m_EditorClassIdentifier: Unity.XR.OpenXR::UnityEngine.XR.OpenXR.Features.Interactions.OculusTouchControllerProfile
-  m_enabled: 0
+  m_enabled: 1
   nameUi: Oculus Touch Controller Profile
   version: 0.0.1
   featureIdInternal: com.unity.openxr.feature.input.oculustouch
@@ -961,9 +963,6 @@ MonoBehaviour:
   - {fileID: -7592948570972000726}
   - {fileID: -2537848470785731589}
   - {fileID: 1717404856623447613}
-  - {fileID: 5665983687620585506}
-  - {fileID: -7098847785166744353}
-  - {fileID: -5261978950823625005}
   - {fileID: 8087011279718485076}
   - {fileID: 7911346144843086768}
   - {fileID: 5585622140557289639}
@@ -974,11 +973,6 @@ MonoBehaviour:
   - {fileID: 3515017330917399684}
   - {fileID: 8890888855033390098}
   - {fileID: 3968188981315797925}
-  - {fileID: -4960931904740882972}
-  - {fileID: 8242976503436406712}
-  - {fileID: -4832520653886350024}
-  - {fileID: -2341113110492455729}
-  - {fileID: -7434917609676829241}
   - {fileID: -1924793512976643551}
   - {fileID: 5991405700001516317}
   - {fileID: 1568646437363794493}
@@ -1250,9 +1244,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.XR.OpenXR::UnityEngine.XR.OpenXR.OpenXRSettings
   features:
   - {fileID: -5265869429050635960}
-  - {fileID: 8788859327126316785}
-  - {fileID: -3223534516635524250}
-  - {fileID: 9025774394521101395}
   - {fileID: 9145376371068299816}
   - {fileID: 332108797199507213}
   - {fileID: -8027810583369999355}
@@ -1264,10 +1255,6 @@ MonoBehaviour:
   - {fileID: -5366398071929625279}
   - {fileID: 7018514715421590107}
   - {fileID: 5901427984982041910}
-  - {fileID: 4159661937046837386}
-  - {fileID: 5404847928386048049}
-  - {fileID: -248439010449899878}
-  - {fileID: 1622977621327923371}
   - {fileID: 4102483880938464667}
   - {fileID: -8479411197204035139}
   - {fileID: 6070538590350181466}
