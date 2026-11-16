@@ -4,10 +4,10 @@ Unity **6000.3.27f1**, URP, OpenXR. Two game modes: **Traditional** and **Modern
 
 ## Preserve
 - Desktop scene: `Assets/Jemparingan/Scenes/JemparinganPlayableEnvironment_v05.unity`.
-- Quest scene: `Assets/Jemparingan/Scenes/JemparinganQuest.unity`.
-- XRI Editor playtest is a **separate, generated scene**; never overwrite source scenes.
-- `IJemparinganInput` is shared by desktop mouse, Unity XR Hands, and Meta OVRHand. Keep projectile physics, scoring, and game rules shared.
-- Hands-only Quest interaction remains **unverified on a physical device**.
+- Archived Meta Quest scene: `Assets/Jemparingan/Scenes/JemparinganQuest.unity` (do not overwrite).
+- XR-only playtest: `Assets/Jemparingan/Scenes/JemparinganXRIOnly.unity`, generated from the desktop scene.
+- `IJemparinganInput` is shared by desktop mouse and Unity XR Hands. Keep shot physics, scoring, and rules shared.
+- Use Unity OpenXR + XR Hands + XRI; Meta XR SDK is removed. Quest device behavior is unverified.
 
 ## Work
 - Prefer small, focused diffs and existing helpers over new abstractions.
