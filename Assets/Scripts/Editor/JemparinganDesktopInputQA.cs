@@ -1,4 +1,4 @@
-#if UNITY_EDITOR && META_XR_SDK && ENABLE_INPUT_SYSTEM
+#if UNITY_EDITOR && ENABLE_INPUT_SYSTEM
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -16,6 +16,8 @@ using Object = UnityEngine.Object;
 // No native OS input, headset state, or scene asset is modified.
 public static class JemparinganDesktopInputQA
 {
+    private const string DesktopScene = "Assets/Jemparingan/Scenes/JemparinganPlayableEnvironment_v05.unity";
+    private const string EvidencePath = "docs/validation/quest-vr-v1/";
     private static readonly BindingFlags Flags = BindingFlags.Instance | BindingFlags.NonPublic;
     private static object Get(object obj, string field) => obj.GetType().GetField(field, Flags).GetValue(obj);
     private static void Set(object obj, string field, object value) => obj.GetType().GetField(field, Flags).SetValue(obj, value);
@@ -23,7 +25,7 @@ public static class JemparinganDesktopInputQA
     [MenuItem("Tools/Jemparingan/Quest VR v1/Run Desktop Input System Regression")]
     public static async void Run()
     {
-        if (!EditorApplication.isPlaying || SceneManager.GetActiveScene().path != JemparinganQuestSetup.DesktopScene)
+        if (!EditorApplication.isPlaying || SceneManager.GetActiveScene().path != DesktopScene)
             throw new InvalidOperationException("Enter Play Mode in the original desktop scene first.");
         var originalMouse = Mouse.current;
         var originalKeyboard = Keyboard.current;
@@ -137,7 +139,7 @@ public static class JemparinganDesktopInputQA
         };
     }
 
-    private static void Save(object result) => File.WriteAllText(JemparinganQuestSetup.Evidence + "desktop-input-regression-stabilization.json", JsonConvert.SerializeObject(result, Formatting.Indented));
+    private static void Save(object result) => File.WriteAllText(EvidencePath + "desktop-input-regression-stabilization.json", JsonConvert.SerializeObject(result, Formatting.Indented));
     private static async Task Wait(float seconds)
     {
         float until = Time.realtimeSinceStartup + seconds;
