@@ -320,228 +320,49 @@ public static class JemparinganEditorMenu
         Debug.LogError("Jemparingan QA FAIL: " + name);
     }
 
-    // SDK-free preflight check: works in the desktop prototype before Meta packages
-    // are installed. Package/asset checks are advisory; runtime XR features require
-    // the official Meta Project Setup Tool and an actual Quest test.
+    // SDK-free checks for Unity XR Hands + OpenXR.
     [MenuItem("Tools/Jemparingan/Check Quest Prerequisites")]
     public static void CheckQuestPrerequisites()
     {
+        string path = "Packages/manifest.json";
+        string manifest = File.Exists(path) ? File.ReadAllText(path) : "";
         int issues = 0;
-        string manifestPath = "Packages/manifest.json";
-        string manifest = File.Exists(manifestPath) ? File.ReadAllText(manifestPath) : "";
-
+        foreach (string dependency in new[]
+        {
+            "com.unity.xr.management", "com.unity.xr.openxr",
+            "com.unity.xr.hands", "com.unity.xr.interaction.toolkit"
+        })
+        {
+            if (manifest.Contains("\"" + dependency + "\"")) continue;
+            issues++;
+            Debug.LogWarning("XR prerequisite missing: " + dependency);
+        }
         if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android)
-        {
-            issues++;
-            Debug.LogWarning("Quest preflight: active target is not Android / Meta Quest. Switch via File > Build Profiles.");
-        }
-
-        if (!manifest.Contains("\"com.unity.xr.management\""))
-        {
-            issues++;
-            Debug.LogWarning("Quest preflight: XR Plug-in Management is not in manifest.json.");
-        }
-
-        if (!manifest.Contains("\"com.unity.xr.openxr\""))
-        {
-            issues++;
-            Debug.LogWarning("Quest preflight: Unity OpenXR Plugin is not in manifest.json. Use Unity OpenXR, not deprecated Oculus XR Plugin.");
-        }
-
-        bool metaCoreAvailable = manifest.Contains("\"com.meta.xr.sdk.all\"") ||
-            manifest.Contains("\"com.meta.xr.sdk.core\"") ||
-            AssetDatabase.FindAssets("OVRManager t:MonoScript").Length > 0;
-        if (!metaCoreAvailable)
-        {
-            issues++;
-            Debug.LogWarning("Quest preflight: Meta XR Core SDK not detected. Install a compatible current Meta XR SDK.");
-        }
-
-        bool rigPrefabAvailable = AssetDatabase.FindAssets("OVRCameraRig t:Prefab").Length > 0;
-        if (!rigPrefabAvailable)
-        {
-            issues++;
-            Debug.LogWarning("Quest preflight: OVRCameraRig prefab not found yet. It is supplied by Meta XR SDK.");
-        }
-
-        bool enabledScene = false;
-        foreach (EditorBuildSettingsScene item in EditorBuildSettings.scenes)
-        {
-            if (!item.enabled) continue;
-            enabledScene = true;
-            break;
-        }
-        if (!enabledScene)
-        {
-            issues++;
-            Debug.LogWarning("Quest preflight: no enabled scene in the Build Profiles scene list.");
-        }
-
-        // Scene check is useful only after opening the intended Quest scene.
-        Scene scene = SceneManager.GetActiveScene();
-        if (scene.IsValid() && scene.isLoaded)
-        {
-            int cameraCount = 0;
-            bool hasRig = false;
-            foreach (GameObject root in scene.GetRootGameObjects())
-            {
-                if (root.name.Contains("OVRCameraRig")) hasRig = true;
-                Camera[] cameras = root.GetComponentsInChildren<Camera>(true);
-                cameraCount += cameras.Length;
-            }
-
-            if (!hasRig)
-            {
-                issues++;
-                Debug.LogWarning("Quest preflight: active scene has no OVRCameraRig. Keep the desktop scene; create a separate Quest scene.");
-            }
-            if (cameraCount > 1)
-            {
-                issues++;
-                Debug.LogWarning("Quest preflight: active scene has multiple Cameras. Remove the old desktop Main Camera when using OVRCameraRig.");
-            }
-        }
-
-        Debug.Log("Jemparingan Quest preflight finished. " + issues +
-            " potential setup item(s) detected. Check warnings above. " +
-            "Also verify Android OpenXR feature groups, hand tracking, passthrough, " +
-            "arm64, and Meta Project Setup Tool manually. This does not validate an APK or headset.");
+            Debug.LogWarning("Quest build target is not Android. Editor XRI playtest does not require Android.");
+        Debug.Log("XR package preflight: " + issues +
+            " missing dependencies. Android OpenXR hand features and device testing remain separate.");
     }
 
-    // Read-only readiness audit. Works before Meta XR SDK is imported,
-    // and does not modify the desktop scene or ProjectSettings.
     [MenuItem("Tools/Jemparingan/Quest/Validate Active Scene")]
     public static void ValidateQuestScene()
     {
-        var scene = SceneManager.GetActiveScene();
-        int problems = 0;
-        int warnings = 0;
+        Scene scene = SceneManager.GetActiveScene();
         if (!scene.IsValid() || !scene.isLoaded)
         {
-            Debug.LogError("Quest audit: open the intended Quest scene first.");
+            Debug.LogError("Open the XR-only playtest scene first.");
             return;
         }
-
-        string manifestPath = "Packages/manifest.json";
-        if (!File.Exists(manifestPath))
+        var origin = Object.FindFirstObjectByType<Unity.XR.CoreUtils.XROrigin>();
+        var game = Object.FindFirstObjectByType<JemparinganGame>();
+        var hands = Object.FindFirstObjectByType<XRHandsBowInput>();
+        var simulator = Object.FindFirstObjectByType<
+            UnityEngine.XR.Interaction.Toolkit.Inputs.Simulation.XRInteractionSimulator>();
+        if (origin == null || origin.Camera == null || game == null || hands == null || simulator == null)
         {
-            Debug.LogError("Quest audit: Packages/manifest.json not found.");
-            problems++;
+            Debug.LogError("XR scene incomplete: requires XROrigin, JemparinganGame, XRHandsBowInput and XR Interaction Simulator.");
+            return;
         }
-        else
-        {
-            string manifest = File.ReadAllText(manifestPath);
-            if (!manifest.Contains("com.unity.xr.management"))
-            {
-                Debug.LogWarning("Quest audit: XR Plug-in Management is not listed. Install it from Unity Package Manager.");
-                warnings++;
-            }
-            if (!manifest.Contains("com.unity.xr.openxr"))
-            {
-                Debug.LogWarning("Quest audit: Unity OpenXR is not listed. Add OpenXR and enable the Android provider.");
-                warnings++;
-            }
-            if (!manifest.Contains("com.meta.xr.sdk.all") &&
-                !manifest.Contains("com.meta.xr.sdk.core"))
-            {
-                Debug.LogWarning("Quest audit: Meta XR SDK is not listed as a UPM package. Check Package Manager / imported SDK.");
-                warnings++;
-            }
-        }
-        if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android)
-        {
-            Debug.LogWarning("Quest audit: active build target is not Android / Meta Quest.");
-            warnings++;
-        }
-
-        GameObject rig = null;
-        int gameCount = 0;
-        int legacyCameraCount = 0;
-        foreach (GameObject root in scene.GetRootGameObjects())
-        {
-            foreach (MonoBehaviour behaviour in root.GetComponentsInChildren<MonoBehaviour>(true))
-            {
-                if (behaviour == null) continue;
-                if (behaviour is JemparinganGame) gameCount++;
-                if (behaviour.GetType().Name == "OVRCameraRig") rig = behaviour.gameObject;
-            }
-            // Only flag a standalone Main Camera, not cameras within OVRCameraRig.
-            if (root.name == "Main Camera") legacyCameraCount++;
-        }
-        if (gameCount != 1)
-        {
-            Debug.LogError("Quest audit: expected exactly one JemparinganGame, found " + gameCount + ".");
-            problems++;
-        }
-        if (rig == null)
-        {
-            Debug.LogError("Quest audit: OVRCameraRig missing. Replace the desktop Main Camera with the SDK rig.");
-            problems++;
-        }
-        if (legacyCameraCount > 0)
-        {
-            Debug.LogError("Quest audit: standalone Main Camera still present; remove it from the Quest scene.");
-            problems++;
-        }
-
-        if (rig != null)
-        {
-            var leftAnchor = rig.transform.Find("TrackingSpace/LeftHandAnchor");
-            var rightAnchor = rig.transform.Find("TrackingSpace/RightHandAnchor");
-            if (leftAnchor == null || rightAnchor == null)
-            {
-                Debug.LogError("Quest audit: hand anchors not found under OVRCameraRig/TrackingSpace.");
-                problems++;
-            }
-            else
-            {
-                if (!HasComponentNamed(leftAnchor, "OVRHand"))
-                {
-                    Debug.LogError("Quest audit: OVRHand prefab missing under LeftHandAnchor.");
-                    problems++;
-                }
-                if (!HasComponentNamed(rightAnchor, "OVRHand"))
-                {
-                    Debug.LogError("Quest audit: OVRHand prefab missing under RightHandAnchor.");
-                    problems++;
-                }
-            }
-            if (!HasComponentNamed(rig.transform, "OVRPassthroughLayer"))
-            {
-                Debug.LogWarning("Quest audit: OVRPassthroughLayer missing from the rig; Mixed Reality underlay is not configured.");
-                warnings++;
-            }
-            if (!HasComponentNamed(rig.transform, "OVRManager"))
-            {
-                Debug.LogError("Quest audit: OVRManager missing from rig.");
-                problems++;
-            }
-        }
-
-#if META_XR_SDK
-        var adapters = Object.FindObjectsByType<MetaQuestBowInput>(FindObjectsSortMode.None);
-        if (adapters.Length != 1 || adapters[0].leftHand == null || adapters[0].rightHand == null)
-        {
-            Debug.LogError("Quest audit: MetaQuestBowInput needs both OVRHand references assigned.");
-            problems++;
-        }
-#else
-        Debug.LogWarning("Quest audit: META_XR_SDK scripting define is not active; MetaQuestBowInput is in stub mode.");
-        warnings++;
-#endif
-
-        if (problems == 0 && warnings == 0)
-            Debug.Log("Jemparingan Quest scene audit PASSED (static scene/package checks only; requires device tests).");
-        else
-            Debug.LogWarning("Jemparingan Quest scene audit: " + problems + " blockers, " +
-                warnings + " warnings. Review Console and docs/QUEST_SETUP_V10.md.");
-    }
-
-    private static bool HasComponentNamed(Transform parent, string componentTypeName)
-    {
-        foreach (Component component in parent.GetComponentsInChildren<Component>(true))
-            if (component != null && component.GetType().Name == componentTypeName) return true;
-        return false;
+        Debug.Log("XR scene validation passed (static components only). Hand tracking and Quest APK are NOT verified.");
     }
 
     [MenuItem("Tools/Jemparingan/Create Prototype Scene")]
