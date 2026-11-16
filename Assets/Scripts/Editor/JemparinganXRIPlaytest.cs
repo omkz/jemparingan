@@ -26,8 +26,8 @@ public static class JemparinganXRIPlaytest
 
         if (AssetDatabase.LoadAssetAtPath<SceneAsset>(PlaytestScene) != null)
         {
-            Scene scene = EditorSceneManager.OpenScene(PlaytestScene, OpenSceneMode.Single);
-            RepairExistingScene(scene);
+            Scene existingScene = EditorSceneManager.OpenScene(PlaytestScene, OpenSceneMode.Single);
+            RepairExistingScene(existingScene);
             return;
         }
 
