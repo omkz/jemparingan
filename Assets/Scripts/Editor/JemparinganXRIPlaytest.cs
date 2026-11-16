@@ -10,7 +10,7 @@ using UnityEngine.XR.Interaction.Toolkit;
 public static class JemparinganXRIPlaytest
 {
     private const string SourceScene = "Assets/Jemparingan/Scenes/JemparinganPlayableEnvironment_v05.unity";
-    private const string PlaytestScene = "Assets/Jemparingan/Scenes/JemparinganXRIOnly.unity";
+    private const string PlaytestScene = "Assets/Jemparingan/Scenes/JemparinganXRIPlaytest.unity";
 
     [MenuItem("Tools/Jemparingan/Simulator/Recenter Seated XR View (Play Mode)")]
     public static void RecenterSeatedView()
