@@ -26,10 +26,10 @@ public static class JemparinganXRIPlaytest
         {
             Scene existing = EditorSceneManager.OpenScene(PlaytestScene, OpenSceneMode.Single);
             var input = Object.FindFirstObjectByType<XRHandsBowInput>(FindObjectsInactive.Include);
-            var simulator = Object.FindFirstObjectByType<
+            var existingSimulator = Object.FindFirstObjectByType<
                 UnityEngine.XR.Interaction.Toolkit.Inputs.Simulation.XRInteractionSimulator>(
                     FindObjectsInactive.Include);
-            if (input == null || simulator == null)
+            if (input == null || existingSimulator == null)
                 Debug.LogError("XR-only scene is incomplete. Existing scene left untouched.");
             else
                 Debug.Log("XRI PLAYTEST READY: opened existing XR-only scene.");
