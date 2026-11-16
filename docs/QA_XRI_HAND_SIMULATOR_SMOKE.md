@@ -14,6 +14,12 @@ When the **XR Hands input adapter is active** in an Editor playtest (including o
 4. Draw at least 10 cm, then press **M** again to release right pinch. Expect **one shot**; repeat in Traditional and Modern.
 5. Release both pinches and retry. Interrupt a draw by disabling a simulated hand; expect **no shot**, then release both pinches before starting again.
 
+## View and aiming
+
+On entering Play Mode, the XR Editor playtest attempts to align the simulated HMD's world position with the disabled desktop MainCamera and face toward the outdoor target. It logs `Jemparingan XR view: ALIGNED` when the camera was moved. This does not change the scene file or actual Quest tracking. If no disabled reference camera exists, alignment is skipped and a warning is logged.
+
+For manual HMD adjustment in the XRI 3.5 simulator: press `H` to select the HMD, use the arrow keys (pitch/yaw) or hold the right mouse button and move the mouse to look down toward the target; `R` resets the selected device. Switch to the right hand (`]`) to move the string hand again. The XR Editor also temporarily shows larger trajectory dots while drawing. The dots indicate the actual projectile path, **not** the headset's central gaze.
+
 ## Feedback
 
 - **PULL RIGHT HAND BACK** — hands are less than 8 cm apart; move the right hand without restarting the gesture.
