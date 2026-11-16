@@ -216,9 +216,12 @@ public class JemparinganGame : MonoBehaviour
     private JemparinganTarget.TraditionalZone _traditionalImpactZone;
     private string _lastInfo = "";
 #if UNITY_EDITOR
-    private bool _xriGuidePoseValid, _xriGuideLeftPinched, _xriGuideRightPinched;
-    private string _xriGuideTrackingHint = "WAITING FOR HAND TRACKING";
     private float _xriGuideLastShotAt = -100f;
+    private static bool IsXRIPlaytestScene()
+    {
+        return UnityEngine.SceneManagement.SceneManager.GetActiveScene().path ==
+            "Assets/Jemparingan/Scenes/JemparinganXRIOnly.unity";
+    }
 #endif
     private int _lastPowerStep = -1;
     private bool _lastStableSignal;
@@ -335,14 +338,6 @@ public class JemparinganGame : MonoBehaviour
 
     private void OnGUI()
     {
-#if UNITY_EDITOR
-        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().path ==
-            "Assets/Jemparingan/Scenes/JemparinganXRIOnly.unity")
-        {
-            DrawXRIPlaytestGuide();
-            return;
-        }
-#endif
         if (!_ready || !useOutdoorEnvironment || !UsesDesktopInput())
             return;
 
@@ -355,84 +350,6 @@ public class JemparinganGame : MonoBehaviour
         if (_finished) DrawModernResultsGUI();
         else DrawModernInGameHUD();
     }
-
-#if UNITY_EDITOR
-    // Temporary, scene-specific simulator guide; never shown in desktop or Quest builds.
-    private void DrawXRIPlaytestGuide()
-    {
-        float width = Mathf.Min(460f, Screen.width - 24f);
-        if (width <= 0f) return;
-        float panelTop = Mathf.Max(12f, Screen.height - 228f);
-        Rect panel = new Rect(12f, panelTop, width, 216f);
-        GUI.Box(panel, "");
-
-        GUIStyle title = new GUIStyle(GUI.skin.label);
-        title.fontStyle = FontStyle.Bold;
-        title.fontSize = 15;
-        GUI.Label(new Rect(24f, panelTop + 7f, width - 24f, 23f),
-            "XR HANDS | SHOOTING GUIDE (EDITOR ONLY)", title);
-
-        int activeStep = 0;
-        string status;
-        if (!_ready)
-            status = "Initializing gameplay...";
-        else if (_finished || _roundOver)
-            status = "ROUND COMPLETE | Shots: " + _shots;
-        else if (Time.time - _xriGuideLastShotAt < 2.5f)
-            status = "SHOT #" + _shots + " LAUNCHED | Watch the target";
-        else if (!_xriGuidePoseValid)
-            status = "TRACKING: " + _xriGuideTrackingHint;
-        else if (!_xriGuideLeftPinched)
-        {
-            activeStep = 1;
-            status = "Waiting for LEFT pinch";
-        }
-        else if (!_xriGuideRightPinched)
-        {
-            activeStep = 2;
-            status = "Bow held | Waiting for RIGHT pinch";
-        }
-        else if (_lastDraw < minimumDraw ||
-                 Time.time - _drawStartedAt < minimumHoldSeconds)
-        {
-            activeStep = 3;
-            status = "Drawing | Move right hand back";
-        }
-        else
-        {
-            activeStep = 4;
-            status = "READY TO SHOOT | Press M once";
-        }
-
-        string[] steps =
-        {
-            "1. Shift + M once: pinch LEFT (hold bow)",
-            "2. M once: pinch RIGHT (grab string)",
-            "3. Select right hand (]); move back (S) and aim",
-            "4. M again: release RIGHT pinch to shoot"
-        };
-        GUIStyle normal = new GUIStyle(GUI.skin.label);
-        normal.fontSize = 12;
-        GUIStyle highlighted = new GUIStyle(normal);
-        highlighted.fontStyle = FontStyle.Bold;
-        highlighted.normal.textColor = new Color(.35f, .95f, .55f);
-        for (int i = 0; i < steps.Length; i++)
-            GUI.Label(new Rect(24f, panelTop + 33f + i * 25f, width - 24f, 24f),
-                steps[i], activeStep == i + 1 ? highlighted : normal);
-
-        int power = _xriGuideRightPinched
-            ? Mathf.RoundToInt(Mathf.InverseLerp(minimumDraw, maximumDraw, _lastDraw) * 100f)
-            : 0;
-        GUI.Label(new Rect(24f, panelTop + 139f, width - 24f, 22f),
-            "LEFT: " + (_xriGuideLeftPinched ? "ON" : "OFF") +
-            "   RIGHT: " + (_xriGuideRightPinched ? "ON" : "OFF") +
-            "   DRAW: " + power + "%   SHOTS: " + _shots, normal);
-        GUI.Label(new Rect(24f, panelTop + 163f, width - 24f, 23f), status,
-            activeStep == 4 ? highlighted : normal);
-        GUI.Label(new Rect(24f, panelTop + 183f, width - 24f, 20f),
-            "Pinch keys toggle; do not hold. Reset: release both pinches.", normal);
-    }
-#endif
 
     private void DrawMainModeSelectGUI()
     {
@@ -998,12 +915,6 @@ public class JemparinganGame : MonoBehaviour
         IJemparinganInput input = ActiveInput();
         if (input == null || !input.TryReadPose(out JemparinganHandPose pose))
         {
-#if UNITY_EDITOR
-            _xriGuidePoseValid = false;
-            _xriGuideLeftPinched = _xriGuideRightPinched = false;
-            _xriGuideTrackingHint = input is XRHandsBowInput failedHands
-                ? failedHands.FailureHint : "INPUT UNAVAILABLE";
-#endif
             HideTraditionalArms();
             if (_bow != null) _bow.gameObject.SetActive(false);
             HideDesktopPracticeSight();
@@ -1013,11 +924,6 @@ public class JemparinganGame : MonoBehaviour
                 ? xrHands.FailureHint : "Hand tracking unavailable. Try again.");
             return;
         }
-#if UNITY_EDITOR
-        _xriGuidePoseValid = true;
-        _xriGuideLeftPinched = pose.BowPinched;
-        _xriGuideRightPinched = pose.StringPinched;
-#endif
         if (_roundOver)
         {
             HideTraditionalArms();
@@ -1319,16 +1225,30 @@ public class JemparinganGame : MonoBehaviour
             ShowPreview(bowOrigin + aim * 0.25f, launchAim, power);
             int step = Mathf.RoundToInt(power * 10f);
             bool calm = Time.time <= _focusReadyUntil;
-            // RASA must update even at constant draw power.
+            // Keep the native help label current during the simulated XR tutorial.
+#if UNITY_EDITOR
+            if (IsXRIPlaytestScene())
+            {
+                if (input is XRHandsBowInput xrHands && xrHands.HandsTooClose)
+                    SetInfo("3/4 PULL RIGHT HAND BACK (SELECT ], THEN S)");
+                else if (_lastDraw < minimumDraw ||
+                         Time.time - _drawStartedAt < minimumHoldSeconds)
+                    SetInfo("3/4 DRAW AND AIM | " + (step * 10) + "%");
+                else
+                    SetInfo("4/4 RELEASE RIGHT PINCH (M) TO SHOOT | DRAW " +
+                        (step * 10) + "%");
+            }
+            else
+#endif
             if (step != _lastPowerStep || calm != _lastStableSignal)
             {
-                _lastPowerStep = step;
-                _lastStableSignal = calm;
                 SetInfo(input is XRHandsBowInput xrHands && xrHands.HandsTooClose
                     ? "PULL RIGHT HAND BACK"
                     : "DRAW " + (step * 10) + "%   |   " +
                         (calm ? "RASA: STEADY" : "RASA: FOCUS"));
             }
+            _lastPowerStep = step;
+            _lastStableSignal = calm;
         }
         else
         {
@@ -1338,9 +1258,14 @@ public class JemparinganGame : MonoBehaviour
             UpdateBowStrings(0f);
             UpdateNockedArrow(0f, true);
             HidePreview();
-            SetInfo(UsesDesktopInput()
-                ? "READY  •  Hold left mouse to draw; release to shoot. Hold right mouse to aim."
-                : "READY  •  Left pinch: hold bow. Right pinch: draw and release.");
+#if UNITY_EDITOR
+            if (IsXRIPlaytestScene())
+                SetInfo("2/4 PINCH RIGHT HAND (M) TO GRAB STRING");
+            else
+#endif
+                SetInfo(UsesDesktopInput()
+                    ? "READY  •  Hold left mouse to draw; release to shoot. Hold right mouse to aim."
+                    : "READY  •  Left pinch: hold bow. Right pinch: draw and release.");
         }
 
         // The contact targets must be current before posing hands. The old
@@ -1743,8 +1668,7 @@ public class JemparinganGame : MonoBehaviour
         _shots++;
 #if UNITY_EDITOR
         _xriGuideLastShotAt = Time.time;
-        if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().path ==
-            "Assets/Jemparingan/Scenes/JemparinganXRIOnly.unity")
+        if (IsXRIPlaytestScene())
             Debug.Log("Jemparingan XR: SHOT #" + _shots + " LAUNCHED", this);
 #endif
         if (UsesSharedDesktopBow() && modernLightweightGameFeel)
@@ -2125,6 +2049,23 @@ public class JemparinganGame : MonoBehaviour
     }
     private void SetInfo(string value)
     {
+#if UNITY_EDITOR
+        if (IsXRIPlaytestScene())
+        {
+            if (value.StartsWith("Hold the bow"))
+                value = "1/4 HOLD BOW WITH LEFT HAND (SHIFT + M)";
+            // The shot notification is grounded in Shoot(), not the draw meter.
+            if (Time.time - _xriGuideLastShotAt < 2f &&
+                (value.StartsWith("1/4 ") || value.StartsWith("2/4 ")))
+                value = "SHOT #" + _shots + " LAUNCHED | WATCH THE TARGET";
+            if (_infoLabel != null && _lastInfo != value)
+            {
+                _lastInfo = value;
+                _infoLabel.text = value;
+            }
+            return;
+        }
+#endif
         if (UsesSharedDesktopBow())
         {
             // No world-space instructions obstruct the bow or target.
