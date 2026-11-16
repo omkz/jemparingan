@@ -16,7 +16,7 @@ When the **XR Hands input adapter is active** in an Editor playtest (including o
 
 ## View and aiming
 
-On entering Play Mode, the XR Editor playtest attempts to align the simulated HMD's world position with the disabled desktop MainCamera and face toward the outdoor target. It logs `Jemparingan XR view: ALIGNED` when the camera was moved. This does not change the scene file or actual Quest tracking. If no disabled reference camera exists, alignment is skipped and a warning is logged.
+After XR simulated tracking initializes, the Editor playtest recenters the simulated eye at the authored seated viewpoint (1.35 m above the floor in outdoor v05), aligns yaw and pitch toward the bandulan, and logs `Jemparingan XR view: SEATED | eye Y=... | target Y=... | aim error=... deg`. To recenter again during Play Mode, use **Tools > Jemparingan > Simulator > Recenter Seated XR View (Play Mode)**. This is Editor-only and does not modify the scene or real Quest tracking. If the disabled desktop MainCamera reference is missing, calibration is skipped with a warning.
 
 For manual HMD adjustment in the XRI 3.5 simulator: press `H` to select the HMD, use the arrow keys (pitch/yaw) or hold the right mouse button and move the mouse to look down toward the target; `R` resets the selected device. Switch to the right hand (`]`) to move the string hand again. The XR Editor also temporarily shows larger trajectory dots while drawing. The dots indicate the actual projectile path, **not** the headset's central gaze.
 
