@@ -228,9 +228,23 @@ public class JemparinganGame : MonoBehaviour
             xrHandsInput.isActiveAndEnabled;
     }
 
-    // Restore the authored desktop viewpoint in XR simulation. The prefab rig
-    // was originally copied to the desktop eye location, then HMD tracking
-    // added its own height and rotation on top. Never move the tracked camera.
+    // Recenter only the Editor's simulated head, after tracking has updated.
+    // The authored outdoor eye is 1.35 m above the floor (seated viewpoint).
+    // Never assign the tracked Camera transform directly.
+    private IEnumerator AlignXRIEditorViewAfterTracking()
+    {
+        yield return new WaitForEndOfFrame();
+        yield return null;
+        AlignXRIEditorPlaytestView();
+    }
+
+    // Also exposed through an Editor menu for testing a seated recenter after
+    // moving the simulated headset. This is never used on a real XR device.
+    public void RecenterXRIEditorView()
+    {
+        AlignXRIEditorPlaytestView();
+    }
+
     private void AlignXRIEditorPlaytestView()
     {
         if (!IsXRIEditorPlaytest()) return;
@@ -259,20 +273,40 @@ public class JemparinganGame : MonoBehaviour
             return;
         }
 
-        Vector3 forward = outdoorTargetAnchor != null
-            ? outdoorTargetAnchor.position - desktopReference.transform.position
+        Vector3 desiredEye = desktopReference.transform.position;
+        Vector3 sightDirection = outdoorTargetAnchor != null
+            ? outdoorTargetAnchor.position - desiredEye
             : desktopReference.transform.forward;
-        forward = Vector3.ProjectOnPlane(forward, Vector3.up);
-        if (forward.sqrMagnitude < 0.01f)
-            forward = Vector3.ProjectOnPlane(
-                desktopReference.transform.forward, Vector3.up);
+        if (sightDirection.sqrMagnitude < 0.01f) return;
+        sightDirection.Normalize();
 
-        if (forward.sqrMagnitude > 0.01f)
-            origin.MatchOriginUpCameraForward(Vector3.up, forward.normalized);
-        bool moved = origin.MoveCameraToWorldLocation(desktopReference.transform.position);
-        Debug.Log("Jemparingan XR view: " + (moved ? "ALIGNED" : "ALIGN FAILED") +
-            " | eye " + xrCamera.transform.position.ToString("F2") +
-            " | forward " + xrCamera.transform.forward.ToString("F2"), this);
+        Vector3 flatForward = Vector3.ProjectOnPlane(sightDirection, Vector3.up);
+        if (flatForward.sqrMagnitude > 0.01f)
+            origin.MatchOriginUpCameraForward(Vector3.up, flatForward.normalized);
+
+        // MatchOriginUpCameraForward handles yaw, but not headset pitch.
+        // Rotate the simulated tracking-space offset around the current eye
+        // to look toward the target without tilting the world-space XR Origin.
+        Transform offset = origin.CameraFloorOffsetObject != null
+            ? origin.CameraFloorOffsetObject.transform : null;
+        float pitchAdjustment = 0f;
+        if (offset != null && offset != origin.transform)
+        {
+            pitchAdjustment = Vector3.SignedAngle(
+                xrCamera.transform.forward, sightDirection, xrCamera.transform.right);
+            if (Mathf.Abs(pitchAdjustment) > 0.05f)
+                offset.RotateAround(xrCamera.transform.position,
+                    xrCamera.transform.right, pitchAdjustment);
+        }
+
+        bool moved = origin.MoveCameraToWorldLocation(desiredEye);
+        float angleError = Vector3.Angle(xrCamera.transform.forward, sightDirection);
+        Debug.Log("Jemparingan XR view: " + (moved ? "SEATED" : "ALIGN FAILED") +
+            " | eye Y=" + xrCamera.transform.position.y.ToString("F2") +
+            " | target Y=" + (outdoorTargetAnchor != null
+                ? outdoorTargetAnchor.position.y.ToString("F2") : "none") +
+            " | aim error=" + angleError.ToString("F1") + " deg" +
+            " | pitch adjustment=" + pitchAdjustment.ToString("F1") + " deg", this);
     }
 #endif
     private int _lastPowerStep = -1;
@@ -364,9 +398,6 @@ public class JemparinganGame : MonoBehaviour
         if (questInput == null) questInput = GetComponent<MetaQuestBowInput>();
         if (xrHandsInput == null) xrHandsInput = GetComponent<XRHandsBowInput>();
         yield return null;
-#if UNITY_EDITOR
-        AlignXRIEditorPlaytestView();
-#endif
         _ready = BuildScene();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         if (_ready)
@@ -395,6 +426,10 @@ public class JemparinganGame : MonoBehaviour
                 SetModernDesktopMouseControl(false);
             }
         }
+#if UNITY_EDITOR
+        if (_ready && IsXRIEditorPlaytest())
+            StartCoroutine(AlignXRIEditorViewAfterTracking());
+#endif
     }
 
     private void OnGUI()
