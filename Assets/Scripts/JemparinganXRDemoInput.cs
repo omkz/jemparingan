@@ -58,8 +58,10 @@ public sealed class JemparinganXRDemoInput : MonoBehaviour, IJemparinganInput
             return false;
         }
 
+        // Play Demo only: put the bow to the player's right so the target
+        // stays visible on the left. Tracked XR input is unaffected.
         Vector3 bowPosition = eye.transform.position + eye.transform.forward * 0.55f
-            - eye.transform.right * 0.22f - eye.transform.up * 0.08f;
+            + eye.transform.right * 0.22f - eye.transform.up * 0.08f;
         float arrowSpeed = _game != null
             ? _game.DemoMaximumArrowSpeed : FallbackArrowSpeed;
         float arrowGravity = _game != null
