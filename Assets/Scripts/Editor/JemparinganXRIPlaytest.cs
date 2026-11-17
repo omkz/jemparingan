@@ -13,6 +13,7 @@ public static class JemparinganXRIPlaytest
     private const string SourceScene = "Assets/Jemparingan/Scenes/JemparinganPlayableEnvironment_v05.unity";
     private const string PlaytestScene = "Assets/Jemparingan/Scenes/JemparinganXRIPlaytest.unity";
     private const float VisualHandScale = 0.90f;
+    private const float CompactBowScale = 0.75f;
 
     [MenuItem("Tools/Jemparingan/Simulator/Recenter Seated XR View (Play Mode)")]
     public static void RecenterSeatedView()
@@ -127,6 +128,7 @@ public static class JemparinganXRIPlaytest
         var serializedGame = new SerializedObject(game);
         serializedGame.FindProperty("preferQuestHandsInEditor").boolValue = true;
         serializedGame.FindProperty("xrCompactBowVisual").boolValue = true;
+        serializedGame.FindProperty("xrBowMeshVisualScale").floatValue = CompactBowScale;
         serializedGame.ApplyModifiedPropertiesWithoutUndo();
 
         ApplyHandVisualScale(scene);
@@ -154,20 +156,23 @@ public static class JemparinganXRIPlaytest
 
         var serialized = new SerializedObject(game);
         SerializedProperty compact = serialized.FindProperty("xrCompactBowVisual");
-        if (compact == null)
+        SerializedProperty scale = serialized.FindProperty("xrBowMeshVisualScale");
+        if (compact == null || scale == null)
         {
-            Debug.LogError("XRI compact bow: missing serialized setting.");
+            Debug.LogError("XRI compact bow: missing serialized settings.");
             return;
         }
-        if (compact.boolValue) return;
+        if (compact.boolValue && Mathf.Approximately(scale.floatValue, CompactBowScale))
+            return;
 
         compact.boolValue = true;
+        scale.floatValue = CompactBowScale;
         serialized.ApplyModifiedPropertiesWithoutUndo();
         EditorSceneManager.MarkSceneDirty(scene);
         if (EditorSceneManager.SaveScene(scene, PlaytestScene))
-            Debug.Log("XRI compact wooden bow enabled at 90% visual scale.");
+            Debug.Log("XRI compact wooden bow set to 75% visual scale.");
         else
-            Debug.LogError("XRI compact bow enabled but the scene save failed.");
+            Debug.LogError("XRI compact bow scale changed but the scene save failed.");
     }
 
     // Resize the *render-only* hand rig for this Editor test scene.
