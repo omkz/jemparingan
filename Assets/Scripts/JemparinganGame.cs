@@ -20,7 +20,7 @@ public class JemparinganGame : MonoBehaviour
     // Enabled only in the dedicated XRI playtest scene by its Editor setup.
     // Does not scale XR hand poses, string nock, or the projectile origin.
     [SerializeField] private bool xrCompactBowVisual;
-    [SerializeField, Range(0.80f, 1.00f)] private float xrBowMeshVisualScale = 0.90f;
+    [SerializeField, Range(0.65f, 1.00f)] private float xrBowMeshVisualScale = 0.75f;
 
     public enum GameMode { Traditional = 1, Modern = 3 }
     [Header("Outdoor game mode (Traditional / Modern)")]
@@ -2893,7 +2893,7 @@ public class JemparinganGame : MonoBehaviour
                     "XRI | compact wooden bow mesh only").transform;
                 _xrBowMeshVisualRoot.SetParent(_bow, false);
                 _xrBowMeshVisualRoot.localScale = Vector3.one *
-                    Mathf.Clamp(xrBowMeshVisualScale, 0.80f, 1.00f);
+                    Mathf.Clamp(xrBowMeshVisualScale, 0.65f, 1.00f);
                 meshParent = _xrBowMeshVisualRoot;
             }
             JemparinganBowVisual.Build(meshParent);
