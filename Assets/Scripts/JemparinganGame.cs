@@ -16,6 +16,12 @@ public class JemparinganGame : MonoBehaviour
     // Keep the field name to preserve existing scene data across upgrades.
     [SerializeField] private bool preferQuestHandsInEditor;
 
+    [Header("XRI Playtest bow mesh (visual only)")]
+    // Enabled only in the dedicated XRI playtest scene by its Editor setup.
+    // Does not scale XR hand poses, string nock, or the projectile origin.
+    [SerializeField] private bool xrCompactBowVisual;
+    [SerializeField, Range(0.80f, 1.00f)] private float xrBowMeshVisualScale = 0.90f;
+
     public enum GameMode { Traditional = 1, Modern = 3 }
     [Header("Outdoor game mode (Traditional / Modern)")]
     [SerializeField] private GameMode initialOutdoorMode = GameMode.Traditional;
@@ -175,6 +181,7 @@ public class JemparinganGame : MonoBehaviour
     private const int ArrowPoolSize = 14;
     private const int PreviewDotCount = 8;
     private Transform _bow, _stringMarker, _focusRoot;
+    private Transform _xrBowMeshVisualRoot;
     private Transform _desktopPracticeSight;
     private Renderer[] _practiceSightRenderers;
     private TextMesh _practiceSightLabel;
@@ -2301,6 +2308,16 @@ public class JemparinganGame : MonoBehaviour
             ? JemparinganBowVisual.UpperTip : Vector3.up * 0.53f;
         Vector3 lowerTip = useOutdoorEnvironment
             ? JemparinganBowVisual.LowerTip : Vector3.down * 0.53f;
+        if (_xrBowMeshVisualRoot != null)
+        {
+            // Scale only the rendered wooden bow around the tracked grip.
+            // String endpoints follow the actual reduced mesh tips, while
+            // the nock stays at the unscaled hand-draw position.
+            upperTip = _bow.InverseTransformPoint(
+                _xrBowMeshVisualRoot.TransformPoint(upperTip));
+            lowerTip = _bow.InverseTransformPoint(
+                _xrBowMeshVisualRoot.TransformPoint(lowerTip));
+        }
         Vector3 nock = TraditionalNockLocalPosition(pull);
         PositionString(_upperString, upperTip, nock);
         PositionString(_lowerString, lowerTip, nock);
@@ -2866,9 +2883,20 @@ public class JemparinganGame : MonoBehaviour
 
         if (useOutdoorEnvironment)
         {
-            // New 1.30m tapered curved mesh plus wrapped grip and subdued
-            // metallic details. All visuals only; no changes to shoot origin.
-            JemparinganBowVisual.Build(_bow);
+            // Keep desktop and Quest bow hierarchy unchanged. Only the
+            // dedicated XRI playtest can use a compact rendered mesh. The
+            // parent bow stays 1:1 at the tracked left-hand grip position.
+            Transform meshParent = _bow;
+            if (!UsesDesktopInput() && xrCompactBowVisual)
+            {
+                _xrBowMeshVisualRoot = new GameObject(
+                    "XRI | compact wooden bow mesh only").transform;
+                _xrBowMeshVisualRoot.SetParent(_bow, false);
+                _xrBowMeshVisualRoot.localScale = Vector3.one *
+                    Mathf.Clamp(xrBowMeshVisualScale, 0.80f, 1.00f);
+                meshParent = _xrBowMeshVisualRoot;
+            }
+            JemparinganBowVisual.Build(meshParent);
             _modernPhysicalSight =
                 _bow.gameObject.AddComponent<JemparinganModernBowSight>();
             _modernPhysicalSight.Build();
