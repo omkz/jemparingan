@@ -7,17 +7,26 @@ using UnityEngine.XR.Hands;
 public sealed class XRHandsBowInput : MonoBehaviour, IJemparinganInput
 {
     private const float MinHandDistance = 0.08f;
+    // A short draw magnifies angular error from tiny pinch movements.
+    private const float MinAimDistance = 0.14f;
     private const float MaxHandDistance = 1.0f;
+    private const float PositionSnapDistance = 0.30f;
 
     [SerializeField] private Transform trackingOrigin;
     [SerializeField, Range(0.015f, 0.06f)] private float pinchEnter = 0.035f;
     [SerializeField, Range(0.03f, 0.08f)] private float pinchExit = 0.05f;
+    [Header("XR tracking stabilization")]
+    [SerializeField, Range(0f, 0.10f)] private float gripSmoothingSeconds = 0.025f;
+    [SerializeField, Range(0.01f, 0.20f)] private float steadyAimSeconds = 0.085f;
+    [SerializeField, Range(0.01f, 0.15f)] private float movingAimSeconds = 0.035f;
+    [SerializeField, Range(2f, 20f)] private float movingAimThresholdDegrees = 6f;
 
     private readonly List<XRHandSubsystem> _subsystems = new List<XRHandSubsystem>();
     private readonly JemparinganQuestGestureGate _gate = new JemparinganQuestGestureGate();
     private XRHandSubsystem _subsystem;
     private bool _leftPinched, _rightPinched, _hasAim, _focused = true, _paused;
-    private Vector3 _lastAim;
+    private bool _hasFilteredBow, _hasFilteredString;
+    private Vector3 _lastAim, _filteredBow, _filteredString;
 
 #if UNITY_EDITOR
     private string _lastDebugState;
@@ -52,6 +61,7 @@ public sealed class XRHandsBowInput : MonoBehaviour, IJemparinganInput
     {
         _gate.Interrupt();
         _leftPinched = _rightPinched = _hasAim = HandsTooClose = false;
+        _hasFilteredBow = _hasFilteredString = false;
     }
 
     private bool Invalid(string reason)
@@ -94,6 +104,8 @@ public sealed class XRHandsBowInput : MonoBehaviour, IJemparinganInput
         if (!ReadHand(right, _rightPinched, out Vector3 str, out bool rightPinch))
             return Invalid("RIGHT FINGERS NOT TRACKED");
 
+        bool newBowGrip = leftPinch && !_leftPinched;
+        bool newStringGrip = rightPinch && !_rightPinched;
         _leftPinched = leftPinch;
         _rightPinched = rightPinch;
         if (!_gate.Accept(true, leftPinch, rightPinch))
@@ -105,29 +117,69 @@ public sealed class XRHandsBowInput : MonoBehaviour, IJemparinganInput
             return false;
         }
 
-        Vector3 axis = bow - str;
-        Vector3 aim = _hasAim ? _lastAim : camera.transform.forward;
-        HandsTooClose = false;
-        if (leftPinch && rightPinch)
-        {
-            if (axis.sqrMagnitude > MaxHandDistance * MaxHandDistance)
-                return Invalid("HANDS TOO FAR - RESET PINCHES");
+        // Validate the real tracked separation, before position filtering.
+        Vector3 rawAxis = bow - str;
+        if (leftPinch && rightPinch &&
+            rawAxis.sqrMagnitude > MaxHandDistance * MaxHandDistance)
+            return Invalid("HANDS TOO FAR - RESET PINCHES");
 
-            // Hands often begin almost touching. Allow the pinch to stay held
-            // while the right hand moves back instead of cancelling the draw.
-            HandsTooClose = axis.sqrMagnitude < MinHandDistance * MinHandDistance;
-            if (!HandsTooClose)
+        // A new grip must never interpolate from an old shot or a stale hand.
+        if (newBowGrip)
+        {
+            _hasFilteredBow = false;
+            _hasAim = false;
+        }
+        if (newStringGrip)
+        {
+            _hasFilteredString = false;
+            _hasAim = false;
+        }
+        if (leftPinch)
+            bow = StabilizePosition(bow, ref _filteredBow, ref _hasFilteredBow);
+        else
+            _hasFilteredBow = _hasFilteredString = _hasAim = false;
+
+        if (rightPinch)
+            str = StabilizePosition(str, ref _filteredString, ref _hasFilteredString);
+        else
+            _hasFilteredString = false;
+
+        Vector3 aim = _hasAim ? _lastAim : camera.transform.forward;
+        // Hands may start almost touching: keep the gesture active while
+        // the string hand moves back, rather than cancelling the draw.
+        HandsTooClose = leftPinch && rightPinch &&
+            rawAxis.sqrMagnitude < MinHandDistance * MinHandDistance;
+        if (leftPinch && rightPinch && !HandsTooClose)
+        {
+            Vector3 axis = bow - str;
+            if (axis.sqrMagnitude >= MinAimDistance * MinAimDistance)
             {
-                aim = axis.normalized;
+                Vector3 desired = axis.normalized;
+                if (!_hasAim)
+                    aim = desired;
+                else
+                {
+                    // Low-pass tracking noise near a settled sight line.
+                    // Larger intentional re-aiming gets a faster response.
+                    float angle = Vector3.Angle(_lastAim, desired);
+                    float response = Mathf.InverseLerp(
+                        1f, movingAimThresholdDegrees, angle);
+                    float seconds = Mathf.Lerp(steadyAimSeconds,
+                        movingAimSeconds, response);
+                    float weight = 1f - Mathf.Exp(
+                        -Time.deltaTime / Mathf.Max(0.001f, seconds));
+                    aim = Vector3.Slerp(_lastAim, desired, weight).normalized;
+                }
                 _lastAim = aim;
                 _hasAim = true;
             }
         }
         else if (!leftPinch)
         {
-            _hasAim = false;
             aim = camera.transform.forward;
         }
+        // Releasing the right pinch keeps the previous frame's aim. The
+        // gameplay controller then fires along the sight line just held.
 
 #if UNITY_EDITOR
         ReportState("TRACKED | left pinch=" + leftPinch + " | right pinch=" +
@@ -142,6 +194,26 @@ public sealed class XRHandsBowInput : MonoBehaviour, IJemparinganInput
             AimDirection = aim
         };
         return true;
+    }
+
+    private Vector3 StabilizePosition(Vector3 sample,
+        ref Vector3 filtered, ref bool hasSample)
+    {
+        // Filtering is active only while gripping. A tracker jump/recenter
+        // must not interpolate the bow or string across the room.
+        if (!hasSample || gripSmoothingSeconds <= 0f ||
+            (sample - filtered).sqrMagnitude >
+                PositionSnapDistance * PositionSnapDistance)
+        {
+            filtered = sample;
+            hasSample = true;
+            return filtered;
+        }
+
+        float weight = 1f - Mathf.Exp(-Time.deltaTime /
+            Mathf.Max(0.001f, gripSmoothingSeconds));
+        filtered = Vector3.Lerp(filtered, sample, weight);
+        return filtered;
     }
 
     private bool ReadHand(XRHand hand, bool wasPinched, out Vector3 position, out bool pinched)
