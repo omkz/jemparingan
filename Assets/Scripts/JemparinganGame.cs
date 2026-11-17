@@ -2887,15 +2887,40 @@ public class JemparinganGame : MonoBehaviour
             // dedicated XRI playtest can use a compact rendered mesh. The
             // parent bow stays 1:1 at the tracked left-hand grip position.
             Transform meshParent = _bow;
-            if (!UsesDesktopInput() && xrCompactBowVisual)
+            bool useCompactBow = !UsesDesktopInput() && xrCompactBowVisual;
+            float compactScale = Mathf.Clamp(xrBowMeshVisualScale, 0.65f, 1.00f);
+#if UNITY_EDITOR
+            // Dedicated XRI playtest must work even when an old scene has
+            // never serialized the new opt-in flag or still stores 90%.
+            // Do not apply this forced preview setting in Quest or desktop scenes.
+            bool isDedicatedXriPlaytest =
+                UnityEngine.SceneManagement.SceneManager.GetActiveScene().path ==
+                "Assets/Jemparingan/Scenes/JemparinganXRIPlaytest.unity";
+            if (isDedicatedXriPlaytest && !UsesDesktopInput())
+            {
+                useCompactBow = true;
+                compactScale = 0.75f;
+            }
+#endif
+            if (useCompactBow)
             {
                 _xrBowMeshVisualRoot = new GameObject(
                     "XRI | compact wooden bow mesh only").transform;
                 _xrBowMeshVisualRoot.SetParent(_bow, false);
-                _xrBowMeshVisualRoot.localScale = Vector3.one *
-                    Mathf.Clamp(xrBowMeshVisualScale, 0.65f, 1.00f);
+                _xrBowMeshVisualRoot.localScale = Vector3.one * compactScale;
                 meshParent = _xrBowMeshVisualRoot;
+#if UNITY_EDITOR
+                Debug.Log("Jemparingan XR compact bow ACTIVE | visual scale=" +
+                    compactScale.ToString("F2") +
+                    " | parent scale=1.00 | scene=" +
+                    UnityEngine.SceneManagement.SceneManager.GetActiveScene().path,
+                    this);
+#endif
             }
+#if UNITY_EDITOR
+            else if (isDedicatedXriPlaytest)
+                Debug.LogWarning("Jemparingan XR compact bow NOT ACTIVE: desktop input selected.", this);
+#endif
             JemparinganBowVisual.Build(meshParent);
             _modernPhysicalSight =
                 _bow.gameObject.AddComponent<JemparinganModernBowSight>();
