@@ -2899,7 +2899,7 @@ public class JemparinganGame : MonoBehaviour
             if (isDedicatedXriPlaytest && !UsesDesktopInput())
             {
                 useCompactBow = true;
-                compactScale = 0.75f;
+                compactScale = Mathf.Min(compactScale, 0.75f);
             }
 #endif
             if (useCompactBow)
