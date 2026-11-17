@@ -55,6 +55,7 @@ public static class JemparinganXRIPlaytest
             else
             {
                 ApplyHandVisualScale(existing);
+                EnableCompactBowVisual(existing);
                 Debug.Log("XRI PLAYTEST READY: opened existing XR-only scene.");
             }
             return;
@@ -125,6 +126,7 @@ public static class JemparinganXRIPlaytest
 
         var serializedGame = new SerializedObject(game);
         serializedGame.FindProperty("preferQuestHandsInEditor").boolValue = true;
+        serializedGame.FindProperty("xrCompactBowVisual").boolValue = true;
         serializedGame.ApplyModifiedPropertiesWithoutUndo();
 
         ApplyHandVisualScale(scene);
@@ -136,6 +138,36 @@ public static class JemparinganXRIPlaytest
         }
 
         Debug.Log("XRI PLAYTEST READY: XR-only scene created from desktop. Original scenes untouched.");
+    }
+
+    // Opt in only this existing XRI scene. Other XR/Quest and desktop scenes
+    // retain their original 1:1 wooden bow visuals and gameplay transforms.
+    private static void EnableCompactBowVisual(Scene scene)
+    {
+        var game = Object.FindFirstObjectByType<JemparinganGame>(
+            FindObjectsInactive.Include);
+        if (game == null || game.gameObject.scene != scene)
+        {
+            Debug.LogWarning("XRI compact bow: gameplay controller not found.");
+            return;
+        }
+
+        var serialized = new SerializedObject(game);
+        SerializedProperty compact = serialized.FindProperty("xrCompactBowVisual");
+        if (compact == null)
+        {
+            Debug.LogError("XRI compact bow: missing serialized setting.");
+            return;
+        }
+        if (compact.boolValue) return;
+
+        compact.boolValue = true;
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+        EditorSceneManager.MarkSceneDirty(scene);
+        if (EditorSceneManager.SaveScene(scene, PlaytestScene))
+            Debug.Log("XRI compact wooden bow enabled at 90% visual scale.");
+        else
+            Debug.LogError("XRI compact bow enabled but the scene save failed.");
     }
 
     // Resize the *render-only* hand rig for this Editor test scene.
