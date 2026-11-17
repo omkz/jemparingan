@@ -4,6 +4,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.XR.Hands;
 using UnityEngine.XR.Interaction.Toolkit;
 
 // XR-only Editor playtest; never modifies desktop, Quest or legacy simulator scenes.
@@ -11,6 +12,7 @@ public static class JemparinganXRIPlaytest
 {
     private const string SourceScene = "Assets/Jemparingan/Scenes/JemparinganPlayableEnvironment_v05.unity";
     private const string PlaytestScene = "Assets/Jemparingan/Scenes/JemparinganXRIPlaytest.unity";
+    private const float VisualHandScale = 0.90f;
 
     [MenuItem("Tools/Jemparingan/Simulator/Recenter Seated XR View (Play Mode)")]
     public static void RecenterSeatedView()
@@ -51,7 +53,10 @@ public static class JemparinganXRIPlaytest
             if (input == null || !hasSimulator)
                 Debug.LogError("XR-only scene is incomplete. Existing scene left untouched.");
             else
+            {
+                ApplyHandVisualScale(existing);
                 Debug.Log("XRI PLAYTEST READY: opened existing XR-only scene.");
+            }
             return;
         }
 
@@ -122,6 +127,7 @@ public static class JemparinganXRIPlaytest
         serializedGame.FindProperty("preferQuestHandsInEditor").boolValue = true;
         serializedGame.ApplyModifiedPropertiesWithoutUndo();
 
+        ApplyHandVisualScale(scene);
         EditorSceneManager.MarkSceneDirty(scene);
         if (!EditorSceneManager.SaveScene(scene, PlaytestScene))
         {
@@ -130,6 +136,61 @@ public static class JemparinganXRIPlaytest
         }
 
         Debug.Log("XRI PLAYTEST READY: XR-only scene created from desktop. Original scenes untouched.");
+    }
+
+    // Resize the *render-only* hand rig for this Editor test scene.
+    // Never scale XROrigin, tracked hand poses, pinch targets, or bow geometry.
+    // Both Quest and AndroidXR visual variants are adjusted, so changing
+    // the detected hand mesh layout will not restore oversized visuals.
+    private static void ApplyHandVisualScale(Scene scene)
+    {
+        GameObject handsRig = null;
+        foreach (GameObject root in scene.GetRootGameObjects())
+        {
+            if (root.name != "Jemparingan | XRI Hands Rig") continue;
+            handsRig = root;
+            break;
+        }
+        if (handsRig == null)
+        {
+            Debug.LogWarning("XR hand visual scale: XRI Hands Rig not found; unchanged.");
+            return;
+        }
+
+        int found = 0;
+        int changed = 0;
+        foreach (XRHandMeshController mesh in
+            handsRig.GetComponentsInChildren<XRHandMeshController>(true))
+        {
+            Transform visual = mesh.transform;
+            string name = visual.name;
+            if (name != "LeftHandQuestVisual" && name != "RightHandQuestVisual" &&
+                name != "LeftHandAndroidXRVisual" && name != "RightHandAndroidXRVisual")
+                continue;
+
+            found++;
+            Vector3 desired = Vector3.one * VisualHandScale;
+            if ((visual.localScale - desired).sqrMagnitude < 0.000001f)
+                continue;
+
+            Undo.RecordObject(visual, "Scale XR hand mesh visual to 90%");
+            visual.localScale = desired;
+            PrefabUtility.RecordPrefabInstancePropertyModifications(visual);
+            changed++;
+        }
+
+        if (found < 2)
+        {
+            Debug.LogWarning("XR hand visual scale: expected left and right " +
+                "visual prefabs but found " + found + ". Check the XRI Hands Rig.");
+        }
+        if (changed == 0) return;
+        EditorSceneManager.MarkSceneDirty(scene);
+        if (EditorSceneManager.SaveScene(scene, PlaytestScene))
+            Debug.Log("XR hand visuals set to 90% in XRI Playtest only " +
+                "(" + changed + " modified, " + found + " found).");
+        else
+            Debug.LogError("XR hand visuals adjusted but scene save failed.");
     }
 }
 #endif
